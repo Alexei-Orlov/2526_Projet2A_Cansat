@@ -61,3 +61,5 @@ CanSat competitions challenge teams to design, build, and launch a **can-sized s
 
 Shutdown switch only for the transmission to keep the gps active
 
+use tx ind and put a led to indicate the recieving and transmiting data
+
