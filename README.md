@@ -56,4 +56,8 @@ Build a **satellite the size of a 33cl can** capable of completing different mis
 ---
 
 ## 🛰️ About CanSat
-CanSat competitions challenge teams to design, build, and launch a **can-sized satellite** that completes scientific or engineering missions during descent.  
+CanSat competitions challenge teams to design, build, and launch a **can-sized satellite** that completes scientific or engineering missions during descent. 
+
+
+Shutdown switch only for the transmission to keep the gps active
+
