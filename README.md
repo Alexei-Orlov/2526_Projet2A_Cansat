@@ -11,11 +11,11 @@ Build a **satellite the size of a 33cl can** capable of completing different mis
 ##  Team Members
 | Name | Role |
 |------|------|
-| Alexeï DOUILLARD | TBD |
-| Juan Pablo BARONA CIFUENTES | TBD |
-| Ted KOYAZANDE | TBD |
-| Amr TAOUIS | TBD |
-| Abdelmoughit HAJJI LAAMOURI | TBD |
+| Alexeï DOUILLARD | 3D Modeling |
+| Juan Pablo BARONA CIFUENTES | Communications |
+| Ted KOYAZANDE | Ground station |
+| Amr TAOUIS | PCB Design |
+| Abdelmoughit HAJJI LAAMOURI | Code and firmware |
 
 ---
 
@@ -33,9 +33,22 @@ Build a **satellite the size of a 33cl can** capable of completing different mis
   - Listed components and sensors to implement  
 - **Goals for Next Session**  
   - Learn basics of required tools:  
-    - Onshape 🛠️  
-    - FreeRTOS ⏱️  
-    - GitHub etiquette 💻  
+    - Onshape  
+    - FreeRTOS   
+    - GitHub etiquette
+   
+### Session 1 – *15/09/2025*
+- **Project Definition**  
+  - Roles distribution
+  - Missions not yet revealed  
+- **Decisions**  
+  - Study previous CanSat team’s GitHub as reference  
+  - Focus on testing the sensors while we wait for the rules
+- **Progress**  
+  - Ordered most of the sensors
+  - Set deadlines
+- **Goals for Next Session**  
+  - Work on the test motherboard
 
 ---
 
@@ -48,7 +61,7 @@ Build a **satellite the size of a 33cl can** capable of completing different mis
 
 ---
 
-##  Resources
+##  Resources (Links are still missing)
 - [Previous ENSEA CanSat GitHub](#)  
 - [Onshape Docs](#)  
 - [FreeRTOS Guide](#)  
@@ -58,8 +71,4 @@ Build a **satellite the size of a 33cl can** capable of completing different mis
 ## 🛰️ About CanSat
 CanSat competitions challenge teams to design, build, and launch a **can-sized satellite** that completes scientific or engineering missions during descent. 
 
-
-Shutdown switch only for the transmission to keep the gps active
-
-use tx ind and put a led to indicate the recieving and transmiting data
 
