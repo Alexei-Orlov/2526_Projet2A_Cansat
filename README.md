@@ -23,10 +23,10 @@ Build a **satellite the size of a 33cl can** capable of completing different mis
     - Using an onboard first person view (FPV) camera
       
 - **Bonus mission : Live video feed to the ground station**
-    -Display all recorede data and live feed of the descend to the ground station
+    - Display all recorede data and live feed of the descend to the ground station
   
 - **330mL volume limit**
-    -Fit everything under a 330mL limit and a 350g limit
+    - Fit everything under a 330mL limit and a 350g limit
 ---
 
 ## 👥 Team Members
@@ -106,9 +106,10 @@ Build a **satellite the size of a 33cl can** capable of completing different mis
 ---
 
 ## 📚 Resources
-- [Previous ENSEA CanSat GitHub](#https://cad.onshape.com/documents?resourceType=folder&nodeId=558406456f078be48d4c722b&column=modifiedAt&sortOrder=asc)  
-- [Onshape Docs](#)  
-- [FreeRTOS Guide](#)  
+- [Previous ENSEA CanSat GitHub](https://github.com/mathieupommery/CANSAT_ARES_ENSEA)
+- [Onshape Docs](https://cad.onshape.com/documents?resourceType=folder&nodeId=558406456f078be48d4c722b&column=modifiedAt&sortOrder=asc)
+- [Kirigami inspierd parachute](https://www.nature.com/articles/s41586-025-09515-9#Fig1)
+- [FreeRTOS Guide](https://www.youtube.com/watch?v=OPrcpbKNSjU)  
 
 ---
 
