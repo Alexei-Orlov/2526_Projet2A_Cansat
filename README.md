@@ -4,8 +4,29 @@ ENSEA's CanSat team project for the 2025–2026 edition
 ---
 
 ## 📋 Objective
-Build a **satellite the size of a 33cl can** capable of completing different missions during a **120m drop**.
+Build a **satellite the size of a 33cl can** capable of completing different missions during a **150m drop**.
 
+
+### 🛰️ Current strategy :
+
+- **Main mission : Parachute deployment**
+  - Kirigami inspired drogue chute
+  - Use the drogue chute to deploy the main parachute
+  - Release the drogue chute with an string and elastic band tied to a servomotor
+ 
+- **Secondary mission : Topography**
+  - Use a time of flight (TOF) sensor to map the ground
+  - Induce a rotation thanks to an helicoïdal shaped can
+  - Precisely plae the mapped point with the help of an Inertial Measurment Unit (IMU) and a barometer
+ 
+- **Tertiary mission : Recording of the landing**
+    - Using an onboard first person view (FPV) camera
+      
+- **Bonus mission : Live video feed to the ground station**
+    -Display all recorede data and live feed of the descend to the ground station
+  
+- **330mL volume limit**
+    -Fit everything under a 330mL limit and a 350g limit
 ---
 
 ## 👥 Team Members
@@ -76,16 +97,16 @@ Build a **satellite the size of a 33cl can** capable of completing different mis
 ---
 
 ## 🗺️ Roadmap
-- [ ] Learn required tools  
-- [x] Define missions (November)  
-- [ ] Motherboard design  
+- [X] Learn required tools  
+- [x] Define missions
+- [ ] Motherboard design  (In prgoress)
 - [ ] Peripheral integration  
 - [ ] Drop test & validation  
 
 ---
 
 ## 📚 Resources
-- [Previous ENSEA CanSat GitHub](#)  
+- [Previous ENSEA CanSat GitHub](#https://cad.onshape.com/documents?resourceType=folder&nodeId=558406456f078be48d4c722b&column=modifiedAt&sortOrder=asc)  
 - [Onshape Docs](#)  
 - [FreeRTOS Guide](#)  
 
