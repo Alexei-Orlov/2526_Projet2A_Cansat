@@ -5842,7 +5842,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "a1a721f0-a158-4868-a970-2bc201a388cc")
+			(uuid "a292f92d-65ac-4844-b7f2-0d5102a9c79e")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -5909,7 +5909,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "8ce3cb23-01ff-4930-a83d-71645d854762")
+			(uuid "55e83861-e0b6-4de8-9eba-cc0ecc3f679c")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -5975,7 +5975,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "fbcb6626-e2b0-4c53-9220-678ac19e3eae")
+			(uuid "f2089207-56bd-4893-9b3a-61c7874914d2")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -6041,7 +6041,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "17583c3b-6d8f-4db9-bd22-dd6731cbcf02")
+			(uuid "5b07b475-cb82-4cb7-be30-363ae86f1e45")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -6108,7 +6108,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "4c0270dd-d4d3-4f30-860c-fcd692f77486")
+			(uuid "2bbb1ecf-512a-4f01-8865-283dd6f11dfa")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -6174,7 +6174,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "14dbfe1c-1b0d-4ded-ab08-988681166566")
+			(uuid "d1ce2acf-2f54-4674-b1d2-8997337ab590")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -6195,7 +6195,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "160385a1-1d80-4154-ae02-7862fddfef64")
-		(property "Reference" "#PWR043"
+		(property "Reference" "#PWR0101"
 			(at 36.83 88.9 0)
 			(effects
 				(font
@@ -6241,12 +6241,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "07dc53a5-111e-4131-83f2-43b17c437fc3")
+			(uuid "f5bbfc32-c832-4f06-b1bd-1aeca460a454")
 		)
 		(instances
-			(project ""
+			(project "Cansat_PCB"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297/24409c25-a13b-4fce-aa43-db656a14ada4"
-					(reference "#PWR043")
+					(reference "#PWR0101")
 					(unit 1)
 				)
 			)
@@ -6308,7 +6308,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "46d2abe5-cbf7-4dcf-ab0e-c7ea298109ab")
+			(uuid "cc740179-7ea7-465d-90af-ede9aa5e1322")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -6374,7 +6374,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "e7b13b58-cff0-4929-8bd9-f162c43dc079")
+			(uuid "26aaa49f-2918-4559-8f32-e2e4237fe5bc")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -6439,7 +6439,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "7ec2e576-b91d-4583-92cc-d4eea7ec277c")
+			(uuid "35d4f655-b018-4c33-9b0b-80d41b5e83c2")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -6625,46 +6625,46 @@
 			)
 		)
 		(pin "06"
-			(uuid "a6d2978a-9358-47f1-8819-16db5d59508e")
+			(uuid "5c26b39d-2f31-4322-8c5e-61d2a97ed75a")
 		)
 		(pin "07"
-			(uuid "2e6d89e3-29a1-4064-a15f-66b18ebd4da2")
+			(uuid "4f5bc39b-2f47-4873-a974-63cf25ab4ef8")
 		)
 		(pin "10"
-			(uuid "ef0dba4d-8383-4ad8-aebb-093879423dc2")
+			(uuid "90bf557a-f900-4f08-a6a7-ba00ea6a7dd8")
 		)
 		(pin "04"
-			(uuid "920db90f-7860-4a43-a7fe-928936883bbf")
+			(uuid "39e54e5e-c8e1-4cd7-bb56-2edfbd1061e3")
 		)
 		(pin "03"
-			(uuid "d1486c3b-45bf-4748-a3e3-1338502c52c5")
+			(uuid "4f521cf5-8b9c-46a7-bf21-a3b84a84a205")
 		)
 		(pin "02"
-			(uuid "5a4ccffa-610f-4d35-a4a8-66465b9c3bc2")
+			(uuid "a1211c15-30b6-4fa7-a160-6cd56d97e854")
 		)
 		(pin "05"
-			(uuid "47167248-d217-41ab-97f4-0ccecb80d244")
+			(uuid "e688481f-3cb0-40f5-9e81-7e5678521bef")
 		)
 		(pin "14"
-			(uuid "9a355f27-2e35-477b-b75c-7293bfc9e1b5")
+			(uuid "cb1265ad-6365-4b68-b3d6-9490bbd919c9")
 		)
 		(pin "09"
-			(uuid "879111fe-b898-4643-9366-142ebd5f9f3a")
+			(uuid "450264b5-fc83-40d2-8557-2d73c33f5968")
 		)
 		(pin "11"
-			(uuid "6844a0d1-2f6a-43f2-bc03-14f77df7d8bf")
+			(uuid "63d0571e-88cf-44da-ae10-1fb603757be1")
 		)
 		(pin "01"
-			(uuid "ed22aba1-afb0-4f74-89ff-c55cce59ce48")
+			(uuid "efa02770-039c-48ad-b186-53ded4b42ec7")
 		)
 		(pin "13"
-			(uuid "adeda428-c2ea-4ad5-b766-b6e4378f82e6")
+			(uuid "8ffa24d4-8f38-41f3-8477-d450799269d2")
 		)
 		(pin "12"
-			(uuid "bb0caecf-fa8a-43fc-bde1-fbb632c54716")
+			(uuid "45ef4664-294f-49d3-b0f2-ca12e337e644")
 		)
 		(pin "08"
-			(uuid "312d2ec6-85cb-4b25-821c-34b4bc964eac")
+			(uuid "f30d0247-2fe5-4f8d-83e5-0e22a2229907")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -6730,10 +6730,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "46b7abc0-ca80-41fc-930c-7cb059196dc7")
+			(uuid "f6397baf-5b87-4347-91ee-a253610002f1")
 		)
 		(pin "2"
-			(uuid "0be78dc7-1364-4bec-bb5a-e6d9200663d2")
+			(uuid "8edd32ad-f716-42a3-a464-d2829613e3bc")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -6800,7 +6800,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "5a169980-17aa-44d3-87d4-34eccb87a909")
+			(uuid "a2dd3908-a01b-4a03-8973-dc7bbb9421bf")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -6864,7 +6864,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "c40424bb-e746-41c6-be4f-14f6121776fa")
+			(uuid "e5dc294b-b046-46c0-a2b9-a2186a346a2c")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -6930,10 +6930,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "c3889b7f-a3c7-4cf7-b788-17ee5e6cca31")
+			(uuid "02a0c23a-7f17-49a7-b406-65137537393c")
 		)
 		(pin "2"
-			(uuid "926fbe27-c5e9-4532-93da-b46a963ed854")
+			(uuid "2eb59eb0-6b4a-4c45-a497-91be6ef36234")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -6954,7 +6954,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "3486e8a9-8cab-4410-8c37-6aa2d8b09661")
-		(property "Reference" "#PWR059"
+		(property "Reference" "#PWR0102"
 			(at 115.57 139.7 0)
 			(effects
 				(font
@@ -7000,12 +7000,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "fc9940ea-0488-4a59-a727-c22812cb5d80")
+			(uuid "9c4b4cac-1143-45ae-92fe-2bd9730e8502")
 		)
 		(instances
-			(project ""
+			(project "Cansat_PCB"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297/24409c25-a13b-4fce-aa43-db656a14ada4"
-					(reference "#PWR059")
+					(reference "#PWR0102")
 					(unit 1)
 				)
 			)
@@ -7066,7 +7066,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "1658400f-2b33-4430-b2a2-33a609d44919")
+			(uuid "525916d7-d0ae-4e70-b099-1818bdedd461")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -7131,7 +7131,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "a32f5c73-dcf8-4e71-8aee-f49750c16f18")
+			(uuid "799dfb92-7f21-47c4-9874-bc0bfc038aff")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -7198,10 +7198,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "8ccc6dac-123b-4622-bc78-f6ef6ab8e377")
+			(uuid "b3cfe744-4abd-4dc8-8b6c-c2fa25e7bae8")
 		)
 		(pin "2"
-			(uuid "0b0ac18a-7171-4117-a060-c3081cb66d8e")
+			(uuid "e7d0eb74-7b46-4e7f-b4c2-da18b1ef99ab")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -7267,7 +7267,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "bdccf846-13ff-4d11-8894-cce3ddff3c94")
+			(uuid "fc5dd4dc-cc6e-4ef9-8c12-439c1e896ba6")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -7333,7 +7333,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "0c019a64-3174-4908-8db6-5d310a7f8b10")
+			(uuid "230e1693-b438-4354-bd0b-322d877b501b")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -7397,16 +7397,16 @@
 			)
 		)
 		(pin "3"
-			(uuid "34c521d0-17ab-44a0-ac78-fc028a7deca0")
+			(uuid "81f04fb3-1708-40a3-8e4f-72a90d3655f2")
 		)
 		(pin "1"
-			(uuid "356a0059-5a04-41de-bab6-3d0cce0f6090")
+			(uuid "2957ce5c-0f0f-476e-8f2d-ad22d4b748a4")
 		)
 		(pin "2"
-			(uuid "f1a809b2-5171-49f6-aa99-61d574cc9c9b")
+			(uuid "3fbb0955-9c2b-49c1-8c13-0f615658502e")
 		)
 		(pin "MP"
-			(uuid "ccc15b5d-0966-4722-9139-8af63259707c")
+			(uuid "f17446a0-d815-4e6b-8e69-e4719db2ca4b")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -7472,10 +7472,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "a688dfc6-ea0b-4ab1-a8f9-e13ca9826b75")
+			(uuid "6a54c006-2bbf-41ce-be94-770958ead9e0")
 		)
 		(pin "2"
-			(uuid "4fa472e1-a9dd-48c4-bc2e-a91a13a8aa86")
+			(uuid "8dd4d1da-05ca-4238-ae19-033eeb3998c6")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -7540,19 +7540,19 @@
 			)
 		)
 		(pin "3"
-			(uuid "edafb051-aa88-4657-98c4-3310292444b5")
+			(uuid "e3fd2f15-cdfb-409e-abe3-2c086644c09a")
 		)
 		(pin "4"
-			(uuid "f9476d7f-0d4d-4e06-88d8-392afdafae0c")
+			(uuid "db2c7dbd-b2ab-46d0-82c4-99bb237e950a")
 		)
 		(pin "2"
-			(uuid "b4818523-b47d-4652-8752-1762820313d9")
+			(uuid "cd49cd85-9867-4886-955e-cf9e0d70265f")
 		)
 		(pin "1"
-			(uuid "c19d9392-e781-445b-866f-c7882e6afd4a")
+			(uuid "053ad126-55dd-4c7a-b012-fe145555dc39")
 		)
 		(pin "MP"
-			(uuid "ce5fff7a-aab6-4b02-96c0-ef3cef9a3878")
+			(uuid "cc601fa9-9208-492e-bde8-681641acc81a")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -7619,10 +7619,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "520e73fc-7db0-4438-8eb3-10ecae6d6a8c")
+			(uuid "bed01d2c-7cbe-45de-8974-7409a0a18724")
 		)
 		(pin "2"
-			(uuid "74a8bacc-958e-4ca2-812e-f78ad5159bbc")
+			(uuid "bc80af4b-3d1a-458e-8ddb-700882872b3b")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -7689,7 +7689,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "dfa99363-0183-4ddc-ac8d-4094ee20eb46")
+			(uuid "ab504065-c9c5-4810-9ae7-078a43b54b45")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -7756,7 +7756,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "63cc9629-55c2-40a4-a2b6-3b3297767d07")
+			(uuid "c9eb9d46-384a-4d9b-8fbf-3b87067671c1")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -7823,7 +7823,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "16c2d419-2fee-458d-8864-d5cfed7977f0")
+			(uuid "016e881c-b246-4324-b6e7-d15ad23d70fd")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -7889,7 +7889,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "3c6d29b5-34bb-42ac-bddc-0175541bedb8")
+			(uuid "13f47929-b705-4783-83fc-179a9b7b24a0")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -7955,7 +7955,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "cdcd981e-2f38-419a-a2a1-ec5f7fab2af7")
+			(uuid "129ee230-77fe-4818-9407-8f7041254ce1")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -8024,7 +8024,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "b51edb2d-24e0-4495-ab31-03fa9675b01c")
+			(uuid "fca993c3-0648-4ae9-83f8-ee85a516a461")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -8045,7 +8045,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "6f19940b-71ec-412d-84cf-3bf405c92309")
-		(property "Reference" "D4"
+		(property "Reference" "D?"
 			(at 106.68 173.9198 0)
 			(effects
 				(font
@@ -8091,21 +8091,21 @@
 			)
 		)
 		(pin "1"
-			(uuid "4d5e8d00-4699-4ffe-908b-6312a367377a")
+			(uuid "bedad42e-f5c7-4b19-8a53-a196f52702b6")
 		)
 		(pin "2"
-			(uuid "f38ed807-c449-434a-93ef-53b12742301b")
+			(uuid "66c331d3-f0d2-4966-9bd5-9facaf29bc11")
 		)
 		(pin "3"
-			(uuid "64a1e6a8-d8f3-47b0-9481-5e4284d8125a")
+			(uuid "2abdf5a0-dcb9-4cb2-825f-99751ac5eaf6")
 		)
 		(pin "4"
-			(uuid "72740429-5986-4ea8-b7e4-75b6e3f8b164")
+			(uuid "3fb3722c-5499-4fac-ac49-12ab80262d86")
 		)
 		(instances
-			(project ""
+			(project "Cansat_PCB"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297/24409c25-a13b-4fce-aa43-db656a14ada4"
-					(reference "D4")
+					(reference "D?")
 					(unit 1)
 				)
 			)
@@ -8166,7 +8166,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "c4d7169b-2b9e-41a8-8ada-45f159b2d5c2")
+			(uuid "2493cd28-48cf-4a02-a1b1-7f7e996ddc12")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -8187,7 +8187,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "7641368a-50d1-4117-b8ef-da117b6f485f")
-		(property "Reference" "L1"
+		(property "Reference" "L?"
 			(at 224.79 35.56 90)
 			(effects
 				(font
@@ -8231,15 +8231,15 @@
 			)
 		)
 		(pin "2"
-			(uuid "0bde18b4-09d7-49cc-93bf-3b18778e206c")
+			(uuid "27b074eb-535a-4130-84b2-d49ebf75a2ec")
 		)
 		(pin "1"
-			(uuid "f88f2787-ce36-43f4-a6d6-0ad346fd19ab")
+			(uuid "cc50d393-15cc-4d55-874b-346723a03248")
 		)
 		(instances
-			(project ""
+			(project "Cansat_PCB"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297/24409c25-a13b-4fce-aa43-db656a14ada4"
-					(reference "L1")
+					(reference "L?")
 					(unit 1)
 				)
 			)
@@ -8301,10 +8301,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "f5307163-6cc2-4834-8ec5-6147194b01b3")
+			(uuid "8c3ecfda-ecd8-4390-a58f-d4e6620585b6")
 		)
 		(pin "2"
-			(uuid "56e8dcbe-5bca-4e2d-972f-7b6c52abdc4b")
+			(uuid "134cb046-7854-428d-82c1-14a5e53bc82f")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -8368,10 +8368,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "e12fb35b-fb26-4d49-a8a7-74470091bd84")
+			(uuid "28fc64bb-ed97-4a19-8e7b-caaa0b0ddb64")
 		)
 		(pin "2"
-			(uuid "d1548ea0-b01e-447a-a82f-9a7cce6e9f8d")
+			(uuid "626a4e58-b290-4543-b92e-840485c2053c")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -8437,10 +8437,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "d3d7e0b9-a6a5-40da-aac6-a05fd99bbef9")
+			(uuid "f5a40610-cd24-4453-976f-d759022a3a37")
 		)
 		(pin "2"
-			(uuid "d5e54df5-e61f-42fc-8ac6-aaa4c00bdf79")
+			(uuid "ead4fd33-d7a1-49ec-aa73-6b0ada86dba8")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -8506,7 +8506,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "d60b8875-4834-476e-b753-2c9862d02a27")
+			(uuid "51dba9d2-f358-41d0-9625-561fc7e541b5")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -8571,7 +8571,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "3adee328-6233-4efe-840c-b12416854997")
+			(uuid "47cdeb55-a552-41c8-ae0e-12323aa4cde7")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -8638,10 +8638,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "7a6a7f88-124c-436c-8698-d63a57004bb0")
+			(uuid "ecb9fb0c-6b61-4a3f-879b-9c07a0753a99")
 		)
 		(pin "2"
-			(uuid "da08c5b5-008b-4995-b7bd-e7b4c119399f")
+			(uuid "48cc9e16-fa0c-4956-8de5-d52ff98332b5")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -8708,16 +8708,16 @@
 			)
 		)
 		(pin "1"
-			(uuid "724c0997-3ae1-41dc-a3e6-125bf1a87a61")
+			(uuid "a2344d95-cb0d-4577-9d92-d8cebc57096a")
 		)
 		(pin "2"
-			(uuid "503a40a9-c08f-46d2-9022-644f26abce0e")
+			(uuid "8091ac1b-4dd1-4cc9-aa01-3e4b9c245db9")
 		)
 		(pin "3"
-			(uuid "65178a6c-4afc-4228-b605-e21ea65d0315")
+			(uuid "e775f39c-152c-4ec0-bc33-42a29326f568")
 		)
 		(pin "4"
-			(uuid "58f8b76a-e87c-4a6b-9984-bf2cdba2dcb3")
+			(uuid "084e51d2-a3a9-42db-8106-2328fe6c519c")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -8784,7 +8784,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "7fb530c8-9bf9-4b3f-9010-e334c31e7c17")
+			(uuid "ee83c367-86d6-4da9-b48c-eef0b03ec312")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -8850,7 +8850,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "d3a651fb-e398-4e68-b3c9-d49fe75ef76c")
+			(uuid "7567aee9-067c-4aaf-9c62-1a84d7741d1e")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -8915,7 +8915,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "eac19d9e-a80d-4739-a441-1c8b397a6cf5")
+			(uuid "c4aee99f-811c-4bd1-aa1b-0a08013a82aa")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -8980,7 +8980,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "4995b606-662c-438a-ad78-0946a59bbd4d")
+			(uuid "d44682ac-e77e-4553-99b6-60059b7998b7")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -9047,10 +9047,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "08f611a0-0695-429c-8d82-1c038c15513f")
+			(uuid "a1fc6315-94a9-4224-af01-4d73e6448c34")
 		)
 		(pin "2"
-			(uuid "ff1fb19e-2c1c-411d-8d0e-1c5fcb367648")
+			(uuid "caf2d918-4678-473b-b5e5-29a39790d641")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -9117,7 +9117,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "6a6354f2-806d-4f30-8ace-75eb0d47d8df")
+			(uuid "66e193e2-dfb9-462a-a259-52527a70ca9a")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -9184,7 +9184,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "f858d2f8-ac24-4c83-ade0-cd80171b62b5")
+			(uuid "40c3e863-0a28-464a-ba89-870d43d9939a")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -9205,7 +9205,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "a390a691-d236-4245-ada0-b068b39a3cc7")
-		(property "Reference" "TP1"
+		(property "Reference" "TP?"
 			(at 32.258 175.26 90)
 			(effects
 				(font
@@ -9249,12 +9249,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "2a61b64b-40f2-4b07-b85a-798073bc86ba")
+			(uuid "e1bb093d-0db6-4d43-87bb-ff098b6cbf79")
 		)
 		(instances
-			(project ""
+			(project "Cansat_PCB"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297/24409c25-a13b-4fce-aa43-db656a14ada4"
-					(reference "TP1")
+					(reference "TP?")
 					(unit 1)
 				)
 			)
@@ -9315,7 +9315,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "e09462ba-cbcd-4e60-9baf-f074b1cd8a64")
+			(uuid "eec651e1-cd8a-4efb-9461-873ae458980f")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -9380,7 +9380,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "cb6dff47-bd29-4418-b5ce-a656c8ad619b")
+			(uuid "e26bc56e-61b1-4a3e-a96e-fafb2bd536f1")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -9446,10 +9446,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "82324c9c-12fb-40e2-8565-08c5176cfb92")
+			(uuid "e0be3c10-15de-40f6-ad5f-c0a174fa1e93")
 		)
 		(pin "2"
-			(uuid "e739a08c-adf0-4aba-a375-aa1dd274a1c6")
+			(uuid "32fc5318-1bab-404c-b07d-3a86438be4d8")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -9515,7 +9515,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "703277a3-6f45-47f8-9041-d4df9f4d8103")
+			(uuid "b2c1f5ad-c837-4060-983a-c696cac3c7df")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -9582,10 +9582,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "080a0c91-a800-4fa7-bc12-f398b06f48a4")
+			(uuid "2151715a-6e1b-43ed-b807-774857b88b3d")
 		)
 		(pin "2"
-			(uuid "d6e6a806-1ed3-44bc-a51f-a3107b015633")
+			(uuid "63c01f00-d261-4e96-a812-c2982fade308")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -9651,7 +9651,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "acb8080d-3183-4048-8e5d-8a71bae5b74f")
+			(uuid "cccc3bc5-e5c1-46a9-9880-153166113a63")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -9718,7 +9718,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "7d98661c-383a-4ecd-8602-74cbe34c89c1")
+			(uuid "51cf7991-5b4a-44f6-bdae-339b1f578dcb")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -9784,7 +9784,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "a26e5369-00e5-48f6-8473-2e6dcfacf04e")
+			(uuid "8c3a7381-06f2-4951-849b-4d11ee370008")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -9850,10 +9850,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "87a6af98-3f97-4064-b7cf-1d002450379b")
+			(uuid "bb47ff8f-2d65-484b-8aab-6f42e6cef510")
 		)
 		(pin "2"
-			(uuid "b6de7387-fd76-4b7d-9415-a640064dc379")
+			(uuid "c0b4cb66-b948-4b05-a83e-f8a1f2ac51cd")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -9917,28 +9917,28 @@
 			)
 		)
 		(pin "2"
-			(uuid "269961ea-f46c-49c7-933a-45779a31fb01")
+			(uuid "8d7007a1-d6a1-40f2-af7d-55f9f703b1e7")
 		)
 		(pin "1"
-			(uuid "2832c8dd-bf1f-479d-af93-c33e3465d845")
+			(uuid "5d6c844a-e538-4a1c-9c03-ff0befcca882")
 		)
 		(pin "3"
-			(uuid "368187be-c4e6-48a5-a72b-a04ea0b350ec")
+			(uuid "13b81bf4-2f88-41b4-8c0b-41542db16514")
 		)
 		(pin "4"
-			(uuid "f6936172-fbb0-490f-b2db-ed4ca3e324c7")
+			(uuid "4b6b5985-ca09-4596-b9ef-00f1c5ea2c0e")
 		)
 		(pin "5"
-			(uuid "c31e424e-e815-43a5-9b87-f9eed4fe67e9")
+			(uuid "6fc3de13-0547-486d-ac30-b0888e2f03f1")
 		)
 		(pin "6"
-			(uuid "069eec19-0164-4e61-bb50-130156fe5a2b")
+			(uuid "907d18f2-0b0f-4c59-910c-0a948c28db83")
 		)
 		(pin "7"
-			(uuid "904567cb-7374-4f2b-897f-8fb98ef87f3d")
+			(uuid "fb30e0b6-77ad-42aa-a7ef-07a01aa7fee3")
 		)
 		(pin "MP"
-			(uuid "39c74535-fff9-4ed3-af9a-ea179a91ad28")
+			(uuid "e4ba69a1-46be-47bf-b441-589a8a6f0b72")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -10003,10 +10003,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "a25b863f-984e-4714-814c-ac63237ec70b")
+			(uuid "61fd6023-01e7-4f37-80fa-6dccb32bf82e")
 		)
 		(pin "2"
-			(uuid "5aac1787-5807-471c-8595-df814c204f46")
+			(uuid "ad466c5a-aabe-4fd8-a92c-b1215b4eebd2")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -10074,7 +10074,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "5f89cd77-e4c4-4273-b3f4-74201f15e8c1")
+			(uuid "b03f77e8-81e1-4e8f-ac1f-af1b04c76c56")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -10141,7 +10141,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "153faca4-5e2c-4e31-80e8-f01903c94fde")
+			(uuid "7cf36c21-5fa2-4b5c-b696-60571e6a8ca9")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -10207,7 +10207,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "636c6554-2754-4454-9516-2c8d28f8e8d5")
+			(uuid "f697a5ee-4a9c-459f-ac17-1da1a951286b")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -10273,7 +10273,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "c06c5e99-f172-4b08-b460-c8be6aba29c7")
+			(uuid "3fc53f0c-6453-4e72-ac70-39147de21a2f")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -10342,7 +10342,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "b547a39c-bc02-4430-bc83-124c54f51226")
+			(uuid "9ed641ed-1549-4764-a4ff-5c072a1b9323")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -10407,10 +10407,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "8a60de5a-5ffc-47a7-a0fe-94ee5e825450")
+			(uuid "726e8d75-59c7-4697-ac48-6ad23436c291")
 		)
 		(pin "2"
-			(uuid "390d091d-8d43-4141-a0b5-beb6a985f1d3")
+			(uuid "f8673ea0-7f37-4e07-b5bc-d252c6e8d8c5")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -10477,10 +10477,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "715f99ee-e09d-492c-9695-6f8cc49a39e8")
+			(uuid "ae2dedf9-9948-40bb-b516-14a3b6c91b38")
 		)
 		(pin "2"
-			(uuid "b4318d1a-a4fb-411b-a663-e1ddd1a72bb4")
+			(uuid "8eb73195-60d7-41ec-a62f-3fb9b11dcbb7")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -10501,7 +10501,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "d6beb54e-e720-4e71-8a55-8634bbeabe29")
-		(property "Reference" "U5"
+		(property "Reference" "U?"
 			(at 199.39 27.94 0)
 			(effects
 				(font
@@ -10556,27 +10556,27 @@
 			)
 		)
 		(pin "4"
-			(uuid "2daf52c2-53e3-4e08-a99e-6089f1480bb6")
+			(uuid "b2035dce-0422-480f-a85e-04cd8f0fe6b7")
 		)
 		(pin "3"
-			(uuid "119f9ecb-0662-4bd6-8f4e-12a24f31476f")
+			(uuid "bc979d19-cc37-4dc6-9d3d-3b4c20917342")
 		)
 		(pin "5"
-			(uuid "e7f14e99-ea41-4454-8159-f15ba306a2fb")
+			(uuid "e3906e64-72f7-45a0-afc5-367dfdf29644")
 		)
 		(pin "6"
-			(uuid "8120bd5e-8c62-4bfd-bf6a-80e75f9e85b5")
+			(uuid "95267dd3-2700-4fba-a172-0359a9e61a90")
 		)
 		(pin "2"
-			(uuid "f678fd10-d1f8-48e5-87e1-30354d83904c")
+			(uuid "4637068b-6ff9-4ea8-ac07-521f4d6fe032")
 		)
 		(pin "1"
-			(uuid "a62cb735-fe9d-401f-b32c-db943de0dfb9")
+			(uuid "00b46c95-9350-4b3f-a4de-a334857a8aaf")
 		)
 		(instances
-			(project ""
+			(project "Cansat_PCB"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297/24409c25-a13b-4fce-aa43-db656a14ada4"
-					(reference "U5")
+					(reference "U?")
 					(unit 1)
 				)
 			)
@@ -10638,10 +10638,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "396d7a13-73a3-4716-b3b3-abfb41a5fc96")
+			(uuid "8ad087a7-fb22-4217-bdde-7fee8df54be0")
 		)
 		(pin "2"
-			(uuid "8a6496ed-9039-418e-a208-037b25deecdd")
+			(uuid "06dfdb11-b2a0-498f-a8a8-6346b0091101")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -10778,25 +10778,25 @@
 			)
 		)
 		(pin "1"
-			(uuid "b1a7906e-e75d-4ba1-bfa1-c4dd4c06ce23")
+			(uuid "f4c32994-6d1c-43b1-ba36-60b0c2486c61")
 		)
 		(pin "3"
-			(uuid "aaf826a9-c86d-4de5-b007-300614a171c7")
+			(uuid "6cb7eade-2ad4-4836-bf79-063f34611ac1")
 		)
 		(pin "4"
-			(uuid "61d3a206-9eed-4652-988e-1931f8df64e4")
+			(uuid "65f7cc94-e31e-443e-b42c-233ec16f7ed0")
 		)
 		(pin "6"
-			(uuid "b1afb065-8ee9-4bc8-b277-e22b02cad545")
+			(uuid "6134a97d-c2b1-4b3a-a796-b2ae2a4b76e1")
 		)
 		(pin "7"
-			(uuid "331db140-ac33-4631-8317-d2c904626b07")
+			(uuid "b791ed84-f43e-42be-83e9-cb262d0c3d49")
 		)
 		(pin "5"
-			(uuid "ad71419b-93dd-45b9-84a1-e70b7e73c40b")
+			(uuid "0a96850c-bcea-4616-99b9-c7f588de70e1")
 		)
 		(pin "2"
-			(uuid "f30a67c4-8b95-444d-a920-d077d0aa23d2")
+			(uuid "a58ed263-6f5c-4a21-9c05-c53076cb485f")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -10933,25 +10933,25 @@
 			)
 		)
 		(pin "1"
-			(uuid "144faed5-faad-4fe6-a973-c28e40b2bdd3")
+			(uuid "71776d73-8ebe-4d4a-8e8b-132ac0f2e558")
 		)
 		(pin "3"
-			(uuid "89bb5bd4-e984-4f0a-be1e-c1fbb00cc3d3")
+			(uuid "6242f643-7185-4b79-a4e6-c6590c430d0c")
 		)
 		(pin "4"
-			(uuid "d706d7aa-6978-4803-8540-6f676fb62d19")
+			(uuid "0d2d180a-ae07-4249-89a4-da4a386341da")
 		)
 		(pin "6"
-			(uuid "c4a92f77-bbad-418f-9f3e-f09020b6e3e0")
+			(uuid "c9323c2e-5370-4910-80f9-aa6c94c798ee")
 		)
 		(pin "7"
-			(uuid "f80b99c1-e812-4ec5-9bd0-d7190b192a08")
+			(uuid "20b4ca15-0e10-4e2f-a1dd-2a489fb77898")
 		)
 		(pin "5"
-			(uuid "6de8b060-8bb8-43ec-902a-c87040e5c8c1")
+			(uuid "7c54c2b0-a160-490c-9910-c2f75801bc37")
 		)
 		(pin "2"
-			(uuid "36c4223c-a8b0-481c-881c-70d1be5fc53d")
+			(uuid "127ff3f9-3ffe-41db-a653-05a088f3bf20")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -11018,7 +11018,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "4bcc6366-099b-495f-b3cb-7b201d565653")
+			(uuid "07016d5e-da01-4631-a92c-9375fa90d8ef")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -11085,7 +11085,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "91fa0248-87da-488f-933e-1295fd048e6a")
+			(uuid "dccf5827-d4bf-42db-8695-390aea8106ac")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -11151,7 +11151,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "78b29fed-db0f-4e61-ac50-75c112458d57")
+			(uuid "c42196ea-36e1-44ef-bc95-4f556bc1342c")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -11215,16 +11215,16 @@
 			)
 		)
 		(pin "3"
-			(uuid "1bb363dd-d2e5-4b30-a560-494bf3e308cf")
+			(uuid "308a1ad1-7fc3-4d30-ae79-b7567da59fdf")
 		)
 		(pin "1"
-			(uuid "485256e8-5b01-4d68-98f9-68d043a23776")
+			(uuid "523ec4ce-15bd-448f-9ec3-7832e6847155")
 		)
 		(pin "2"
-			(uuid "b588fad2-eeb4-45f7-a0d3-476a10f2be67")
+			(uuid "ca51b1a7-55ef-4855-9090-bda696d6681a")
 		)
 		(pin "MP"
-			(uuid "dca00c3d-0099-404e-84d1-865964a0c3af")
+			(uuid "12b464f5-ef5c-4582-9e81-623443a4bdce")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -11245,7 +11245,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "e6d9806b-a169-47f0-b4bd-fe8c487c29fe")
-		(property "Reference" "#PWR060"
+		(property "Reference" "#PWR0103"
 			(at 125.73 147.32 0)
 			(effects
 				(font
@@ -11291,12 +11291,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "a68c9269-75ba-42c2-b5d4-5cc406a8d527")
+			(uuid "0e577e50-b280-4d51-957b-db7680aa7920")
 		)
 		(instances
-			(project ""
+			(project "Cansat_PCB"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297/24409c25-a13b-4fce-aa43-db656a14ada4"
-					(reference "#PWR060")
+					(reference "#PWR0103")
 					(unit 1)
 				)
 			)
@@ -11356,7 +11356,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "663f8a16-c01c-4d3f-aeeb-9ce55616bab8")
+			(uuid "362f0584-9540-49e9-82d5-8c98bdafef12")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -11430,10 +11430,10 @@
 			)
 		)
 		(pin "2"
-			(uuid "e79e40b7-6091-4f89-b356-c7a209592de6")
+			(uuid "0f3845f3-1aa0-4e2d-bcb2-463ff28dabc4")
 		)
 		(pin "1"
-			(uuid "594e0e46-2d26-4edb-9113-bf6a291cc87c")
+			(uuid "a0a40332-e35a-4e47-a32d-b66d82599ea4")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -11507,10 +11507,10 @@
 			)
 		)
 		(pin "2"
-			(uuid "5dba8ecf-3625-4493-aca6-d460757ef309")
+			(uuid "54aa89e0-0a42-44fb-99e4-7bb99835761d")
 		)
 		(pin "1"
-			(uuid "2e52cfe3-f508-46ae-a9e8-74cab7394c0a")
+			(uuid "46d8acd3-6011-41d4-bd0c-762068491a41")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -11576,7 +11576,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "3d97f7d7-b777-416d-9dc1-f2916a3f4986")
+			(uuid "33c049aa-4ac2-4222-ba5e-096111955f1f")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -11642,7 +11642,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "a386b977-d2fc-4667-83b4-c73e36d85e6b")
+			(uuid "cc58c666-35a5-4b68-819e-06c86b798554")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -11707,19 +11707,19 @@
 			)
 		)
 		(pin "2"
-			(uuid "1974d018-92d3-4a78-a17c-7059b3cd4d6d")
+			(uuid "7e3f301f-70ea-4d33-90f0-9e3e87015dab")
 		)
 		(pin "3"
-			(uuid "218e02ce-a0c4-4a53-8f8a-300ba5395c14")
+			(uuid "010d3c21-c89b-43e7-b53b-6c762630645c")
 		)
 		(pin "4"
-			(uuid "bca12a45-acf9-4138-a619-205514faa7e6")
+			(uuid "4bfaad7d-9d02-4a91-9518-8824f1deb245")
 		)
 		(pin "1"
-			(uuid "391fb78d-a298-457c-a0e3-c33c9a0566b0")
+			(uuid "04c175f0-db5d-423f-827f-f00da92b01f9")
 		)
 		(pin "MP"
-			(uuid "3f57411f-8a97-4654-9823-5678b41cec15")
+			(uuid "501d616d-82a4-463f-9b17-41671ac1adc8")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -11788,7 +11788,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "274f96db-e160-42c6-b42c-ba176d6f8bde")
+			(uuid "29d92399-2db0-4083-b972-ec161ace2008")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -11853,7 +11853,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "0d61226a-51b0-4fbb-9a88-89aebd816d28")
+			(uuid "ad4e6e7a-b3cc-4553-aa31-2c91ce74acda")
 		)
 		(instances
 			(project "Cansat_PCB"
@@ -11919,7 +11919,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "d2f9d130-52df-42b7-a5cb-f8bd1a2a9cd5")
+			(uuid "9aafc8de-7707-4230-891c-071b0341b9ad")
 		)
 		(instances
 			(project "Cansat_PCB"

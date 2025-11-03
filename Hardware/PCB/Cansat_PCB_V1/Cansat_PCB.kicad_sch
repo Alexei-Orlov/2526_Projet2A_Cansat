@@ -5132,6 +5132,12 @@
 		(uuid "131f596f-bcad-4a26-954c-c7015b093f43")
 	)
 	(junction
+		(at 340.36 149.86)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "150ada9e-9cc9-46bb-8659-61cee217fe59")
+	)
+	(junction
 		(at 320.04 87.63)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -5436,12 +5442,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "e4edaeeb-8f2b-43cc-aac1-8e94db5ea8a8")
-	)
-	(junction
-		(at 328.93 149.86)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "eb018d40-5217-4d82-afc7-3703b87a7108")
 	)
 	(junction
 		(at 132.08 58.42)
@@ -6345,16 +6345,6 @@
 	)
 	(wire
 		(pts
-			(xy 300.99 149.86) (xy 328.93 149.86)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7c46fff0-a424-4a69-b53d-5ea0665d16a2")
-	)
-	(wire
-		(pts
 			(xy 77.47 204.47) (xy 88.9 204.47)
 		)
 		(stroke
@@ -6795,6 +6785,16 @@
 	)
 	(wire
 		(pts
+			(xy 340.36 149.86) (xy 356.87 149.86)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b1a8a213-f818-4dda-9956-0c2c0b0fe8aa")
+	)
+	(wire
+		(pts
 			(xy 85.09 78.74) (xy 116.84 78.74)
 		)
 		(stroke
@@ -6885,7 +6885,7 @@
 	)
 	(wire
 		(pts
-			(xy 328.93 149.86) (xy 356.87 149.86)
+			(xy 300.99 149.86) (xy 340.36 149.86)
 		)
 		(stroke
 			(width 0)
@@ -9811,6 +9811,72 @@
 			(project "Cansat_PCB"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C16")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3.3V")
+		(at 340.36 149.86 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "2cb9d4b2-78b0-40e2-bd8b-f7dfc78540ab")
+		(property "Reference" "#PWR041"
+			(at 340.36 153.67 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3.3V"
+			(at 336.55 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 340.36 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 340.36 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
+			(at 340.36 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "357fa344-5294-4576-9659-1f5743f766f0")
+		)
+		(instances
+			(project "Cansat_PCB"
+				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
+					(reference "#PWR041")
 					(unit 1)
 				)
 			)
@@ -13644,72 +13710,6 @@
 			(project "Cansat_PCB"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R16")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:PWR_FLAG")
-		(at 328.93 149.86 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "c0e243e8-d112-46c7-9fe7-444fde901f80")
-		(property "Reference" "#FLG03"
-			(at 328.93 147.955 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "PWR_FLAG"
-			(at 328.93 144.78 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 328.93 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 328.93 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Special symbol for telling ERC where power comes from"
-			(at 328.93 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "c860b2c8-1374-4f49-bf2b-1b9b5ec3b652")
-		)
-		(instances
-			(project "Cansat_PCB"
-				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
-					(reference "#FLG03")
 					(unit 1)
 				)
 			)
