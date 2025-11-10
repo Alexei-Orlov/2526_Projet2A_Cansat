@@ -1,0 +1,16 @@
+.FTSH-107-01-F-DV-K :1 ;High Reliability HDR Strips 0.050"
+FTSH-107-XX-YYY-DV-K
+*STM J
+*NGS
+*PLB 1="1" 2="2" 3="3" 4="4" 5="5" 6="6" 7="7" 8="8" 9="9" 10="10" 11="11" 12="12" 13="13" 14="14"
+*MXP 14
+*DFN FTSH-107-01-F-DV-K
+~!Mouser Part Number (200-FTSH10701FDVK)
+~!Link Mouser Price/Stock (https://www.mouser.co.uk/ProductDetail/Samtec/FTSH-107-01-F-DV-K?qs=%252BZP6%2F%252BtExtDsIijVpK7L8w%3D%3D)
+~!Manufacturer_Name (SAMTEC)
+~!Manufacturer_Part_Number (FTSH-107-01-F-DV-K)
+~!Link Datasheet (http://suddendocs.samtec.com/prints/ftsh-1xx-xx-xxx-dv-xxx-xxx-mkt.pdf)
+~!Height (-)
+~!3D_Model (FTSH-107-01-F-DV-K)
+FTSH-107-01-F-DV-K
+1.1!U 2.1!U 3.1!U 4.1!U 5.1!U 6.1!U 7.1!U 8.1!U 9.1!U 10.1!U 11.1!U 12.1!U 13.1!U 14.1!U 

@@ -4898,6 +4898,18 @@
 		)
 	)
 	(rectangle
+		(start 177.038 219.202)
+		(end 224.79 243.586)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(uuid 31a26f31-fdca-448b-af2d-3604fce98cf9)
+	)
+	(rectangle
 		(start 250.19 16.51)
 		(end 403.86 112.776)
 		(stroke
@@ -4954,6 +4966,16 @@
 			)
 		)
 		(uuid "15a5e7ac-19d5-44c4-b66b-2c18b24ff5a3")
+	)
+	(text "Bouton de commande"
+		(exclude_from_sim no)
+		(at 188.976 221.234 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "182b93e9-6e06-4ac8-af99-bf434a3fff24")
 	)
 	(text "100n par pin VDD 10n par pin VDDA"
 		(exclude_from_sim no)
@@ -5108,6 +5130,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "131f596f-bcad-4a26-954c-c7015b093f43")
+	)
+	(junction
+		(at 340.36 149.86)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "150ada9e-9cc9-46bb-8659-61cee217fe59")
 	)
 	(junction
 		(at 320.04 87.63)
@@ -5416,12 +5444,6 @@
 		(uuid "e4edaeeb-8f2b-43cc-aac1-8e94db5ea8a8")
 	)
 	(junction
-		(at 328.93 149.86)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "eb018d40-5217-4d82-afc7-3703b87a7108")
-	)
-	(junction
 		(at 132.08 58.42)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -5472,10 +5494,6 @@
 		(uuid "64ccc7e3-e60a-4ad6-bcb1-e18345ac5cae")
 	)
 	(no_connect
-		(at 152.4 73.66)
-		(uuid "709ee580-73d5-4475-9461-68de3a869487")
-	)
-	(no_connect
 		(at 116.84 96.52)
 		(uuid "7fabee56-f9cc-4491-904d-aa4b580128e0")
 	)
@@ -5488,12 +5506,8 @@
 		(uuid "a622d1b1-5692-4427-a26f-c68dc7fb130a")
 	)
 	(no_connect
-		(at 116.84 129.54)
-		(uuid "a74cabb3-e080-4d31-999c-81c943463664")
-	)
-	(no_connect
 		(at 116.84 93.98)
-		(uuid "cb9eb0e1-a7b0-4e1d-a3f3-c16c21631111")
+		(uuid "c693e412-9197-43b3-a06f-15ba9b862457")
 	)
 	(no_connect
 		(at 116.84 106.68)
@@ -6331,16 +6345,6 @@
 	)
 	(wire
 		(pts
-			(xy 300.99 149.86) (xy 328.93 149.86)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7c46fff0-a424-4a69-b53d-5ea0665d16a2")
-	)
-	(wire
-		(pts
 			(xy 77.47 204.47) (xy 88.9 204.47)
 		)
 		(stroke
@@ -6438,6 +6442,16 @@
 			(type default)
 		)
 		(uuid "8445e231-4f76-4fa4-9702-590fcfa02044")
+	)
+	(wire
+		(pts
+			(xy 107.95 129.54) (xy 111.76 129.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "857ef8d8-ab98-43ef-b4d2-14f2610200f0")
 	)
 	(wire
 		(pts
@@ -6771,6 +6785,16 @@
 	)
 	(wire
 		(pts
+			(xy 340.36 149.86) (xy 356.87 149.86)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b1a8a213-f818-4dda-9956-0c2c0b0fe8aa")
+	)
+	(wire
+		(pts
 			(xy 85.09 78.74) (xy 116.84 78.74)
 		)
 		(stroke
@@ -6861,7 +6885,7 @@
 	)
 	(wire
 		(pts
-			(xy 328.93 149.86) (xy 356.87 149.86)
+			(xy 300.99 149.86) (xy 340.36 149.86)
 		)
 		(stroke
 			(width 0)
@@ -7719,6 +7743,28 @@
 			)
 		)
 	)
+	(global_label "EXTI3"
+		(shape input)
+		(at 152.4 73.66 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "368d4913-fc52-4f58-8d15-873f78362837")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 160.5256 73.66 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "SPI1_CS_SD"
 		(shape input)
 		(at 85.09 191.77 180)
@@ -8313,6 +8359,28 @@
 			)
 		)
 	)
+	(global_label "LED_DATA"
+		(shape input)
+		(at 107.95 129.54 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "cd5cbee1-7a6b-4903-95f7-8ead3496f367")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 96.1353 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "D+"
 		(shape input)
 		(at 212.09 189.23 0)
@@ -8392,6 +8460,28 @@
 		(uuid "dee8ae89-0ffe-4263-92d6-a469655a67c0")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 217.9176 186.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "EXTI3"
+		(shape input)
+		(at 204.47 232.41 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "e785b760-e5cf-4785-bc41-b17f00fa8c30")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 212.5956 232.41 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9721,6 +9811,72 @@
 			(project "Cansat_PCB"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C16")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3.3V")
+		(at 340.36 149.86 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "2cb9d4b2-78b0-40e2-bd8b-f7dfc78540ab")
+		(property "Reference" "#PWR041"
+			(at 340.36 153.67 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3.3V"
+			(at 336.55 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 340.36 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 340.36 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
+			(at 340.36 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "357fa344-5294-4576-9659-1f5743f766f0")
+		)
+		(instances
+			(project "Cansat_PCB"
+				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
+					(reference "#PWR041")
 					(unit 1)
 				)
 			)
@@ -11521,6 +11677,75 @@
 	)
 	(symbol
 		(lib_id "Device:R_Small")
+		(at 114.3 129.54 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "77ea8f84-5b82-42db-8e70-32c2d257a371")
+		(property "Reference" "R26"
+			(at 113.0299 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "330"
+			(at 115.5699 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric_Pad0.72x0.64mm_HandSolder"
+			(at 114.3 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 114.3 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small symbol"
+			(at 114.3 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "2893e518-822c-4489-8a1a-38326b5c3dc2")
+		)
+		(pin "2"
+			(uuid "267d8772-1fde-41b8-a0df-5f53b871b98f")
+		)
+		(instances
+			(project "Cansat_PCB"
+				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
+					(reference "R26")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R_Small")
 		(at 354.33 97.79 90)
 		(unit 1)
 		(exclude_from_sim no)
@@ -12795,6 +13020,71 @@
 		)
 	)
 	(symbol
+		(lib_id "power:+3.3V")
+		(at 194.31 232.41 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "b17f133c-d79c-47cf-9dfd-1188f813deb9")
+		(property "Reference" "#PWR079"
+			(at 198.12 232.41 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3.3V"
+			(at 188.214 232.41 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 194.31 232.41 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 194.31 232.41 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
+			(at 194.31 232.41 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "5c62f757-24f4-41a8-9340-f61409aa9da1")
+		)
+		(instances
+			(project "Cansat_PCB"
+				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
+					(reference "#PWR079")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 88.9 201.93 270)
 		(unit 1)
@@ -13426,72 +13716,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:PWR_FLAG")
-		(at 328.93 149.86 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "c0e243e8-d112-46c7-9fe7-444fde901f80")
-		(property "Reference" "#FLG03"
-			(at 328.93 147.955 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "PWR_FLAG"
-			(at 328.93 144.78 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 328.93 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 328.93 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Special symbol for telling ERC where power comes from"
-			(at 328.93 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "c860b2c8-1374-4f49-bf2b-1b9b5ec3b652")
-		)
-		(instances
-			(project "Cansat_PCB"
-				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
-					(reference "#FLG03")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:+3.3V")
 		(at 71.12 113.03 0)
 		(unit 1)
@@ -13689,6 +13913,74 @@
 			(project "Cansat_PCB"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR05")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Switch:SW_Push")
+		(at 199.39 232.41 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "d648ef01-3b2f-4712-8bde-bcb18a6db8ba")
+		(property "Reference" "SW3"
+			(at 199.39 224.79 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "SW_Push"
+			(at 199.39 227.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Button_Switch_SMD:SW_Push_1P1T_NO_CK_PTS125Sx43PSMTR"
+			(at 199.39 227.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 199.39 227.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Push button switch, generic, two pins"
+			(at 199.39 232.41 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "6f79b68a-68a0-4957-946e-125445c84897")
+		)
+		(pin "1"
+			(uuid "214f606b-775a-45b7-983f-ee9b659016d6")
+		)
+		(instances
+			(project "Cansat_PCB"
+				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
+					(reference "SW3")
 					(unit 1)
 				)
 			)
@@ -14996,7 +15288,7 @@
 		)
 	)
 	(sheet
-		(at 190.5 229.87)
+		(at 250.19 229.87)
 		(size 24.13 3.81)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -15012,7 +15304,7 @@
 		)
 		(uuid "24409c25-a13b-4fce-aa43-db656a14ada4")
 		(property "Sheetname" "connection et alim"
-			(at 190.5 229.1584 0)
+			(at 250.19 229.1584 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -15021,7 +15313,7 @@
 			)
 		)
 		(property "Sheetfile" "untitled.kicad_sch"
-			(at 190.5 234.2646 0)
+			(at 250.19 234.2646 0)
 			(effects
 				(font
 					(size 1.27 1.27)

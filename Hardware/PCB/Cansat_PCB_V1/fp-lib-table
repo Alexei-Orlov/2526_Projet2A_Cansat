@@ -1,6 +1,4 @@
 (fp_lib_table
   (version 7)
-  (lib (name "customhole")(type "KiCad")(uri "C:/Users/amrta/OneDrive/Bureau/2526_Projet2A_Cansat/Hardware/PCB/Custom_library/Old_imports_(2425Cansat)/customhole.pretty")(options "")(descr ""))
-  (lib (name "footprints")(type "KiCad")(uri "C:/Alexei/Hardware/PCB/Custom_library/New_imports/footprints.pretty")(options "")(descr ""))
-  (lib (name "bmp581")(type "KiCad")(uri "C:/Users/amrta/OneDrive/Bureau/2526_Projet2A_Cansat/Hardware/PCB/Custom_library/Old_imports_(2425Cansat)/bmp581")(options "")(descr ""))
+  (lib (name "footprints")(type "KiCad")(uri "/home/alexei/Documents/ENSEA/Semestre_7/Cansat/2526_Projet2A_Cansat/Hardware/PCB/Custom_library/New_imports/footprints.pretty")(options "")(descr ""))
 )
