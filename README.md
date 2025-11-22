@@ -10,20 +10,24 @@ Build a **satellite the size of a 33cl can** capable of completing different mis
 ### 🛰️ Current strategy :
 
 - **Main mission : Parachute deployment**
-  - Kirigami inspired drogue chute
+  - Kirigami inspired drogue chute (CF links) acting as a protective cap on the Cansat
   - Use the drogue chute to deploy the main parachute
   - Release the drogue chute with an string and elastic band tied to a servomotor
  
 - **Secondary mission : Topography**
-  - Use a time of flight (TOF) sensor to map the ground
-  - Induce a rotation thanks to an helicoïdal shaped can
-  - Precisely plae the mapped point with the help of an Inertial Measurment Unit (IMU) and a barometer
- 
+  - ***Plan A :***
+  -  Use a 100m time of flight (TOF) sensor to map the ground
+  -  Induce a rotation thanks to an helicoïdal shaped can
+  -  Precisely place the mapped point with the help of an Inertial Measurment Unit (IMU) and a barometer
+  - ***Plan B :***
+  -  Use a high resolution camera to film the whole descent
+  -  Create a topological map thanks to an AI after the mission.
+     
 - **Tertiary mission : Recording of the landing**
     - Using an onboard first person view (FPV) camera
       
 - **Bonus mission : Live video feed to the ground station**
-    - Display all recorede data and live feed of the descend to the ground station
+    - Display all recoreded data and live feed of the descend to the ground station
   
 - **330mL volume limit**
     - Fit everything under a 330mL limit and a 350g limit
@@ -32,7 +36,7 @@ Build a **satellite the size of a 33cl can** capable of completing different mis
 ## 👥 Team Members
 | Name | Role |
 |------|------|
-| Alexeï DOUILLARD | 3D Modeling |
+| Alexeï DOUILLARD | 3D Modeling, Satellite integration |
 | Juan Pablo BARONA CIFUENTES | Communications |
 | Ted KOYAZANDE | Ground Station |
 | Amr TAOUIS | PCB Design |
@@ -63,10 +67,9 @@ Build a **satellite the size of a 33cl can** capable of completing different mis
 - **Sensor Integration**
   - Testing and calibration of various sensors
   - Signal processing and data acquisition
-  - Peripheral interface design
+  - Peripheral interface design (Buttons, leds and a screen)
 - **Current Focus**
   - LiDAR sensor testing and evaluation
-  - Component validation for final design
 
 ### 🖥️ Ground Station
 - **Station Development**
@@ -78,17 +81,17 @@ Build a **satellite the size of a 33cl can** capable of completing different mis
   - Mission control dashboard
   - Data logging and analysis
 - **Current Focus**
-  - Integration testing with SX1276 modules
+  - Integration testing with SX1276 modules (Working with a nucealo board)
   - Communication protocol validation
 
 ### 🎨 3D Design
 - **Mechanical Structure**
   - Can-sized satellite enclosure design
   - Component placement and mounting
-  - Aerodynamic considerations for descent
+  - Aerodynamic considerations for descent : spiral shape + winglets
 - **Prototyping**
   - 3D modeling and simulation
-  - Material selection and testing
+  - Material selection and testing (PLA for now)
   - Integration with electronic components
 - **Current Focus**
   - Prototype printing and fit testing
