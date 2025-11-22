@@ -7684,7 +7684,7 @@
 				)
 			)
 		)
-		(property "Value" "Connecteur GPS"
+		(property "Value" "Connecteur TOF"
 			(at 114.935 133.35 0)
 			(effects
 				(font
@@ -8581,7 +8581,7 @@
 				)
 			)
 		)
-		(property "Value" "10u"
+		(property "Value" "4.7u"
 			(at 224.79 38.1 90)
 			(effects
 				(font
@@ -8589,7 +8589,7 @@
 				)
 			)
 		)
-		(property "Footprint" "footprints:DFN6_3X3_STM"
+		(property "Footprint" "footprints:IND_WE-PD-SMT_7332_WRE"
 			(at 224.79 40.64 0)
 			(effects
 				(font
@@ -8598,7 +8598,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" "https://www.we-online.com/components/products/datasheet/74438356047.pdf"
 			(at 224.79 40.64 0)
 			(effects
 				(font
@@ -11461,7 +11461,7 @@
 				)
 			)
 		)
-		(property "Value" "Alim STM Baro GPS IMU"
+		(property "Value" "Alim LoRa"
 			(at 212.09 123.19 0)
 			(effects
 				(font
