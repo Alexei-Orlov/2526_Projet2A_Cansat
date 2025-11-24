@@ -6937,7 +6937,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "66u"
+		(property "Value" "22u"
 			(at 245.11 45.7262 0)
 			(effects
 				(font
@@ -8589,7 +8589,11 @@
 				)
 			)
 		)
+<<<<<<< Updated upstream
 		(property "Footprint" "footprints:DFN6_3X3_STM"
+=======
+		(property "Footprint" "footprints:IND_WE-MAPI_4020_WRE"
+>>>>>>> Stashed changes
 			(at 224.79 40.64 0)
 			(effects
 				(font
