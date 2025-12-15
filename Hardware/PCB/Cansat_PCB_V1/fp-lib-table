@@ -1,0 +1,5 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "footprints")(type "KiCad")(uri "${KIPRJMOD}/../Custom_library/New_imports/footprints.pretty")(options "")(descr ""))
+  (lib (name "3D_models")(type "KiCad")(uri "/home/alexei/Bureau/Start_project_fixing/Custom_library/New_imports/3D_models")(options "")(descr ""))
+)

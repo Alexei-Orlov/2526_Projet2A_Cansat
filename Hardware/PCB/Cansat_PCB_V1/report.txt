@@ -1,0 +1,6 @@
+Numérotation WS2812B-2020 en D4.
+Numérotation 10u en L1.
+Numérotation TestPoint en TP1.
+Numérotation LMR51625 en U5.
+Annotation terminée.
+Annotation terminée.
