@@ -1,0 +1,21 @@
+%TF.GenerationSoftware,KiCad,Pcbnew,9.0.4*%
+%TF.CreationDate,2025-12-18T13:03:24+01:00*%
+%TF.ProjectId,Cansat_PCB_IHM,43616e73-6174-45f5-9043-425f49484d2e,rev?*%
+%TF.SameCoordinates,Original*%
+%TF.FileFunction,Soldermask,Bot*%
+%TF.FilePolarity,Negative*%
+%FSLAX46Y46*%
+G04 Gerber Fmt 4.6, Leading zero omitted, Abs format (unit mm)*
+G04 Created by KiCad (PCBNEW 9.0.4) date 2025-12-18 13:03:24*
+%MOMM*%
+%LPD*%
+G01*
+G04 APERTURE LIST*
+%ADD10C,2.000000*%
+G04 APERTURE END LIST*
+D10*
+%TO.C,SW3*%
+X151600000Y-91800000D03*
+X151600000Y-100800000D03*
+%TD*%
+M02*
