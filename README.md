@@ -84,7 +84,8 @@ So first, it's required to show the Block diagram of the solution to understand 
 
 ### 💡 Block diagram of the solution
 
-
+![Diagram](./IMG/system_diagram.jpeg)
+![Diagram](./IMG/electrical_diagram.jpeg)
 
 ### 🔗 Used components description
 
@@ -172,7 +173,19 @@ On the navigation front, the software driver for the SAM-M10Q GNSS module was de
 
 ### Ground Station
 
-Thanks to a Raspberry Pi 5
+It is going to be our mission control, from which we will process the data sent by the CanSat. It is made of a screen and a Raspberry Pi 5.
+
+![Photo](./IMG/groundstation.png)
+
+We devised a graphical user interface using an STM32, to be able to view the received data in real-time.
+
+![Photo](./IMG/groundstation_gui_config.png)
+![Photo](./IMG/groundstation_gui.png)
+
+It displays the CanSat's orientation, its location and various other parameters such as its altitude. We still have not tested this GUI and will have to do it once the transmissions are established. 
+
+
+We are also working on changing the ground station's appearance so that our names will be written on it.
 
 ### 👾 Used software 
 
@@ -181,3 +194,5 @@ Thanks to a Raspberry Pi 5
 - STM32CubeIDE V.1.19.0 - STM32
 - KiCAD - PCB Design
 - OnShape - 3D modeling
+
+---
