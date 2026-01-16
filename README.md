@@ -103,7 +103,7 @@ All the blocks shown above will be implemented with the components listed below.
 | **Single Board Computer** | Raspberry Pi (Model 4 / Zero 2 W) | A low-cost, credit-card-sized computer that plugs into a computer monitor or TV, and uses a standard keyboard and mouse. It runs a Linux-based operating system. | Utilized for the Ground Station architecture. It processes the incoming telemetry stream, handles the graphical user interface (GUI) for data visualization, and stores mission logs. |
 | **Battery** | 2-Cell LiPo (7.4V) | A Lithium Polymer rechargeable battery pack consisting of two cells in series, providing a nominal voltage of 7.4V and high discharge capabilities. | The 7.4V output is ideal for the input range of the voltage regulators, providing sufficient overhead to maintain stable power throughout the mission duration. |
 | **Buck Converter** | LMR51625 | A wide-input, synchronous buck converter from Texas Instruments. It is designed to regulate high voltage inputs down to lower logic levels with high efficiency and a compact footprint. | Steps down the 7.4V battery voltage to 5V efficiently. Unlike linear regulators, this switching regulator minimizes heat generation and power loss. |
-| **JST Connectors** | JST SH Vertical| A small plugin connector | All of our components are connected thanks to JST SH connectors thes are a good compromise between compactness and ease to use |
+| **JST Connectors** | JST SH Vertical| Small plugin connector we used sizes from 3 to 7 pins | All of our components are connected thanks to JST SH connectors these are a good compromise between compactness and ease of use |
 
 
 
@@ -131,7 +131,8 @@ To integrate this high quantity of components within the restricted 33cl volume 
 
 Here are the rendered 3d model of our PCB :
 
-Front side : STM32 (center), Barometer (top), IMU (bottom right), SD card reader (bottom left), Buttons (left), Status LED (left) a 12 MHz clock (for the STM on it's left) and a 32.765 kHz clock (for the IMU above it) and a JTAG connector (top right).
+Front side : STM32 (center), Barometer (top), JTAG connector (top right), IMU (bottom right), SD card reader (bottom left), Status LED (left), Buttons (left), 
+Whe have two oscillators; a 12 MHz clock for the STM on it's left and a 32.765 kHz clock for the IMU above the IMU.
 ![Front side](./IMG/Mainboard_3d_front.png)
 
 Back Side :
@@ -172,9 +173,16 @@ The testing process of the IHM PCB will begin shortly as it has just arrived.
 
 ### ⚙️ Mechanical Design
 
-Our current strategy requires the body to have an open top where the main chute is covered by the drogue parachute. The drogue chute, is a kirigami inspired parachute (the research paper can be found in the useful links section) it has been cut with our school's laser cutter.
+Our current strategy requires the body to have an open top where the main chute is covered by the drogue parachute. 
 <br>
 <img src="./IMG/Mechanical_top.png" alt="Main structure" width="300"/><br><br>
+The drogue chute, is a kirigami inspired parachute *check the research paper in the ressources section*  
+
+For now we only laser cutted the (a) design shown below because we found it's 3D model easly but we are working on creating a more optimised patern using a better cut patern
+![Kirigami example](./IMG/Mechanical_kirigami.jpg)
+
+
+
 For the topography mission we need to make the satellite spin thus we added several helixes to the body of the can this will induce a rotation so the TOF sensor can map the entire ground in a spiral patern.
 <br>
 <img src="./IMG/Mechanical_body.png" alt="Main structure" width="300"/><br>
