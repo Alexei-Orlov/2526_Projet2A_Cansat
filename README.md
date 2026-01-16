@@ -1,7 +1,7 @@
 # 🛰️CanSat 2025-2026
 ![Type](https://img.shields.io/badge/Type-Group_Project-green.svg) ![Year](https://img.shields.io/badge/Year-2nd-orange.svg) ![Language](https://img.shields.io/badge/Language-C,_Python-blue.svg)  
 
-> **ENSEA's CanSat team project for the 2025–2026 edition .**
+> **ENSEA's CanSat team project for the 2025–2026 C'space edition**
 
 
 
@@ -48,28 +48,27 @@ We then defined our own objectives based on the missions we chose to fulfill amo
 
 
 - **Main Mission (Mandatory)**
-  - Devise a kirigami inspired drogue chute which will act as a protective cap on the CanSat. It will be used to deploy the main parachute. The drogue chute will be released thanks to a string and an elastic band tied to a servomotor and will deploy the main parachute.
+  - Devise a kirigami inspired drogue chute which will act as a protective cap on the CanSat. It will be used to deploy the main parachute. The drogue chute will be released thanks to a string and an elastic band tied to a servomotor we want to test it with the help of a homemade wind tunnel.
 
 - **Secondary Missions**
 
   - **Mission 2** : Downsizing
-    - Fit everything under a 330mL limit and a 350g limit
+    - Fit everything under a 330mL limit and a 350g limit using a 6 layered PCB and a super lightweight parachute
   
   - **Mission 3** : Ground study
-    - **Plan A** :
+    - **Plan A** : (Currently active)
       Use a 100m time of flight (TOF) sensor to map the ground.
       Induce a rotation thanks to an helicoïdal-shaped can.
-      Precisely place the mapped point with the help of an Inertial Measurment Unit (IMU) and a barometer.
+      Precisely place the mapped point with the help of an Inertial Measurment Unit (IMU) and a barometer. The wind tunnel will also help desinging the shape of the can to see if it spins.
     - **Plan B** :
 Use a high resolution camera to film the whole descent
 Create a topological map thanks to an AI after the mission.
   - **Mission 4: Onboard Camera**
-    - Record the landing using a small independent mini camera
+    - Record the landing using a small independent mini camera.
 - **Bonus Mission**
-  - Display all recorded data and live feed of the descend to the ground station.
+  - Display some of the recorded data of the descend to the ground station within the transmition rate of our LoRa module.
 
 
-In order to simulate our can's movement during its descent, we will also devise a wind tunnel.
 
 ## 🔧 Development
 
@@ -117,18 +116,19 @@ The electronic architecture of the Vortex project is based on a “reverse engin
 ![Schematic](./IMG/mainboardSchem2.png)
 
 To integrate this high quantity of components within the restricted 33cl volume of the can, we developed a 6-layer PCB. The layers are organised as follows : 
-1 - Signal
-2 - GND
-3 - Signal
-4 - PWR
-5 - GND
-6 - Signal
+1. Signal
+2. GND
+3. Signal
+4. PWR
+5. GND
+6. Signal
 
 ![Mainboard](./IMG/Mainboardroutage1.png)
 
 ![Mainboard](./IMG/Mainboardroutage4.png)
 
 ![Mainboard](./IMG/Mainboardroutage6.png)
+
 
 We also developed a secondary HMI (Human-Machine Interface) PCB (2 layers). This PCB establishes an I2C link with the mainboard to control an onboard status screen. Moreover, the HMI PCB contains two addressable LEDs, providing a programmable visual feedback system to monitor the CanSat’s state before and during the launch.
 
@@ -140,9 +140,11 @@ We also developed a secondary HMI (Human-Machine Interface) PCB (2 layers). This
 
 The assembly process began with the arrival of the V1 motherboard. We soldered the components and we successfully performed a test by programming and blinking an onboard LED. This test confirmed that the STM32G431CBU6 microcontroller was properly powered and that our clock and debug circuits were functional.
 
+![Testing](./IMG/blinking_mainboard.gif)
+
 In parallel with the electronic validation, we have begun wind tunnel preparation to evaluate the mechanical and aerodynamic behavior of the CanSat. The electronics of the wind turbine is quite simple we use two drone motors t
 
-The testing process of the IHM pcb was not possible yet because it has not yet been delivered.
+The testing process of the IHM PCB will begin shortly as it has just arrived.
 
 
 
@@ -186,6 +188,21 @@ It displays the CanSat's orientation, its location and various other parameters 
 
 
 We are also working on changing the ground station's appearance so that our names will be written on it.
+### Wind Tunnel
+
+For reliably testing the parachute we constructed a wind tunnel that uses two 350W conter-rotative drone motors 
+<br>
+<img src="./IMG/windtunnel_structure.jpg" alt="Main structure" width="400"/><br><br>
+The device is powered by an 12V powersupply cased in a PLA box :
+<img src="./IMG/windtunnel_alim.jpg" alt="Main structure" width="300"/>
+<img src="./IMG/windtunnel_covered_alim.jpg" alt="Main structure" width="300"/><br>
+
+
+###  🚀 Future plans
+The next steps will be :
+
+[] developping a V2 for the mainboard that includes outputs to a mini screen, fixes the buck's footprint adds testpoints for the IMU and barometer.
+
 
 ### 👾 Used software 
 
@@ -195,4 +212,5 @@ We are also working on changing the ground station's appearance so that our name
 - KiCAD - PCB Design
 - OnShape - 3D modeling
 
+### Useful links :
 ---
