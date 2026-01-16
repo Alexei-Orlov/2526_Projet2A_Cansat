@@ -107,7 +107,7 @@ All the blocks shown above will be implemented with the components listed below.
 
 
 
-### Electronic design
+### 🔌 Electronic design
 #### Mainboard PCB
 The electronic architecture of the Vortex project is based on a “reverse engineering” process. Indeed, by analyzing and understanding last year’s project and more precisely last year’s PCB, we were able to identify the key points of the PCB and the components that needed to be modified. Due to this process, we chose all the components listed above to meet the evolving requirements of our missions and did the schematic.
 
@@ -138,7 +138,11 @@ Back Side :
 Vbat -> 5V Buck , Main 3.3V LDO, and 3.3V LDO for the LoRa module with an enable function, Connectors to the external modules
 ![Back side](./IMG/Mainboard_3d_back.png)
 
+
+
 The assembly process began with the arrival of the V1 motherboard. We soldered the components and we successfully performed a test by programming and blinking an onboard LED. This test confirmed that the STM32G431CBU6 microcontroller was properly powered and that our clock and debug circuits were functional.
+
+/!\ Warning ! The V1 Has a mistake in the buck's footprint we had to rewire it manually to ensure that uit could power the rest of the mainboard.
 
 A Blinking blue LED controlled by the microcontroller,
 The red LEDs mean that the LDO are working one is on by default, the other one was activated by the microcontroller
@@ -194,7 +198,7 @@ On the navigation front, the software driver for the SAM-M10Q GNSS module was de
 
 **Current Status:** Finalizing the integration of the IMU values into the main telemetry stream.
 
-### Ground Station
+### 🧰 Ground Station
 
 It is going to be our mission control, from which we will process the data sent by the CanSat. It is made of a screen and a Raspberry Pi 5.
 
@@ -209,12 +213,14 @@ It displays the CanSat's orientation, its location and various other parameters 
 
 
 We are also working on changing the ground station's appearance so that our names will be written on it.
-### Wind Tunnel
+### 🍃 Wind Tunnel
 
 For reliably testing the parachute we constructed a wind tunnel that uses two 350W conter-rotative drone motors.
 <br>
-<img src="./IMG/windtunnel_structure.jpg" alt="Main structure" width="300"/><br><br>
+<img src="./IMG/windtunnel_structure.jpg" alt="Main structure" width="300"/><br>
+<br>
 The device is powered by an 12V powersupply cased in a PLA box :
+ <br>
 <img src="./IMG/windtunnel_alim.jpg" alt="Main structure" width="200"/>
 <img src="./IMG/windtunnel_covered_alim.jpg" alt="Main structure" width="200"/><br>
 
