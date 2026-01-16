@@ -103,12 +103,12 @@ All the blocks shown above will be implemented with the components listed below.
 | **Single Board Computer** | Raspberry Pi (Model 4 / Zero 2 W) | A low-cost, credit-card-sized computer that plugs into a computer monitor or TV, and uses a standard keyboard and mouse. It runs a Linux-based operating system. | Utilized for the Ground Station architecture. It processes the incoming telemetry stream, handles the graphical user interface (GUI) for data visualization, and stores mission logs. |
 | **Battery** | 2-Cell LiPo (7.4V) | A Lithium Polymer rechargeable battery pack consisting of two cells in series, providing a nominal voltage of 7.4V and high discharge capabilities. | The 7.4V output is ideal for the input range of the voltage regulators, providing sufficient overhead to maintain stable power throughout the mission duration. |
 | **Buck Converter** | LMR51625 | A wide-input, synchronous buck converter from Texas Instruments. It is designed to regulate high voltage inputs down to lower logic levels with high efficiency and a compact footprint. | Steps down the 7.4V battery voltage to 5V efficiently. Unlike linear regulators, this switching regulator minimizes heat generation and power loss. |
-
+| **JST Connectors** | JST SH Vertical| A small plugin connector | All of our components are connected thanks to JST SH connectors thes are a good compromise between compactness and ease to use |
 
 
 
 ### Electronic design
-
+#### Mainboard PCB
 The electronic architecture of the Vortex project is based on a “reverse engineering” process. Indeed, by analyzing and understanding last year’s project and more precisely last year’s PCB, we were able to identify the key points of the PCB and the components that needed to be modified. Due to this process, we chose all the components listed above to meet the evolving requirements of our missions and did the schematic.
 
 ![Schematic](./IMG/mainboardSchem1.png)
@@ -129,7 +129,23 @@ To integrate this high quantity of components within the restricted 33cl volume 
 
 ![Mainboard](./IMG/Mainboardroutage6.png)
 
+Here are the rendered 3d model of our PCB :
 
+Front side : STM32, Barometer, IMU, SD card reader, Buttons, Led a 12 MHz clock (for the stm) and a 32.765 kHz clock (for the IMU) and a JTAG connector.
+![Front side](./IMG/Mainboard_3d_front.png)
+
+Back Side :
+Vbat -> 5V Buck , Main 3.3V LDO, and 3.3V LDO for the LoRa module with an enable function, Connectors to the external modules
+![Back side](./IMG/Mainboard_3d_back.png)
+
+The assembly process began with the arrival of the V1 motherboard. We soldered the components and we successfully performed a test by programming and blinking an onboard LED. This test confirmed that the STM32G431CBU6 microcontroller was properly powered and that our clock and debug circuits were functional.
+
+A Blinking blue LED controlled by the microcontroller,
+The red LEDs mean that the LDO are working one is on by default, the other one was activated by the microcontroller
+![Testing](./IMG/blinking_mainboard.gif)
+
+
+#### HMI PCB
 We also developed a secondary HMI (Human-Machine Interface) PCB (2 layers). This PCB establishes an I2C link with the mainboard to control an onboard status screen. Moreover, the HMI PCB contains two addressable LEDs, providing a programmable visual feedback system to monitor the CanSat’s state before and during the launch.
 
 ![IHM](./IMG/SchematicIHM.png)
@@ -138,14 +154,19 @@ We also developed a secondary HMI (Human-Machine Interface) PCB (2 layers). This
 
 ![IHM](./IMG/IHMroutage2.png)
 
-The assembly process began with the arrival of the V1 motherboard. We soldered the components and we successfully performed a test by programming and blinking an onboard LED. This test confirmed that the STM32G431CBU6 microcontroller was properly powered and that our clock and debug circuits were functional.
 
-![Testing](./IMG/blinking_mainboard.gif)
-
-In parallel with the electronic validation, we have begun wind tunnel preparation to evaluate the mechanical and aerodynamic behavior of the CanSat. The electronics of the wind turbine is quite simple we use two drone motors t
 
 The testing process of the IHM PCB will begin shortly as it has just arrived.
 
+### ⚙️ Mechanical Design
+
+Our current strategy requires the body to have an open top where the main chute is covered by the drogue parachute. The drogue chute, is a kirigami inspired parachute (the research paper can be found in the useful links section) it has been cut with our school's laser cutter.
+<br>
+<img src="./IMG/Mechanical_top.png" alt="Main structure" width="300"/><br><br>
+For the topography mission we need to make the satellite spin thus we added several helixes to the body of the can this will induce a rotation so the TOF sensor can map the entire ground in a spiral patern.
+<br>
+<img src="./IMG/Mechanical_body.png" alt="Main structure" width="300"/><br>
+We added winglets that will deploy as the can falls and will be locked by small magnets, for now we are still trying to find the optimal shape of those winglets.
 
 
 ### 📡 Communications & Software Architecture
@@ -190,19 +211,24 @@ It displays the CanSat's orientation, its location and various other parameters 
 We are also working on changing the ground station's appearance so that our names will be written on it.
 ### Wind Tunnel
 
-For reliably testing the parachute we constructed a wind tunnel that uses two 350W conter-rotative drone motors 
+For reliably testing the parachute we constructed a wind tunnel that uses two 350W conter-rotative drone motors.
 <br>
-<img src="./IMG/windtunnel_structure.jpg" alt="Main structure" width="400"/><br><br>
+<img src="./IMG/windtunnel_structure.jpg" alt="Main structure" width="300"/><br><br>
 The device is powered by an 12V powersupply cased in a PLA box :
-<img src="./IMG/windtunnel_alim.jpg" alt="Main structure" width="300"/>
-<img src="./IMG/windtunnel_covered_alim.jpg" alt="Main structure" width="300"/><br>
+<img src="./IMG/windtunnel_alim.jpg" alt="Main structure" width="200"/>
+<img src="./IMG/windtunnel_covered_alim.jpg" alt="Main structure" width="200"/><br>
+
+It still needs a protection from the spinning motor but the wwindtunnel seem to have more than enough power to simulate a freefall :
+
+A one fan test :
+![One blade test](./IMG/windtunnel_one_fan.gif)
+
+Here is the whole prototype setup :
+
+![whole prototype setup](./IMG/windtunnel_setup.gif)
 
 
-###  🚀 Future plans
-The next steps will be :
-
-[] developping a V2 for the mainboard that includes outputs to a mini screen, fixes the buck's footprint adds testpoints for the IMU and barometer.
-
+## 📚 Resources and useful links
 
 ### 👾 Used software 
 
@@ -212,5 +238,22 @@ The next steps will be :
 - KiCAD - PCB Design
 - OnShape - 3D modeling
 
-### Useful links :
+### 🔗 Links 
+
+- [Previous ENSEA CanSat GitHub](https://github.com/mathieupommery/CANSAT_ARES_ENSEA)
+
+- [Onshape Docs](https://cad.onshape.com/documents?resourceType=folder&nodeId=558406456f078be48d4c722b&column=modifiedAt&sortOrder=asc)
+
+- [Kirigami inspierd parachute](https://www.nature.com/articles/s41586-025-09515-9#Fig1)
+
+- [FreeRTOS Guide](https://www.youtube.com/watch?v=OPrcpbKNSjU) 
 ---
+
+###  🚀 Future plans
+The next steps will be :
+
+- [ ] Create a V2 for the mainboard that includes outputs to a mini screen, fixes the buck's footprint, adds testpoints for the IMU and barometer.
+- [ ] Test the current Cansat Body in the wind tunnel
+- [ ] Write the code for the barometer and accelerometer
+- [ ] Test the ToF sensor
+
