@@ -131,18 +131,26 @@ To integrate this high quantity of components within the restricted 33cl volume 
 
 Here are the rendered 3d model of our PCB :
 
-Front side : STM32, Barometer, IMU, SD card reader, Buttons, Led a 12 MHz clock (for the stm) and a 32.765 kHz clock (for the IMU) and a JTAG connector.
+Front side : STM32 (center), Barometer (top), IMU (bottom right), SD card reader (bottom left), Buttons (left), Status LED (left) a 12 MHz clock (for the STM on it's left) and a 32.765 kHz clock (for the IMU above it) and a JTAG connector (top right).
 ![Front side](./IMG/Mainboard_3d_front.png)
 
 Back Side :
-Vbat -> 5V Buck , Main 3.3V LDO, and 3.3V LDO for the LoRa module with an enable function, Connectors to the external modules
+Vbat -> 5V Buck (top left), Main 3.3V LDO (center right), and 3.3V LDO for the LoRa module with an enable function (bottom left), Connectors to the external modules :
+- Motor (top left)
+- Time of Flight sensor (top right)
+- LoRa module (right)
+- HMI *see next section* (bottom right)
+- GPS (bottom left)
+- Battery 7.4V (right)
+
+There are also two testpoints, one for them is to test the 5V (top left), the other is for the main 3.3V (top right).
 ![Back side](./IMG/Mainboard_3d_back.png)
 
 
 
 The assembly process began with the arrival of the V1 motherboard. We soldered the components and we successfully performed a test by programming and blinking an onboard LED. This test confirmed that the STM32G431CBU6 microcontroller was properly powered and that our clock and debug circuits were functional.
 
-/!\ Warning ! The V1 Has a mistake in the buck's footprint we had to rewire it manually to ensure that uit could power the rest of the mainboard.
+/!\ Warning ! The V1 Has a mistake in the buck's footprint we had to rewire it manually to ensure that uit could power the rest of the mainboard.The is also a mistake in the connection of 3.3V enabeled signal, the 3.3V power supply that can be triggerd is supposed to be linked to the LoRa connector, here it has mistakenly been connected to the GPS connector.
 
 A Blinking blue LED controlled by the microcontroller,
 The red LEDs mean that the LDO are working one is on by default, the other one was activated by the microcontroller
@@ -224,7 +232,7 @@ The device is powered by an 12V powersupply cased in a PLA box :
 <img src="./IMG/windtunnel_alim.jpg" alt="Main structure" width="200"/>
 <img src="./IMG/windtunnel_covered_alim.jpg" alt="Main structure" width="200"/><br>
 
-It still needs a protection from the spinning motor but the wwindtunnel seem to have more than enough power to simulate a freefall :
+It still needs a protection from the spinning motor but the windtunnel seem to have more than enough power to simulate a freefall :
 
 A one fan test :
 ![One blade test](./IMG/windtunnel_one_fan.gif)
@@ -262,4 +270,6 @@ The next steps will be :
 - [ ] Test the current Cansat Body in the wind tunnel
 - [ ] Write the code for the barometer and accelerometer
 - [ ] Test the ToF sensor
+
+From the current state of progress we expect to end the project in time with all of the missions.
 
