@@ -249,6 +249,16 @@ Here is the whole prototype setup :
 
 ![whole prototype setup](./IMG/windtunnel_setup.gif)
 
+## Topography:
+In order to reproduce the topography of the landing field, we settled on using a Lidar model Lw20/C, the Lidar would give us at each instant, with respect of its measurement frequecy, a distance seperating it from the point it is measuring. This distance has to be stored in the memory card with the time of the measurement and the gyroscoping data at that moment. After the landing, the data would be tranfered via Lora to the raspberry pi to be converted into an .xyz file containing cartezian cordinates of the points measured, then with the help of libraries like PDAL, the .xyz file is converted to .laz file which is easy to manipulate for plotting the cloud of points and thus reconstructing the topography.
+The following image summerizes how data is processed for this mission.
+<img width="259" height="172" alt="Data flow" src="https://github.com/user-attachments/assets/5c08e962-6dc7-4ed4-95fd-6f69f6f8f4c9" />
+
+This figures represents the plotting of Le Ponceau neighbourhood using .laz file sourced from a governmental website:
+<img width="537" height="390" alt="ponceau cloud points" src="https://github.com/user-attachments/assets/93930ddb-e8cb-4c45-ba89-24d3fc5f3cef" />
+
+
+
 
 ## 📚 Resources and useful links
 
