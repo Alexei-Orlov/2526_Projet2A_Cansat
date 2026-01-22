@@ -6483,7 +6483,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Connector_JST:JST_SH_BM06B-SRSS-TB_1x06-1MP_P1.00mm_Vertical"
 			(at 124.46 186.69 0)
 			(effects
 				(font
@@ -6686,7 +6686,7 @@
 				)
 			)
 		)
-		(property "Value" "Connecteur IHM"
+		(property "Value" "Connecteur IHM (PCB EXTERNE)"
 			(at 151.765 179.07 0)
 			(effects
 				(font
@@ -6694,7 +6694,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Connector_JST:JST_SH_BM06B-SRSS-TB_1x06-1MP_P1.00mm_Vertical"
 			(at 151.13 186.69 0)
 			(effects
 				(font
