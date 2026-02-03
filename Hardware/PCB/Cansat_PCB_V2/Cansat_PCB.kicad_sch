@@ -4464,7 +4464,7 @@
 	)
 	(text "PB8 en comment entre \nboot0 et usart3_RX"
 		(exclude_from_sim no)
-		(at 74.676 112.522 0)
+		(at 76.2 114.3 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4485,7 +4485,7 @@
 	)
 	(text "LED drivé à 1mA avec une tension de 2.2v ce qui \ndonne R=U/I=1.1kohms\nAttention la somme des courants sortant des GPIO \nne dois pas depasser 100mA"
 		(exclude_from_sim no)
-		(at 29.21 99.06 0)
+		(at 38.354 97.79 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4879,10 +4879,6 @@
 		(uuid "0f92643e-5a70-4c84-a917-12456d7868b1")
 	)
 	(no_connect
-		(at 152.4 93.98)
-		(uuid "14ec7898-9bb7-42d7-bf41-b788e49e1ca3")
-	)
-	(no_connect
 		(at 88.9 189.23)
 		(uuid "17b833db-d18d-4efd-aae7-a9c6f013d75b")
 	)
@@ -4893,6 +4889,10 @@
 	(no_connect
 		(at 353.06 179.07)
 		(uuid "2f4154bb-0de8-4aab-bca0-2a876225a449")
+	)
+	(no_connect
+		(at 116.84 106.68)
+		(uuid "5b67d4e4-6de0-43ca-a7dc-85d1125c784e")
 	)
 	(no_connect
 		(at 88.9 207.01)
@@ -4913,10 +4913,6 @@
 	(no_connect
 		(at 116.84 93.98)
 		(uuid "c693e412-9197-43b3-a06f-15ba9b862457")
-	)
-	(no_connect
-		(at 116.84 106.68)
-		(uuid "f27ea9dc-f3b2-4871-9950-b0cdc6a6fd58")
 	)
 	(wire
 		(pts
@@ -5460,6 +5456,16 @@
 	)
 	(wire
 		(pts
+			(xy 152.4 93.98) (xy 154.94 93.98)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4cff3e63-7025-4123-bb3c-e75e8abe52e7")
+	)
+	(wire
+		(pts
 			(xy 290.83 160.02) (xy 290.83 181.61)
 		)
 		(stroke
@@ -5567,6 +5573,16 @@
 			(type default)
 		)
 		(uuid "5dcae742-d9b1-4479-b19a-c744f7c7ea4b")
+	)
+	(wire
+		(pts
+			(xy 172.72 93.98) (xy 160.02 93.98)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5f2c3bed-f31a-4dd3-af7c-72e92eb421f7")
 	)
 	(wire
 		(pts
@@ -7344,6 +7360,28 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "CAM_EN"
+		(shape input)
+		(at 172.72 93.98 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "67f86029-109e-4c8e-8cf4-ec47a689678e")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 182.9623 93.98 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -13666,6 +13704,73 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R_Small")
+		(at 157.48 93.98 270)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "f0791407-f5ef-4cf6-9e07-be085e67266d")
+		(property "Reference" "R20"
+			(at 162.052 95.504 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "10k"
+			(at 157.734 96.012 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric_Pad0.72x0.64mm_HandSolder"
+			(at 157.48 93.98 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 157.48 93.98 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resistor, small symbol"
+			(at 157.48 93.98 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "1c611ad4-2bb9-4514-845c-caae1e12e164")
+		)
+		(pin "2"
+			(uuid "dbef8733-fef0-48d6-b10e-135d3ab7fc37")
+		)
+		(instances
+			(project "Cansat_PCB"
+				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
+					(reference "R20")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 134.62 152.4 0)
 		(unit 1)
@@ -14098,7 +14203,7 @@
 				)
 			)
 		)
-		(property "Footprint" "footprints:SMD3225_3.2X2.5X0.7_MTC"
+		(property "Footprint" "footprints:Crystal_SMD_3225-4pin_3.2x2.5mm"
 			(at 85.09 74.93 0)
 			(effects
 				(font

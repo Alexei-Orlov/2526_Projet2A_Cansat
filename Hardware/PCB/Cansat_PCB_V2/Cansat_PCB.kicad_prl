@@ -1,6 +1,6 @@
 {
   "board": {
-    "active_layer": 2,
+    "active_layer": 0,
     "active_layer_preset": "",
     "auto_track_width": false,
     "hidden_netclasses": [
@@ -58,14 +58,12 @@
       "Net-(U1-INT)",
       "Net-(U1-CSB)",
       "Net-(U1-SDO)",
-      "unconnected-(U2-PA11-Pad33)",
       "Net-(U3-COM3)",
       "IMU_BOOT",
       "IMU_RST",
       "Net-(J1-PadG3)",
       "unconnected-(U2-PC13-Pad2)",
       "IMU_INT",
-      "unconnected-(U2-PB1-Pad18)",
       "unconnected-(U2-PC15-Pad4)",
       "unconnected-(U2-PC14-Pad3)",
       "unconnected-(Y2-Pad4)",
@@ -91,7 +89,8 @@
       "EXTI3_BTN",
       "EXTI_BARO",
       "I2C3_SDA_IMU",
-      "I2C3_SCL_IMU"
+      "I2C3_SCL_IMU",
+      "CAM_EN"
     ],
     "high_contrast_mode": 1,
     "net_color_mode": 1,
