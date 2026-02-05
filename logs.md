@@ -243,3 +243,63 @@
   -  Station Sol 3D Modelling
 
 
+## Session 16 – *20/01/2026*
+- **Project Definition**  
+  - Work on tasks defined in the roadmap
+
+- **Decisions**  
+  - Work on tasks defined in the roadmap
+
+- **Progress**  
+  - Wind tunnel : Testing the can's rotation and replacing the controller with an ESC device.
+  - State Machine
+  - Kalman's filter for the can's trajectory
+  - Main PCB : V2, fixed previous issues
+  - HMI PCB : Soldering and testing
+  - Branding
+  - Soldered connections for the IMU
+  - Soldered connections to use the LoRa via the RaspBerry
+- **Goals for Next Session**  
+  -  Not defined
+
+## Session 17 – *27/01/2026*
+- **Project Definition**  
+  - Work on tasks defined in the roadmap
+  - Report 5
+
+- **Decisions**  
+  - Work on tasks defined in the roadmap
+
+- **Progress**  
+  - Successfully received a message by using the RaspBerry.
+  - Minimum changes in LiDAR code.
+  - Stickers
+  - Can's internal structure
+  - Discussing how to control the camera via PCB
+  - Main PCB : V2, solved issue with powering the camera
+  - Another PCB in the making (with an npn transistor) to link camera and main board
+  - HMI PCB : Soldering 
+  - FreeRTOS and FATFS for SD card
+- **Goals for Next Session**  
+  -  Not defined
+
+## Session 18 – *03/02/2026*
+- **Project Definition**  
+  - Work on tasks defined in the roadmap
+
+- **Decisions**  
+  - Work on tasks defined in the roadmap
+
+- **Progress**  
+  - Improving the code of the LoRa.
+  - Mainboard v2: Corrected camera circuitry and added test points.
+
+  - Camera Interposer PCB: Finalized schematics and routing.
+
+  - HMI PCB Testing: Investigating a 3.3V-to-GND short circuit occurring after LED soldering (potential causes: soldering bridge or button footprint issues).
+
+  - Testing SD card
+- **Goals for Next Session**  
+  -  Not defined
+
+
