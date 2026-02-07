@@ -1612,7 +1612,7 @@
 			(uuid "db2c00ad-a1d7-4bad-bc4e-ef8316bf42e5")
 		)
 		(embedded_fonts no)
-		(model "${CANSAT_3D_MODEL}BMP581.STEP"
+		(model "${CANSAT_3D_MODEL}/BMP581.STEP"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -3693,7 +3693,7 @@
 			(uuid "e87568b6-ef06-4f68-9c33-d3a56fa77d24")
 		)
 		(embedded_fonts no)
-		(model "${CANSAT_3D_MODEL}Molex.stp"
+		(model "${CANSAT_3D_MODEL}/Molex.stp"
 			(offset
 				(xyz 0.2 -0.6 0)
 			)
@@ -6379,8 +6379,7 @@
 				(xyz 0 0 0)
 			)
 		)
-		(model "/home/alexei/Bureau/Start_project_fixing/Custom_library/New_imports/3D_models/UFQFPN-48_7X7X0P55MM.step"
-			(hide yes)
+		(model "${CANSAT_3D_MODEL}/UFQFPN-48_7X7X0P55MM.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -8077,6 +8076,17 @@
 				(xyz 0 0 0)
 			)
 		)
+		(model "${CANSAT_3D_MODEL}/CON14_2X7_DUK_FTSH_SAI.step"
+			(offset
+				(xyz 0 0 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
+		)
 	)
 	(footprint "Capacitor_SMD:C_0402_1005Metric_Pad0.74x0.62mm_HandSolder"
 		(layer "F.Cu")
@@ -8913,7 +8923,7 @@
 			(uuid "2ecbce1d-f77c-453b-8d1c-9e22d175bda7")
 		)
 		(embedded_fonts no)
-		(model "${CANSAT_3D_MODEL}BNO055.STEP"
+		(model "${CANSAT_3D_MODEL}/BNO055.STEP"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -9302,7 +9312,7 @@
 			(uuid "da47ac4b-ebe3-4854-82b3-93221576943d")
 		)
 		(embedded_fonts no)
-		(model "${CANSAT_3D_MODEL}KXT321LHS.stp"
+		(model "${CANSAT_3D_MODEL}/KXT321LHS.stp"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -9924,6 +9934,7 @@
 		(property "Reference" "R20"
 			(at 0 -1.17 90)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "6fc32ff4-7c3e-4f68-a062-c3f8d2d8e055")
 			(effects
 				(font
@@ -10605,7 +10616,7 @@
 			(uuid "f906ab62-454a-46ca-90e7-0699eb9b8d17")
 		)
 		(embedded_fonts no)
-		(model "${CANSAT_3D_MODEL}KXT321LHS.stp"
+		(model "${CANSAT_3D_MODEL}/KXT321LHS.stp"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -12179,6 +12190,7 @@
 		(property "Reference" "Y1"
 			(at 0 -2.45 0)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "779ce212-4f9e-4148-a5ad-a8405d4ff27a")
 			(effects
 				(font
@@ -12385,7 +12397,7 @@
 			(uuid "b20bef72-d9b7-4d48-bd55-75564e5e7d39")
 		)
 		(embedded_fonts no)
-		(model "${KISYS3DMOD}/Crystals.3dshapes/Crystal_SMD_3225-4pin_3.2x2.5mm.wrl"
+		(model "/home/alexei/Documents/ENSEA/Semestre_8/Cansat/2526_Projet2A_Cansat/2526_Projet2A_Cansat/Hardware/PCB/Custom_library/New_imports/3D_models/Download_STP_830069882 (rev1).stp"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -13357,7 +13369,7 @@
 			(uuid "1dd2bbb8-e692-403d-a7e8-218e9880ebce")
 		)
 		(embedded_fonts no)
-		(model "${CANSAT_3D_MODEL}Download_STP_830108091501_IMU_osc.stp"
+		(model "${CANSAT_3D_MODEL}/Download_STP_830108091501_IMU_osc.stp"
 			(offset
 				(xyz 0 0 0.000001)
 			)
@@ -13807,15 +13819,15 @@
 			(uuid "861fc71e-9f9c-4713-9524-7786279fd240")
 		)
 		(embedded_fonts no)
-		(model "${CANSAT_3D_MODEL}BM03B-SRSS-TB.STEP"
+		(model "${KICAD9_3DMODEL_DIR}/Connector_JST.3dshapes/JST_SH_BM03B-SRSS-TB_1x03-1MP_P1.00mm_Vertical.step"
 			(offset
-				(xyz 0 1 0)
+				(xyz 0 0 0)
 			)
 			(scale
 				(xyz 1 1 1)
 			)
 			(rotate
-				(xyz -90 -0 -0)
+				(xyz -0 -0 -0)
 			)
 		)
 	)
@@ -15011,7 +15023,7 @@
 			(uuid "eb13fa84-d26d-4982-8d52-775cc6ec82e6")
 		)
 		(embedded_fonts no)
-		(model "${CANSAT_3D_MODEL}DFN6_3X3_STM.step"
+		(model "${CANSAT_3D_MODEL}/DFN6_3X3_STM.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -15965,7 +15977,7 @@
 			)
 		)
 		(embedded_fonts no)
-		(model "${CANSAT_3D_MODEL}Download_STP_WE-MAPI_4020 (rev1).stp"
+		(model "${CANSAT_3D_MODEL}/Download_STP_WE-MAPI_4020 (rev1).stp"
 			(offset
 				(xyz 0 0 2)
 			)
@@ -17126,15 +17138,15 @@
 			(uuid "f5021ac3-06b1-4e4d-88fd-9139c68f4529")
 		)
 		(embedded_fonts no)
-		(model "${CANSAT_3D_MODEL}BM07B-SRSS-TB.STEP"
+		(model "${KICAD9_3DMODEL_DIR}/Connector_JST.3dshapes/JST_SH_BM07B-SRSS-TB_1x07-1MP_P1.00mm_Vertical.step"
 			(offset
-				(xyz 0 1 0)
+				(xyz 0 0 0)
 			)
 			(scale
 				(xyz 1 1 1)
 			)
 			(rotate
-				(xyz -90 -0 -0)
+				(xyz -0 -0 -0)
 			)
 		)
 	)
@@ -18818,15 +18830,15 @@
 			(uuid "79ea64dc-d922-4e3c-8dc4-1073664ff7eb")
 		)
 		(embedded_fonts no)
-		(model "${CANSAT_3D_MODEL}BM04B-SRSS-TB.STEP"
+		(model "${KICAD9_3DMODEL_DIR}/Connector_JST.3dshapes/JST_SH_BM04B-SRSS-TB_1x04-1MP_P1.00mm_Vertical.step"
 			(offset
-				(xyz 0 1 0)
+				(xyz 0 0 0)
 			)
 			(scale
 				(xyz 1 1 1)
 			)
 			(rotate
-				(xyz -90 -0 -0)
+				(xyz -0 -0 -0)
 			)
 		)
 	)
@@ -19575,7 +19587,7 @@
 			(uuid "833d0ed5-6a0b-45d2-8d53-3929a9f67b6e")
 		)
 		(embedded_fonts no)
-		(model "${CANSAT_3D_MODEL}DFN6_3X3_STM.step"
+		(model "${CANSAT_3D_MODEL}/DFN6_3X3_STM.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -21577,15 +21589,15 @@
 			(uuid "4a45ae46-e43a-4e58-9b7b-d2ccc12c882c")
 		)
 		(embedded_fonts no)
-		(model "${CANSAT_3D_MODEL}BM04B-SRSS-TB.STEP"
+		(model "${KICAD9_3DMODEL_DIR}/Connector_JST.3dshapes/JST_SH_BM04B-SRSS-TB_1x04-1MP_P1.00mm_Vertical.step"
 			(offset
-				(xyz 0 1 0)
+				(xyz 0 0 0)
 			)
 			(scale
 				(xyz 1 1 1)
 			)
 			(rotate
-				(xyz -90 -0 -0)
+				(xyz -0 -0 -0)
 			)
 		)
 	)
@@ -22194,15 +22206,15 @@
 			(uuid "a5a2d928-1a6f-4b16-a842-0e24032db620")
 		)
 		(embedded_fonts no)
-		(model "${CANSAT_3D_MODEL}BM03B-SRSS-TB.STEP"
+		(model "${KICAD9_3DMODEL_DIR}/Connector_JST.3dshapes/JST_SH_BM03B-SRSS-TB_1x03-1MP_P1.00mm_Vertical.step"
 			(offset
-				(xyz 0 1 0)
+				(xyz 0 0 0)
 			)
 			(scale
 				(xyz 1 1 1)
 			)
 			(rotate
-				(xyz -90 -0 -0)
+				(xyz -0 -0 -0)
 			)
 		)
 	)
