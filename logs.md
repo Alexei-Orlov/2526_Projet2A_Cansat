@@ -303,3 +303,65 @@
   -  Not defined
 
 
+## Session 19 – *10/02/2026*
+- **Project Definition**  
+  - Work on tasks defined in the roadmap
+
+- **Decisions**  
+  - Work on tasks defined in the roadmap
+
+- **Progress**  
+  -  New version of FSM 
+  - Flow diagrams of the system V1
+  - Beginning the Cansat V1 code
+  - RCE2
+  - Conception de parachute
+  - Peaufinage de la V2
+  - Tests LEDs pcb IHM
+  - Calculs et dimensionnement du parachute
+  
+
+  
+
+  
+- **Goals for Next Session**  
+  -  Not defined
+
+
+## Session 20 – *17/02/2026*
+- **Project Definition**  
+  - Work on tasks defined in the roadmap
+  - Report 6
+
+- **Decisions**  
+  - Work on tasks defined in the roadmap
+
+- **Progress**  
+  - Test du BNO055
+  - Test du baromètre
+  - Floquage
+  - Recensement des valeurs de courants min, typ, max et peak de chaque élément du pcb (baromètre, imu etc)
+  - Reflexion sur l'ajout de sécurité concernant le pcb mainboard (fusible, TVS, diode Schottky)
+
+  
+
+  
+- **Goals for Next Session**  
+  -  Not defined
+
+## Session 21 – *10/03/2026*
+- **Project Definition**  
+  - Work on tasks defined in the roadmap
+  
+
+- **Decisions**  
+  - Work on tasks defined in the roadmap
+
+- **Progress**  
+  - 
+
+  
+
+  
+- **Goals for Next Session**  
+  -  Not defined
