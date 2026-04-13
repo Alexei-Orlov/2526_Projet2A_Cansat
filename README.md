@@ -123,17 +123,18 @@ To integrate this high quantity of components within the restricted 33cl volume 
 5. GND
 6. Signal
 
-![Mainboard](./IMG/Mainboardroutage1.png)
+Here is the final PCB :
+![Mainboard](./IMG/Mainboardroutage_V3_1.png)
 
-![Mainboard](./IMG/Mainboardroutage4.png)
+![Mainboard](./IMG/Mainboardroutage_V3_4.png)
 
-![Mainboard](./IMG/Mainboardroutage6.png)
+![Mainboard](./IMG/Mainboardroutage_V3_6.png)
 
 Here are the rendered 3d model of our PCB :
 
 Front side : STM32 (center), Barometer (top), JTAG connector (top right), IMU (bottom right), SD card reader (bottom left), Status LED (left), Buttons (left), 
 Whe have two oscillators; a 12 MHz clock for the STM on it's left and a 32.765 kHz clock for the IMU above the IMU.
-![Front side](./IMG/Mainboard_3d_front.png)
+![Front side](./IMG/Mainboard_V3_3d_front.png)
 
 Back Side :
 Vbat -> 5V Buck (top left), Main 3.3V LDO (center right), and 3.3V LDO for the LoRa module with an enable function (bottom left), Connectors to the external modules :
@@ -145,16 +146,16 @@ Vbat -> 5V Buck (top left), Main 3.3V LDO (center right), and 3.3V LDO for the L
 - Battery 7.4V (right)
 
 There are also two testpoints, one for them is to test the 5V (top left), the other is for the main 3.3V (top right).
-![Back side](./IMG/Mainboard_3d_back.png)
-
+![Back side](./IMG/Mainboard_V3_3d_back.png)
 
 
 The assembly process began with the arrival of the V1 motherboard. We soldered the components and we successfully performed a test by programming and blinking an onboard LED. This test confirmed that the STM32G431CBU6 microcontroller was properly powered and that our clock and debug circuits were functional.
 
 /!\ Warning ! The V1 Has a mistake in the buck's footprint we had to rewire it manually to ensure that uit could power the rest of the mainboard.The is also a mistake in the connection of 3.3V enabeled signal, the 3.3V power supply that can be triggerd is supposed to be linked to the LoRa connector, here it has mistakenly been connected to the GPS connector.
+This has been fixed in the following versions (V2) and the latest version V3 is a cleaner version with added electrical security.
 
 A Blinking blue LED controlled by the microcontroller,
-The red LEDs mean that the LDO are working one is on by default, the other one was activated by the microcontroller
+The red LEDs mean that the LDO are working one is on by default, the other one was activated by the microcontroller here is the blinking V1 :
 ![Testing](./IMG/blinking_mainboard.gif)
 
 
