@@ -5,9 +5,9 @@
 	(uuid "43b9f51a-edfb-48c9-aab9-a28c7efe9297")
 	(paper "A3")
 	(title_block
-		(title "CanSatv1")
+		(title "CanSatv3")
 		(date "2025-09-16")
-		(rev "1.0")
+		(rev "3.0")
 		(company "ENSEA")
 		(comment 1 "Processeur et capteurs de la carte mère du CanSat")
 	)
@@ -8112,7 +8112,7 @@
 			(uuid "fd859073-9be0-4273-8ed4-040dadb05fc4")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR021")
 					(unit 1)
@@ -8178,7 +8178,7 @@
 			(uuid "52762ab2-bb20-4f26-afb9-354913938fa5")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR012")
 					(unit 1)
@@ -8247,7 +8247,7 @@
 			(uuid "b35eb721-1771-42b3-a754-db443ec51b55")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R10")
 					(unit 1)
@@ -8313,7 +8313,7 @@
 			(uuid "cdf6fa1e-79e0-4fba-aa11-6184f1626ec7")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "TP7")
 					(unit 1)
@@ -8379,7 +8379,7 @@
 			(uuid "01783af5-a5c1-4ba5-b8d0-5d4f656fe098")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR030")
 					(unit 1)
@@ -8446,7 +8446,7 @@
 			(uuid "19f004ea-adcd-445a-9770-2dcb2ca985ba")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#FLG01")
 					(unit 1)
@@ -8514,7 +8514,7 @@
 			(uuid "09c771a5-8894-407b-bde3-3d37019e5bad")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C29")
 					(unit 1)
@@ -8584,7 +8584,7 @@
 			(uuid "b8181777-7f01-4b83-b3d5-5dc94a93b1a3")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R1")
 					(unit 1)
@@ -8749,7 +8749,7 @@
 			(uuid "85199dd7-8df1-40b5-ba3c-2e8c95e2c709")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "U1")
 					(unit 1)
@@ -8815,7 +8815,7 @@
 			(uuid "f97e2b12-6bbd-43d8-acba-fad5c996c8b5")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR066")
 					(unit 1)
@@ -8881,7 +8881,7 @@
 			(uuid "f2ac80e1-0407-40a9-9538-7c1c0a643f5c")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR013")
 					(unit 1)
@@ -8948,7 +8948,7 @@
 			(uuid "ab9adcd0-a8e9-42f3-b7fd-986f95871533")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C17")
 					(unit 1)
@@ -9128,7 +9128,7 @@
 			(uuid "2543d422-cdb5-4732-b87c-b029f11e5122")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "J1")
 					(unit 1)
@@ -9198,7 +9198,7 @@
 			(uuid "cfb60807-35f9-451e-8b5e-0e4974ae64b7")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C16")
 					(unit 1)
@@ -9264,7 +9264,7 @@
 			(uuid "357fa344-5294-4576-9659-1f5743f766f0")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR041")
 					(unit 1)
@@ -9331,7 +9331,7 @@
 			(uuid "cdf47504-369a-43a4-9cbf-7f2a18d8d12c")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C11")
 					(unit 1)
@@ -9398,7 +9398,7 @@
 			(uuid "17e1e69d-3f48-4204-8bb6-08bf4f09600d")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C30")
 					(unit 1)
@@ -9465,7 +9465,7 @@
 			(uuid "5fe027a7-e339-4645-9d00-fe2e9d97a464")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C3")
 					(unit 1)
@@ -9532,7 +9532,7 @@
 			(uuid "cce59a42-82e5-486a-bca4-58e9e7eac446")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR06")
 					(unit 1)
@@ -9601,7 +9601,7 @@
 			(uuid "156047eb-e412-4164-ae8c-4daee9dbd92e")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C13")
 					(unit 1)
@@ -9907,7 +9907,7 @@
 			(uuid "c0fc0a27-0ba4-4a09-b55f-78c3d71919fb")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "U3")
 					(unit 1)
@@ -9976,7 +9976,7 @@
 			(uuid "93507516-0020-4733-9cc2-b35c19509f82")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R12")
 					(unit 1)
@@ -10045,7 +10045,7 @@
 			(uuid "b3e8f544-68f4-4fff-9710-1654d4451460")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R11")
 					(unit 1)
@@ -10112,7 +10112,7 @@
 			(uuid "bff8a58f-d552-4130-82ad-1a7bdd38b4ef")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C9")
 					(unit 1)
@@ -10178,7 +10178,7 @@
 			(uuid "b157de48-6bc2-41d4-845e-c5ef8e06ec64")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR010")
 					(unit 1)
@@ -10244,7 +10244,7 @@
 			(uuid "8954b0c8-a4b6-4b29-b7a6-a250de5286e5")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR027")
 					(unit 1)
@@ -10314,7 +10314,7 @@
 			(uuid "3fca414f-91ae-4939-8b39-44b9399102d0")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R2")
 					(unit 1)
@@ -10380,7 +10380,7 @@
 			(uuid "ea40c525-2b6f-4e98-87f8-3fbb70b2da62")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR09")
 					(unit 1)
@@ -10448,7 +10448,7 @@
 			(uuid "cc0c8176-e93f-4c3e-8d0f-0e0fd5a1b2e5")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R5")
 					(unit 1)
@@ -10514,7 +10514,7 @@
 			(uuid "8ad54599-27f5-49b3-8867-7be5cd561d5d")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "TP1")
 					(unit 1)
@@ -10580,7 +10580,7 @@
 			(uuid "ca3ea247-8e0b-4549-bd93-0c08f7c10893")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "TP3")
 					(unit 1)
@@ -10649,7 +10649,7 @@
 			(uuid "c8a6ad0f-7c9b-46b5-9526-5f1976615098")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R9")
 					(unit 1)
@@ -10716,7 +10716,7 @@
 			(uuid "3866e251-ef77-4c97-b93c-e698309ce1bc")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C4")
 					(unit 1)
@@ -10783,7 +10783,7 @@
 			(uuid "a7b41894-fd72-4d1d-b4e1-4998fafb29ff")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C8")
 					(unit 1)
@@ -10850,7 +10850,7 @@
 			(uuid "91d7188c-b97b-421f-8e3e-4c9b0c922a28")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR031")
 					(unit 1)
@@ -10919,7 +10919,7 @@
 			(uuid "3f96c16a-eed6-400f-950c-51208f1ff825")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C15")
 					(unit 1)
@@ -10986,7 +10986,7 @@
 			(uuid "1dba01f4-e3d7-4ade-b5e2-8ef1d1dad66f")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C2")
 					(unit 1)
@@ -11056,7 +11056,7 @@
 			(uuid "8895e5db-83d0-4afe-b26e-d1382804f0e3")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "SW2")
 					(unit 1)
@@ -11123,7 +11123,7 @@
 			(uuid "de19dc08-0198-46fe-b1f8-7c6d2ebcf21b")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C6")
 					(unit 1)
@@ -11189,7 +11189,7 @@
 			(uuid "171f35d8-21b8-4f31-8da0-b8f840f799b1")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR029")
 					(unit 1)
@@ -11258,7 +11258,7 @@
 			(uuid "267d8772-1fde-41b8-a0df-5f53b871b98f")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R26")
 					(unit 1)
@@ -11326,7 +11326,7 @@
 			(uuid "919246b7-d795-426e-88f7-f955aa2e0eb3")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R6")
 					(unit 1)
@@ -11393,7 +11393,7 @@
 			(uuid "e06d5617-04a1-4ee3-a2c1-420bc94ce810")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR024")
 					(unit 1)
@@ -11459,7 +11459,7 @@
 			(uuid "4896a8fa-080f-46d8-8376-7d34e53f8654")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR01")
 					(unit 1)
@@ -11525,7 +11525,7 @@
 			(uuid "22cbd477-f8c0-41f5-9059-6310cae32139")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR02")
 					(unit 1)
@@ -11592,7 +11592,7 @@
 			(uuid "6fbc6165-145a-40f2-a34e-b2eda00799d4")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R4")
 					(unit 1)
@@ -11660,7 +11660,7 @@
 			(uuid "41dc8e07-aa76-4a09-a353-2ee6dadaa8f3")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "SW1")
 					(unit 1)
@@ -11731,7 +11731,7 @@
 			(uuid "f0cfffbe-ccc7-4953-9c69-9b1d32ccba2f")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C20")
 					(unit 1)
@@ -11799,7 +11799,7 @@
 			(uuid "289e75c5-b782-4a19-9c3f-2983146799dc")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R8")
 					(unit 1)
@@ -11866,7 +11866,7 @@
 			(uuid "210c17ff-3875-46a9-b7a5-7fad77ce9bf8")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR033")
 					(unit 1)
@@ -11933,7 +11933,7 @@
 			(uuid "1e2d07cc-d36c-42d2-8932-040d2132b58a")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR04")
 					(unit 1)
@@ -12000,7 +12000,7 @@
 			(uuid "7d1acf5c-28e0-426d-9f9a-2e1c09890e2f")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C14")
 					(unit 1)
@@ -12066,7 +12066,7 @@
 			(uuid "06122fcc-2788-4421-923f-d8fbe815fe9d")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR065")
 					(unit 1)
@@ -12132,7 +12132,7 @@
 			(uuid "da62d48c-0545-4a68-852e-53d0508b7097")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR028")
 					(unit 1)
@@ -12198,7 +12198,7 @@
 			(uuid "754f4b71-d5e8-4857-9b1c-32445e00cf1d")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "TP6")
 					(unit 1)
@@ -12264,7 +12264,7 @@
 			(uuid "16e059cf-9978-4161-8a15-9200d8ffd2c4")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR014")
 					(unit 1)
@@ -12331,7 +12331,7 @@
 			(uuid "51d37909-8312-411e-b4a4-a747aff1c294")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C10")
 					(unit 1)
@@ -12397,7 +12397,7 @@
 			(uuid "409ff816-1b41-46ec-a7c5-de7da892998d")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR020")
 					(unit 1)
@@ -12464,7 +12464,7 @@
 			(uuid "dcdffe49-62c6-4d16-8903-41b312c443b7")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "TP2")
 					(unit 1)
@@ -12533,7 +12533,7 @@
 			(uuid "c4b13672-87bc-4c64-aabe-2b2166ea269e")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R14")
 					(unit 1)
@@ -12600,7 +12600,7 @@
 			(uuid "45b73229-a379-4fce-ba6a-fe718b9bde4f")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR023")
 					(unit 1)
@@ -12666,7 +12666,7 @@
 			(uuid "2f5e78e4-f05f-4b9a-b261-1216cd1143f6")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "TP9")
 					(unit 1)
@@ -12733,7 +12733,7 @@
 			(uuid "5c513a6d-f746-43f1-901d-8d3485f89984")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR026")
 					(unit 1)
@@ -12799,7 +12799,7 @@
 			(uuid "cc2d6d4f-74c4-4b19-b1df-01cf9288de34")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "TP10")
 					(unit 1)
@@ -12867,7 +12867,7 @@
 			(uuid "0f8345ae-1df7-45c1-ba2e-fe26f00073a8")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR032")
 					(unit 1)
@@ -13079,7 +13079,7 @@
 			(uuid "90716e86-2ea0-4369-a235-2c390b4184a2")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "U2")
 					(unit 1)
@@ -13149,7 +13149,7 @@
 			(uuid "e43480ac-c5e5-40f1-9a36-9a83215357ba")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C18")
 					(unit 1)
@@ -13220,7 +13220,7 @@
 			(uuid "fde30b6c-9bed-49f9-bfd4-774445f48d92")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R17")
 					(unit 1)
@@ -13293,7 +13293,7 @@
 			(uuid "c35f78ed-0c1a-4a4b-9b6b-a5a3131c7910")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "Y2")
 					(unit 1)
@@ -13363,7 +13363,7 @@
 			(uuid "4c7fbd56-7071-4ce3-94c1-64b1d4aefbbc")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R16")
 					(unit 1)
@@ -13429,7 +13429,7 @@
 			(uuid "ec8746f8-39a0-484f-bd29-58ca9d5ce404")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR016")
 					(unit 1)
@@ -13499,7 +13499,7 @@
 			(uuid "6d8b1f02-a68f-41f7-870d-ec2d8b9f3a0f")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C7")
 					(unit 1)
@@ -13565,7 +13565,7 @@
 			(uuid "75e67694-ecd7-4dce-8ea9-8afe00850e10")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "TP8")
 					(unit 1)
@@ -13632,7 +13632,7 @@
 			(uuid "84e17a05-356d-4bbf-8eb7-d158be0f9fae")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR05")
 					(unit 1)
@@ -13701,7 +13701,7 @@
 			(uuid "3e1b6bfd-9fee-4b48-a74f-80c7410d0334")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R13")
 					(unit 1)
@@ -13771,7 +13771,7 @@
 			(uuid "6704e60d-4c90-410c-9472-613705d263f8")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C12")
 					(unit 1)
@@ -13837,7 +13837,7 @@
 			(uuid "c9fc3611-961e-45ff-9fe0-cbea06d6c428")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR015")
 					(unit 1)
@@ -13914,7 +13914,7 @@
 			(uuid "1e75a027-73e1-428f-986b-5eeafb92f5f2")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "D1")
 					(unit 1)
@@ -13981,7 +13981,7 @@
 			(uuid "4354d039-1504-41f1-b847-6ef9e175f6be")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR08")
 					(unit 1)
@@ -14048,7 +14048,7 @@
 			(uuid "84fa84d5-f353-42d2-b34d-23ecb4c8d0e3")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR017")
 					(unit 1)
@@ -14114,7 +14114,7 @@
 			(uuid "42b6bb04-374f-4bec-bd3f-5e3c36771025")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR03")
 					(unit 1)
@@ -14181,7 +14181,7 @@
 			(uuid "1c44e551-2336-4855-80d3-1c4ef4a7624e")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C5")
 					(unit 1)
@@ -14249,7 +14249,7 @@
 			(uuid "f82ba3be-cbf1-437a-bb4c-66447c5ca916")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R7")
 					(unit 1)
@@ -14317,7 +14317,7 @@
 			(uuid "5a66d6ab-febe-4701-85a0-ba02a0ece542")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R3")
 					(unit 1)
@@ -14383,7 +14383,7 @@
 			(uuid "20084f07-c158-417e-b0a9-0add42465d1e")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR018")
 					(unit 1)
@@ -14452,7 +14452,7 @@
 			(uuid "7b800143-7200-4e91-90bb-8f4fabfde6ca")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R18")
 					(unit 1)
@@ -14519,7 +14519,7 @@
 			(uuid "dbef8733-fef0-48d6-b10e-135d3ab7fc37")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R20")
 					(unit 1)
@@ -14585,7 +14585,7 @@
 			(uuid "2252ce1d-3e3f-4722-aead-b7329687df93")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR019")
 					(unit 1)
@@ -14651,7 +14651,7 @@
 			(uuid "3999abe5-922d-4e1e-9147-9ffb707ca7b0")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR07")
 					(unit 1)
@@ -14721,7 +14721,7 @@
 			(uuid "3d77256b-78f6-4b0b-913b-022297a62463")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C19")
 					(unit 1)
@@ -14791,7 +14791,7 @@
 			(uuid "ad25d9d9-72bb-4ed3-b0c9-2638a8f49069")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "R15")
 					(unit 1)
@@ -14858,7 +14858,7 @@
 			(uuid "ac15bca6-04f8-44ae-b7e3-59c771c0f1d4")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "#PWR011")
 					(unit 1)
@@ -14927,7 +14927,7 @@
 			(uuid "dfa8449a-009f-45ea-8302-3ff30dcc4041")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "C1")
 					(unit 1)
@@ -15000,7 +15000,7 @@
 			(uuid "1b2cb912-5394-43d6-81b0-d10a6c0f9cbe")
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(reference "Y1")
 					(unit 1)
@@ -15043,7 +15043,7 @@
 			)
 		)
 		(instances
-			(project "Cansat_PCB"
+			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297"
 					(page "2")
 				)
