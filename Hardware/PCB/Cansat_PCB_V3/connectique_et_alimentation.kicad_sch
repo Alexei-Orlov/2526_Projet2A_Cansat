@@ -7,173 +7,11 @@
 	(title_block
 		(title "CanSatv3")
 		(date "2025-09-16")
+		(rev "V3")
 		(company "ENSEA")
-		(comment 1 "Processeur et capteurs de la carte mère du CanSat")
+		(comment 1 "Connectique et alimentation de la carte mère ")
 	)
 	(lib_symbols
-		(symbol "Connector:Conn_01x02_Pin"
-			(pin_names
-				(offset 1.016)
-				(hide yes)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "J"
-				(at 0 2.54 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "Conn_01x02_Pin"
-				(at 0 -5.08 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" "~"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" "Generic connector, single row, 01x02, script generated"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_locked" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_keywords" "connector"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_fp_filters" "Connector*:*_1x??_*"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "Conn_01x02_Pin_1_1"
-				(rectangle
-					(start 0.8636 0.127)
-					(end 0 -0.127)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(rectangle
-					(start 0.8636 -2.413)
-					(end 0 -2.667)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(polyline
-					(pts
-						(xy 1.27 0) (xy 0.8636 0)
-					)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 1.27 -2.54) (xy 0.8636 -2.54)
-					)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(pin passive line
-					(at 5.08 0 180)
-					(length 3.81)
-					(name "Pin_1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 5.08 -2.54 180)
-					(length 3.81)
-					(name "Pin_2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
 		(symbol "Connector:Conn_01x06_Pin"
 			(pin_names
 				(offset 1.016)
@@ -5960,6 +5798,28 @@
 		)
 		(uuid "fd3a1c4d-db68-4551-9d12-f05698f34635")
 	)
+	(global_label "USART2_TX_CAM"
+		(shape input)
+		(at 121.92 140.97 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "0717a500-a652-4242-b549-f2b1718d1c32")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 139.9032 140.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "SPI2_NSS{slash}CS"
 		(shape input)
 		(at 31.75 146.05 0)
@@ -6026,7 +5886,7 @@
 			)
 		)
 	)
-	(global_label "ADC1_IN3_VBAT"
+	(global_label "ADC1_IN12_VBAT"
 		(shape input)
 		(at 53.34 38.1 0)
 		(fields_autoplaced yes)
@@ -6038,7 +5898,7 @@
 		)
 		(uuid "1dc81c12-ca8f-4471-820d-065e8efcac40")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 70.6581 38.1 0)
+			(at 71.8676 38.1 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6202,28 +6062,6 @@
 			)
 		)
 	)
-	(global_label "CAM_EN"
-		(shape input)
-		(at 128.27 138.43 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "3a296fe2-09c2-4fb3-98a3-0e4420a8e46f")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 138.5123 138.43 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "SWCLK{slash}I2C1_SDA"
 		(shape input)
 		(at 64.77 91.44 0)
@@ -6246,7 +6084,7 @@
 			)
 		)
 	)
-	(global_label "EXTI3_BTN"
+	(global_label "EXTI13_BTN"
 		(shape input)
 		(at 30.48 172.72 0)
 		(fields_autoplaced yes)
@@ -6258,7 +6096,7 @@
 		)
 		(uuid "68ec60bb-2d1e-4630-b93b-6fc77fcb8ce1")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 43.1413 172.72 0)
+			(at 44.3508 172.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6457,6 +6295,28 @@
 		(uuid "b56a7e7a-773c-410f-ac2b-116dd2609b12")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 42.8995 148.59 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "USART2_RX_CAM"
+		(shape input)
+		(at 121.92 138.43 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "b64cff7b-451f-492f-a17d-105ae0bcf688")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 140.2056 138.43 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7749,6 +7609,73 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 121.92 143.51 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "307cd26c-51fd-4dba-bba5-a057cf520ee6")
+		(property "Reference" "#PWR036"
+			(at 128.27 143.51 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 125.73 143.5099 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" ""
+			(at 121.92 143.51 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 121.92 143.51 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 121.92 143.51 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "ec09cb67-7493-411a-b8f5-2eea16543a2c")
+		)
+		(instances
+			(project "Cansat_PCB_V3"
+				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297/24409c25-a13b-4fce-aa43-db656a14ada4"
+					(reference "#PWR036")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Diode TVS:SPHV15-01ETG")
 		(at 168.91 40.64 270)
 		(unit 1)
@@ -7864,6 +7791,73 @@
 			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297/24409c25-a13b-4fce-aa43-db656a14ada4"
 					(reference "D5")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 121.92 146.05 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "33884152-d6da-488d-9dde-c7c42400b295")
+		(property "Reference" "#PWR037"
+			(at 128.27 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 125.73 146.0499 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" ""
+			(at 121.92 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 121.92 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 121.92 146.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "9ffbaff1-d525-41ed-9a91-c5179e3cf77f")
+		)
+		(instances
+			(project "Cansat_PCB_V3"
+				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297/24409c25-a13b-4fce-aa43-db656a14ada4"
+					(reference "#PWR037")
 					(unit 1)
 				)
 			)
@@ -8278,73 +8272,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 128.27 140.97 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "4523bb97-4f7c-4436-b982-0fbd7266211b")
-		(property "Reference" "#PWR060"
-			(at 134.62 140.97 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 132.08 140.9699 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Footprint" ""
-			(at 128.27 140.97 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 128.27 140.97 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 128.27 140.97 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "3d0ad95f-cbbc-4b1f-9d3c-ccb0bd668453")
-		)
-		(instances
-			(project "Cansat_PCB_V3"
-				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297/24409c25-a13b-4fce-aa43-db656a14ada4"
-					(reference "#PWR060")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:C_Small")
 		(at 236.22 100.33 0)
 		(unit 1)
@@ -8485,73 +8412,6 @@
 			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297/24409c25-a13b-4fce-aa43-db656a14ada4"
 					(reference "J5")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector:Conn_01x02_Pin")
-		(at 123.19 138.43 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "4fbaca55-b151-4870-ad35-192cf773ae43")
-		(property "Reference" "J8"
-			(at 124.968 130.302 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "Connecteur Camera"
-			(at 124.968 132.842 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Connector_JST:JST_SH_BM02B-SRSS-TB_1x02-1MP_P1.00mm_Vertical"
-			(at 123.19 138.43 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 123.19 138.43 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Generic connector, single row, 01x02, script generated"
-			(at 123.19 138.43 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "24af5cf5-15b3-4924-9e2c-ed20c9c5b137")
-		)
-		(pin "2"
-			(uuid "664c0f03-8a76-4118-b985-7ba8d69a8620")
-		)
-		(instances
-			(project "Cansat_PCB_V3"
-				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297/24409c25-a13b-4fce-aa43-db656a14ada4"
-					(reference "J8")
 					(unit 1)
 				)
 			)
@@ -9120,7 +8980,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" "footprints:mountinghole1.2mm"
+		(property "Footprint" "MountingHole:MountingHole_2.2mm_M2_ISO7380_Pad"
 			(at 121.92 53.34 0)
 			(effects
 				(font
@@ -9761,6 +9621,71 @@
 			(project "Cansat_PCB_V3"
 				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297/24409c25-a13b-4fce-aa43-db656a14ada4"
 					(reference "#FLG02")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3.3V")
+		(at 121.92 135.89 270)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "999be26b-7a6d-4f02-8397-3e6b310c3419")
+		(property "Reference" "#PWR038"
+			(at 118.11 135.89 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3.3V"
+			(at 128.016 135.89 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 121.92 135.89 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 121.92 135.89 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
+			(at 121.92 135.89 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "7ea73db3-b37d-48cc-b76f-5dc32c565f9e")
+		)
+		(instances
+			(project "Cansat_PCB_V3"
+				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297/24409c25-a13b-4fce-aa43-db656a14ada4"
+					(reference "#PWR038")
 					(unit 1)
 				)
 			)
@@ -10691,7 +10616,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" "footprints:mountinghole1.2mm"
+		(property "Footprint" "MountingHole:MountingHole_2.2mm_M2_ISO7380_Pad"
 			(at 129.54 53.34 0)
 			(effects
 				(font
@@ -10959,7 +10884,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" "footprints:mountinghole1.2mm"
+		(property "Footprint" "MountingHole:MountingHole_2.2mm_M2_ISO7380_Pad"
 			(at 106.68 53.34 0)
 			(effects
 				(font
@@ -11948,6 +11873,83 @@
 		)
 	)
 	(symbol
+		(lib_id "Homemade:jst_4pin_with_mp")
+		(at 116.84 138.43 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "f248393e-8914-42a2-8af2-dd351317fd16")
+		(property "Reference" "J9"
+			(at 117.475 130.81 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "Connecteur Camera"
+			(at 117.475 133.35 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Connector_JST:JST_SH_BM04B-SRSS-TB_1x04-1MP_P1.00mm_Vertical"
+			(at 116.84 138.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 116.84 138.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Generic connector, single row, 01x04, script generated"
+			(at 116.84 138.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "3"
+			(uuid "244d90ff-89cb-4613-889c-3da728a2bd56")
+		)
+		(pin "4"
+			(uuid "f500c313-b330-4d10-917f-92c98fb0b81d")
+		)
+		(pin "2"
+			(uuid "654b80e6-1efd-4f7b-8e34-034c80a1fe4a")
+		)
+		(pin "1"
+			(uuid "91d09f42-b6b2-40c6-92e3-7314f99885e0")
+		)
+		(pin "MP"
+			(uuid "3d60ce24-e33e-48b8-af43-344ea18445ac")
+		)
+		(instances
+			(project "Cansat_PCB_V3"
+				(path "/43b9f51a-edfb-48c9-aab9-a28c7efe9297/24409c25-a13b-4fce-aa43-db656a14ada4"
+					(reference "J9")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:LED")
 		(at 228.6 78.74 0)
 		(unit 1)
@@ -12340,7 +12342,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" "footprints:mountinghole1.2mm"
+		(property "Footprint" "MountingHole:MountingHole_2.2mm_M2_ISO7380_Pad"
 			(at 114.3 53.34 0)
 			(effects
 				(font
