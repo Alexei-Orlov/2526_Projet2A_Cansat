@@ -172,6 +172,7 @@ The HMI PCB was tested in integration with an OLED screen and a Nucleo developme
 <div align="center">
   <img src="./IMG/OLED_screen.png" alt="state display" width="800"><br><br>
   <img src="./IMG/Button_Screen.png" alt="Button pushed" width="800"><br><br>
+  <img src="./IMG/Button_Screen2.png" alt="Button pushed2" width="800"><br><br>
 </div>
 
 ### ⚙️ Mechanical Design
