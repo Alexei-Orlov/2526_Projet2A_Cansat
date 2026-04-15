@@ -32,7 +32,7 @@ And finally, here's the list of team members and their roles :
 | Alexeï DOUILLARD | 3D Modeling, Satellite integration |
 | Juan Pablo BARONA CIFUENTES | Embedded systems, firmware |
 | Ted KOYAZANDE | Ground Station, Communications |
-| Amr TAOUIS | PCB Design |
+| Amr TAOUIS | PCB Design and testing, parachute sizing |
 | Abdelmoughit HAJJI LAAMOURI | Code |
 
 ---
@@ -167,7 +167,11 @@ We also developed a secondary HMI (Human-Machine Interface) PCB (2 layers). This
   <img src="./IMG/IHMroutage2.png" alt="IHM Bottom" width="600">
 </div>
 
-The testing process of the IHM PCB will begin shortly as it has just arrived.
+The HMI PCB was tested in integration with an OLED screen and a Nucleo development board. The display correctly shows the CanSat system status (LoRa link state, battery level), and the user can cycle through information screens using the onboard button. A short circuit between GND and 3.3V was detected after re-soldering a loose LED and was resolved. A custom enclosure for the HMI PCB and the OLED screen was also designed in OnShape, to hold them inside a handheld remote control casing. The next and final step for the HMI PCB is to connect it to the mainboard, which will allow the display to show the actual real-time status of the onboard components instead of test values.
+
+<div align="center">
+  <img src="./IMG/OLED_screen.png" alt="state display"><br><br>
+</div>
 
 ### ⚙️ Mechanical Design
 
@@ -182,6 +186,8 @@ The drogue chute, is a kirigami inspired parachute *check the research paper in 
 <div align="center">
   <img src="./IMG/Mechanical_kirigami.jpg" alt="Kirigami example" width="500">
 </div>
+
+The parachute dimensions were calculated using the fundamental principle of dynamics at stabilized velocity (mg = ½ρC_dSV²). We have found a parachute surface area of approximately 0.116 m² and a diameter of approximately 0.385 m. We have decided to take a parachute with a diameter of 40 cm. This choice has been discussed and approved an aerospace research scientist.
 
 For the topography mission we need to make the satellite spin thus we added several helixes to the body of the can this will induce a rotation so the TOF sensor can map the entire ground in a spiral patern.
 
