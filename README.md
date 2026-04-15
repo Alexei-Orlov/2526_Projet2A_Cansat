@@ -167,7 +167,7 @@ We also developed a secondary HMI (Human-Machine Interface) PCB (2 layers). This
   <img src="./IMG/IHMroutage2.png" alt="IHM Bottom" width="600">
 </div>
 
-The HMI PCB was tested in integration with an OLED screen and a Nucleo development board. The display correctly shows the CanSat system status (LoRa link state, battery level), and the user can cycle through information screens using the onboard button. A short circuit between GND and 3.3V was detected after re-soldering a loose LED and was resolved. A custom enclosure for the HMI PCB and the OLED screen was also designed in OnShape, to hold them inside a handheld remote control casing. The next and final step for the HMI PCB is to connect it to the mainboard, which will allow the display to show the actual real-time status of the onboard components instead of test values.
+The HMI PCB was tested in integration with an OLED screen and a Nucleo development board. The display correctly shows the CanSat system status (LoRa link state, battery level), and we can cycle through information screens using the onboard button. A short circuit between GND and 3.3V was detected after re-soldering a loose LED and was resolved. A custom enclosure for the HMI PCB and the OLED screen was also designed in OnShape, to hold them inside a handheld remote control casing. The next and final step for the HMI PCB is to connect it to the mainboard, which will allow the display to show the actual real-time status of the onboard components instead of test values.
 
 <div align="center">
   <img src="./IMG/OLED_screen.png" alt="state display" width="800"><br><br>
