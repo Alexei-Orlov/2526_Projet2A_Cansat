@@ -189,7 +189,7 @@ The drogue chute, is a kirigami inspired parachute *check the research paper in 
   <img src="./IMG/Mechanical_kirigami.jpg" alt="Kirigami example" width="500">
 </div>
 
-The parachute dimensions were calculated using the fundamental principle of dynamics at stabilized velocity (mg = ½ρC_dSV²). We have found a parachute surface area of approximately 0.116 m² and a diameter of approximately 0.385 m. We have decided to take a parachute with a diameter of 40 cm. This choice has been discussed and approved an aerospace research scientist.
+The parachute dimensions were calculated using the fundamental principle of dynamics at stabilized velocity (mg = ½ρC_dSV²). We have found a parachute surface area of approximately 0.116 m² and a diameter of approximately 0.385 m. We have decided to take a parachute with a diameter of 40 cm. This choice has been discussed and approved by an aerospace specialist.
 
 For the topography mission we need to make the satellite spin thus we added several helixes to the body of the can this will induce a rotation so the TOF sensor can map the entire ground in a spiral patern.
 
