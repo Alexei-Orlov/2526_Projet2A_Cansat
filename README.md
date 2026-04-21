@@ -29,7 +29,7 @@ And finally, here's the list of team members and their roles :
 
 | Name | Role |
 |------|------|
-| Alexeï DOUILLARD | 3D Modeling, Satellite integration |
+| Alexeï DOUILLARD | 3D Modeling, Satellite integration, PCB |
 | Juan Pablo BARONA CIFUENTES | Embedded systems, firmware |
 | Ted KOYAZANDE | Ground Station, Communications |
 | Amr TAOUIS | PCB Design and testing |
@@ -93,10 +93,10 @@ All the blocks shown above will be implemented with the components listed below.
 | **Voltage Regulator (LDO)** | LDO40LPU33RY | A high-precision, low-dropout voltage regulator from STMicroelectronics. It provides a stable output with low quiescent current and low noise. | Used to provide a clean, stable 3.3V power line to sensitive electronics (like the MCU and sensors) filtering out noise that might come from the main power rail. |
 | **Local Storage** | Micro SD Card + Molex 473092651 | A standard high-capacity non-volatile flash memory storage card interfaced via SPI or SDIO with the Molex 473092651 card reader. | Used to save a large amount of points and telemetry from the different sensors. It will be recording everything and setting timestamps on measurements. This will be the data that is recovered post-flight. |
 | **Single Board Computer** | Raspberry Pi (Model 4 / Zero 2 W) | A low-cost, credit-card-sized computer that plugs into a computer monitor or TV, and uses a standard keyboard and mouse. It runs a Linux-based operating system. | Utilized for the Ground Station architecture. It processes the incoming telemetry stream, handles the graphical user interface (GUI) for data visualization, and stores mission logs. |
-| **Battery** | 2-Cell LiPo (7.4V) | A Lithium Polymer rechargeable battery pack consisting of two cells in series, providing a nominal voltage of 7.4V and high discharge capabilities. | The 7.4V output is ideal for the input range of the voltage regulators, providing sufficient overhead to maintain stable power throughout the mission duration. |
+| **Battery** | 2-Cell LiPo (7.4V) 2 x 500mAh| A Lithium Polymer rechargeable battery pack consisting of two cells in series, providing a nominal voltage of 7.4V and high discharge capabilities. | The 7.4V output is ideal for the input range of the voltage regulators, providing sufficient overhead to maintain stable power throughout the mission duration. |
 | **Buck Converter** | LMR51625 | A wide-input, synchronous buck converter from Texas Instruments. It is designed to regulate high voltage inputs down to lower logic levels with high efficiency and a compact footprint. | Steps down the 7.4V battery voltage to 5V efficiently. Unlike linear regulators, this switching regulator minimizes heat generation and power loss. |
-| **JST Connectors** | JST SH Vertical| Small plugin connector we used sizes from 3 to 7 pins | All of our components are connected thanks to JST SH connectors these are a good compromise between compactness and ease of use |
-
+| **JST Connectors** | JST SH Vertical| Small plugin connector we used sizes from 3 to 7 pins, Thanks JST for the samples ! | All of our components are connected thanks to JST SH connectors these are a good compromise between compactness and ease of use |
+| **Camera** | Drone camera| Camera module stolen from a drone with 2.4GHz reciever and SD card reader plugged to another 500mAh 3.4V battery | We found 2 very similar HD cameras from cheap drones however one only works via a wifi app and the other one via UART|
 ### 🔌 Electronic design
 #### Mainboard PCB
 The electronic architecture of the Vortex project is based on a “reverse engineering” process. Indeed, by analyzing and understanding last year’s project and more precisely last year’s PCB, we were able to identify the key points of the PCB and the components that needed to be modified. Due to this process, we chose all the components listed above to meet the evolving requirements of our missions and did the schematic.
@@ -140,16 +140,21 @@ Vbat -> 5V Buck (top left), Main 3.3V LDO (center right), and 3.3V LDO for the L
 - GPS (bottom left)
 - Battery 7.4V (right)
 
-There are also two testpoints, one for them is to test the 5V (top left), the other is for the main 3.3V (top right).
+There are also two power testpoints, one for them is to test the 5V (top left), the other is for the main 3.3V (top right).
+The other testpoints are for the onboard compoennets : SD card, IMU and barometer which pinout can be found on the Kicad project
+
+Thee motor wasn't necessary in the end but we decided to keep it as it allowed us to implement some new features if needed
 
 <div align="center">
   <img src="./IMG/Mainboard_V3_3d_back.png" alt="Back side" width="700">
 </div>
 
-The assembly process began with the arrival of the V1 motherboard. We soldered the components and we successfully performed a test by programming and blinking an onboard LED. This test confirmed that the STM32G431CBU6 microcontroller was properly powered and that our clock and debug circuits were functional.
 
 /!\ Warning ! The V1 Has a mistake in the buck's footprint we had to rewire it manually to ensure that uit could power the rest of the mainboard.The is also a mistake in the connection of 3.3V enabeled signal, the 3.3V power supply that can be triggerd is supposed to be linked to the LoRa connector, here it has mistakenly been connected to the GPS connector.
 This has been fixed in the following versions (V2) and the latest version V3 is a cleaner version with added electrical security.
+
+
+The V2 and V3 are fully functionnal however some re-wiring had to be done done to implement the new UART Camera pins instead of the simple camera enable pin. The changes concern the ADC od the battery measurement system and the HMI button interrupt. 
 
 A Blinking blue LED controlled by the microcontroller,
 The red LEDs mean that the LDO are working one is on by default, the other one was activated by the microcontroller here is the blinking V1 :
@@ -177,27 +182,54 @@ The HMI PCB was tested in integration with an OLED screen and a Nucleo developme
 
 ### ⚙️ Mechanical Design
 
-Our current strategy requires the body to have an open top where the main chute is covered by the drogue parachute. 
+#### Cansat Core
+Our Cansat is split in two independant parts:
+-  The upper section (nicknamed "Pepe"), it has a spring loaded triple fairing opening. The fairing is kept closed by the trigger. The trigger is removed thanks to the drogue chutes to calibrate the height at wich we release the trigger we change the number of chained drogue chutes (detailed below).
+- The lower section (nicknamed "Latz") holds the entire electronics skeleton (nicknamed "Gravitsappa"). The lower section is decoupled from the top with a M5 bearing. It has a spiral going all around to enduce a spin, this is the spin that allows our lidar to scan the ground in a spiral patern as the cansat falls. This is also why we have vertical fins in the upper section prevent the parachute from spinning
 
+
+The following schematic can be found : [here as a pdf](./Hardware/3D_Modeling/Cansat%20Schematic%20SCAE.pdf) or [here as the onshape project]([./Hardware/3D_Modeling/Cansat%20Schematic%20SCAE.pdf](https://cad.onshape.com/documents?resourceType=folder&nodeId=558406456f078be48d4c722b&column=modifiedAt&sortOrder=asc)) 
 <div align="center">
-  <img src="./IMG/Mechanical_top.png" alt="Main structure" width="300"/>
+  <img src="./IMG/3D_Schematic.png" alt="Main structure" />
 </div>
+<div align="center">
+  <img src="./IMG/Mechanical_complete_cansat.jpg" alt="Complte assembly" >
+</div>
+<table style="width:100%;">
+  <tr>
+    <td style="text-align:left;">
+      <img src="./IMG/Mechanical_left_side.jpg" alt="Electrical left" width="300">
+    </td>
+    <td style="text-align:center;">
+      <img src="./IMG/Mechanical_front_side.jpg" alt="Electrical front" width="300">
+    </td>
+    <td style="text-align:right;">
+      <img src="./IMG/Mechanical_right_side.jpg" alt="Electrical right" width="300">
+    </td>
+  </tr>
+</table>
 
-The drogue chute, is a kirigami inspired parachute *check the research paper in the ressources section* For now we only laser cutted the (a) design shown below because we found it's 3D model easly but we are working on creating a more optimised patern using a better cut patern
+
+#### Drogue chutes
+The drogue chute, is a kirigami inspired parachute *check the research paper in the ressources section*  we laser cutted these parachutes in a K-Way coat as we found that it had the best comprise between strenght and flexibility.
+
 
 <div align="center">
   <img src="./IMG/Mechanical_kirigami.jpg" alt="Kirigami example" width="500">
 </div>
 
-The parachute dimensions were calculated using the fundamental principle of dynamics at stabilized velocity (mg = ½ρC_dSV²). We have found a parachute surface area of approximately 0.116 m² and a diameter of approximately 0.385 m. We have decided to take a parachute with a diameter of 40 cm. This choice has been discussed and approved by an aerospace specialist.
-
-For the topography mission we need to make the satellite spin thus we added several helixes to the body of the can this will induce a rotation so the TOF sensor can map the entire ground in a spiral patern.
-
+Example of chained parachutes to increase the pulling force :
 <div align="center">
-  <img src="./IMG/Mechanical_body.png" alt="Main structure" width="300"/>
+  <img src="./IMG/Mechanical_multichute.gif" alt="Chained Kirigami" width="400">
 </div>
 
-We added winglets that will deploy as the can falls and will be locked by small magnets, for now we are still trying to find the optimal shape of those winglets.
+
+#### Main parachute
+The parachute dimensions were calculated using the fundamental principle of dynamics at stabilized velocity (mg = ½ρC_dSV²). By aiming at an airspeed between 2 and 5 m/s, we have found a parachute surface area of approximately 0.116 m² and a diameter of approximately 0.385 m. We have decided to take a parachute with a diameter of 45 cm. This choice has been discussed and approved by an aerospace specialist. We bought our round shapped parachute at Klima
+
+<div align="center">
+  <img src="./IMG/Mechanical_parachute_test.gif" alt="Main parachute test" width="400">
+</div>
 
 ### 🧠 RTOS Software Architecture
 
@@ -303,20 +335,22 @@ We are also working on changing the ground station's appearance so that our name
 
 ### 🍃 Wind Tunnel
 
-For reliably testing the parachute we constructed a wind tunnel that uses two 350W conter-rotative drone motors.
+For reliably testing the parachute we constructed a wind tunnel that uses two 350W conter-rotative brushless drone motors. This will ensure we have no undesired vorteces
 
 <div align="center">
-  <img src="./IMG/windtunnel_structure.jpg" alt="Wind Tunnel Structure" width="300"/>
+  <img src="./IMG/windtunnel_clean_structure.jpg" alt="Wind Tunnel Structure" width="300"/>
 </div>
 
-The device is powered by an 12V powersupply cased in a PLA box :
+We are using a servo motor tester as our speed control (it works with servos and brushless motors) and we check the airspeed with an anemometer.
+
+
+  The device is powered by an 12V, 30A powersupply cased in a PLA box. Even if we are not using the motor at their full power it is enough to produce a 60km/h wind wich is more than our cansat is supposed to reach before deployment.
 
 <div align="center">
   <img src="./IMG/windtunnel_alim.jpg" alt="Wind Tunnel Power Supply" width="200"/>
   <img src="./IMG/windtunnel_covered_alim.jpg" alt="Covered Power Supply" width="200"/>
 </div>
 
-It still needs a protection from the spinning motor but the windtunnel seem to have more than enough power to simulate a freefall :
 
 A one fan test :
 
@@ -324,12 +358,23 @@ A one fan test :
   <img src="./IMG/windtunnel_one_fan.gif" alt="One blade test" width="300">
 </div>
 
-Here is the whole prototype setup :
-
+The motor has been covered with an aerospiked inspired nozzle in an attempt to preserve some of the air going around it:
 <div align="center">
-  <img src="./IMG/windtunnel_setup.gif" alt="Whole prototype setup" width="300">
+  <img src="./IMG/windtunnel_aerospike.jpg" alt="aerospkie cover" width="300">
 </div>
 
+#### Precautions before use :
+To use  the wind tunnel you must check that the propellers are clear and that nothing could get sucked in, then you must plug the power supply and turn it on (also check if the emergency button is not triggered). The knob of the servo tester should be set to 0, once the ESC made 3 bips the wind tunnel is armed and ready to be operated.
+
+
+### ✈️ Drone
+
+We did some early mechanical field test with a heavy duty drone that a professor kindly allowed us to use, but we plan on build our own to make more tests.
+
+Here is the drop mechanism :
+<div align="center">
+  <img src="./IMG/drone_drop_remote.gif" alt="Drone remote test" width="300">
+</div>
 
 ## 📚 Resources and useful links
 
@@ -344,7 +389,7 @@ Here is the whole prototype setup :
 ### 🔗 Links 
 
 - [Previous ENSEA CanSat GitHub](https://github.com/mathieupommery/CANSAT_ARES_ENSEA)
-- [Onshape Docs](https://cad.onshape.com/documents?resourceType=folder&nodeId=558406456f078be48d4c722b&column=modifiedAt&sortOrder=asc)
+- [Onshape Folder](https://cad.onshape.com/documents?resourceType=folder&nodeId=558406456f078be48d4c722b&column=modifiedAt&sortOrder=asc)
 - [Kirigami inspierd parachute](https://www.nature.com/articles/s41586-025-09515-9#Fig1)
 - [FreeRTOS Guide](https://www.youtube.com/watch?v=OPrcpbKNSjU) 
 ---
@@ -352,9 +397,8 @@ Here is the whole prototype setup :
 ###  🚀 Future plans
 The next steps will be :
 
-- [ ] Create a V2 for the mainboard that includes outputs to a mini screen, fixes the buck's footprint, adds testpoints for the IMU and barometer.
-- [ ] Test the current Cansat Body in the wind tunnel
-- [ ] Write the code for the barometer and accelerometer
-- [ ] Test the ToF sensor
+- Improve the deployment reliability
+- Finish the SD card code
+- Prepare more field tests with a drone
 
 From the current state of progress we expect to end the project in time with all of the missions.

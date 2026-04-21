@@ -11822,7 +11822,7 @@
 				)
 			)
 		)
-		(property "Value" "Littel fuse 435 1.25A"
+		(property "Value" "Littel fuse 435 1.5A"
 			(at 164.592 37.592 0)
 			(effects
 				(font

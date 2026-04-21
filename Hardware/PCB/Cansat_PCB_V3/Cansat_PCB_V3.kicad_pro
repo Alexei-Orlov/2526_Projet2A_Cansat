@@ -544,7 +544,7 @@
       "gencad": "",
       "idf": "",
       "netlist": "",
-      "plot": "",
+      "plot": "/home/alexei/Bureau/Gerber_Cansat_V3/",
       "pos_files": "",
       "specctra_dsn": "",
       "step": "Cansat_PCB_V3.stl",
