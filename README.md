@@ -188,7 +188,7 @@ Our Cansat is split in two independant parts:
 - The lower section (nicknamed "Latz") holds the entire electronics skeleton (nicknamed "Gravitsappa"). The lower section is decoupled from the top with a M5 bearing. It has a spiral going all around to enduce a spin, this is the spin that allows our lidar to scan the ground in a spiral patern as the cansat falls. This is also why we have vertical fins in the upper section prevent the parachute from spinning
 
 
-The following schematic can be found : [here as a pdf](./Hardware/3D_Modeling/Cansat%20Schematic%20SCAE.pdf) or [here as the onshape project]([./Hardware/3D_Modeling/Cansat%20Schematic%20SCAE.pdf](https://cad.onshape.com/documents?resourceType=folder&nodeId=558406456f078be48d4c722b&column=modifiedAt&sortOrder=asc)) 
+The following schematic can be found : [here as a pdf](./Hardware/3D_Modeling/Cansat%20Schematic%20SCAE.pdf) or [here as the onshape project](https://cad.onshape.com/documents/c1d9fbb7572429731402c7f6/w/9922ef0afe1ea96367c92f22/e/19dd7d98b534d5ce389091af) 
 <div align="center">
   <img src="./IMG/3D_Schematic.png" alt="Main structure" />
 </div>
