@@ -1,0 +1,6 @@
+../Core/Src/gnss_reader.c:20:6:GNSS_Init	1
+../Core/Src/gnss_reader.c:25:6:GNSS_UART_RxCpltCallback	5
+../Core/Src/gnss_reader.c:53:13:GNSS_Get_Field	11
+../Core/Src/gnss_reader.c:77:6:GNSS_Process_Data	12
+../Core/Src/gnss_reader.c:133:6:HAL_UART_ErrorCallback	2
+../Core/Src/gnss_reader.c:145:6:GNSS_CalibrateSatellite	3

@@ -1,0 +1,6 @@
+../Core/Src/sx1276.c:21:6:SX1276_WriteRegister	1
+../Core/Src/sx1276.c:28:9:SX1276_ReadRegister	1
+../Core/Src/sx1276.c:42:6:SX1276_Init	1
+../Core/Src/sx1276.c:121:6:SX1276_SendPacket	4
+../Core/Src/sx1276.c:160:8:SX1276_GetTemperature	2
+../Core/Src/sx1276.c:216:6:SX1276_SendCalibrationPacket	1

@@ -1,0 +1,3 @@
+../Core/Src/bmp581.c:25:9:bmp581_init_precise_normal	40	static
+../Core/Src/bmp581.c:56:9:bmp581_read_precise_normal	72	static
+../Core/Src/bmp581.c:110:19:BMP581_CalibrateGroundPressure	112	static

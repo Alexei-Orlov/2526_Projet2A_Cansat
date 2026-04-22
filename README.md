@@ -1,6 +1,5 @@
 # 🛰️CanSat 2025-2026
-<img src="https://img.shields.io/badge/Type-Group_Project-green.svg" alt="Type"><img src="https://img.shields.io/badge/Year-2nd-orange.svg" alt="Year"><img src="https://img.shields.io/badge/Language-C,_Python-blue.svg" alt="Language">
-
+<img src="https://img.shields.io/badge/Type-Group_Project-green.svg" alt="Type"> <img src="https://img.shields.io/badge/Year-2nd-orange.svg" alt="Year"> <img src="https://img.shields.io/badge/Language-C,_Python-blue.svg" alt="Language"> ![License](https://img.shields.io/badge/License-Educational-yellow)
 > **ENSEA's CanSat team project for the 2025–2026 C'space edition**
 
 We are a team of of second year engeneering students at ENSEA and we will attend the 2025-2026 edition of the CanSat competition. CanSat competitions challenge teams to design, build, and launch a can-sized (33 cl) satellite that completes scientific or engineering missions during descent.
@@ -314,24 +313,27 @@ On the navigation front, the software driver for the SAM-M10Q GNSS module was de
 
 **Current Status:** Finalizing the integration of the IMU values into the main telemetry stream.
 
-### 🧰 Ground Station
-
-It is going to be our mission control, from which we will process the data sent by the CanSat. It is made of a screen and a Raspberry Pi 5.
+### 🧰 Ground Station (Mission Control Center)
 
 <div align="center">
   <img src="./IMG/groundstation.png" alt="Ground Station Setup">
 </div>
 
-We devised a graphical user interface using an STM32, to be able to view the received data in real-time.
+The Ground Station serves as the mission's central command and telemetry hub, engineered for high-performance data acquisition and real-time situational awareness. It is a portable, ruggedized unit built upon a **Raspberry Pi 5** single-board computer.
 
-<div align="center">
-  <img src="./IMG/groundstation_gui_config.png" alt="GUI Configuration"><br><br>
-  <img src="./IMG/groundstation_gui.png" alt="GUI Interface">
-</div>
+#### **Communication & Data Link**
+The station utilizes a **LoRa SX1276** transceiver operating on the **869.53 MHz** frequency. The link is governed by a custom **v2.4 telemetry protocol**, processing 17-field packets to monitor critical flight metrics including 9-axis IMU data, GNSS coordinates, and atmospheric conditions. To ensure data integrity, the system implements hardware-level SPI communication and software-side CSV logging (`flight.csv`) for redundant storage.
 
-It displays the CanSat's orientation, its location and various other parameters such as its altitude. We still have not tested this GUI and will have to do it once the transmissions are established. 
+#### **Real-Time Visualization Suite**
+The Ground Station software is an asynchronous, multi-threaded **PyQt5** application designed for low-latency monitoring:
+* **3D Kinematic Rendering**: Uses **PyOpenGL** to visualize the satellite's orientation in real-time by mapping incoming Euler angles to a custom STL model.
+* **Dynamic Geospatial Tracking**: Features an optimized **OpenStreetMap (OSM)** tile map engine (Zoom 18) that handles position updates in less than 1ms using pre-fetched memory caching.
+* **Telemetry Analytics**: Provides real-time plotting via **PyQtGraph**, calculating derivative metrics such as vertical speed and applying a 12-sample moving average for battery voltage smoothing.
+* **Mission State Monitoring**: Displays real-time flight phase indicators (Calibration, Ascension, Drop, Recovery) based on sensor-fusion bitmasks.
 
-We are also working on changing the ground station's appearance so that our names will be written on it.
+Detailed specifications regarding the software architecture, SX127x register configurations, and the post-flight signal processing pipeline (FFT, Kalman filtering, and LIDAR point cloud fusion) can be found in the **[README_GUI.md](./README_GUI.md)**.
+
+
 
 ### 🍃 Wind Tunnel
 

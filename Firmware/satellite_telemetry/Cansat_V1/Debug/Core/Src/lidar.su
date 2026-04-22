@@ -1,0 +1,5 @@
+../Core/Src/lidar.c:23:6:Lidar_Init	16	static
+../Core/Src/lidar.c:31:6:Lidar_RequestMenu	16	static
+../Core/Src/lidar.c:37:6:Lidar_RequestStream	16	static
+../Core/Src/lidar.c:44:6:Lidar_RxCallback	24	static,ignoring_inline_asm
+../Core/Src/lidar.c:74:6:Lidar_DirectDebug	336	static
