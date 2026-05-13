@@ -1,0 +1,163 @@
+# ============================================================================
+# Satellite Telemetry Monitor - LoRa Edition
+# Python Package Requirements
+# ============================================================================
+# 
+# Installation: pip install -r requirements.txt
+# Virtual environment recommended: python3 -m venv venv && source venv/bin/activate
+#
+# Note: main.py automatically prioritizes venv packages over system packages
+# to avoid PyQtGraph version conflicts (0.14.0 vs 0.13.1)
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# GUI Framework
+# ----------------------------------------------------------------------------
+
+# PyQt5 - Core GUI framework for windows, widgets, and event loop
+# Provides: QMainWindow, QWidget, QPushButton, QLabel, layouts, etc.
+PyQt5>=5.15.0
+
+# ----------------------------------------------------------------------------
+# Data Visualization & Plotting
+# ----------------------------------------------------------------------------
+
+# PyQtGraph - High-performance plotting and 3D graphics
+# CRITICAL: Must be >= 0.14.0 to avoid drawLines() TypeError
+# System package (0.13.1) is incompatible with this PyQt5 version
+# Provides: PlotWidget, ImageItem, ScatterPlotItem, GLMeshItem, etc.
+pyqtgraph>=0.14.0
+
+# NumPy - Numerical computing with arrays
+# Required by: pyqtgraph, numpy-stl, custom data processing
+# Used for: Pre-allocated circular buffers, rotation matrices, tile data
+numpy>=1.25.0
+
+# ----------------------------------------------------------------------------
+# 3D Graphics
+# ----------------------------------------------------------------------------
+
+# PyOpenGL - OpenGL bindings for Python
+# Required by: pyqtgraph.opengl (3D satellite model rendering)
+# Provides: GL rendering context, shaders, mesh display
+PyOpenGL>=3.1.5
+
+# numpy-stl - STL file loader
+# Used for: Loading Corps.stl satellite 3D model
+# Provides: mesh.Mesh.from_file() for STL parsing
+numpy-stl>=2.16.0
+
+# ----------------------------------------------------------------------------
+# Hardware Communication (Raspberry Pi)
+# ----------------------------------------------------------------------------
+
+# spidev - SPI interface for Python
+# Required for: LoRa module (SX127x) communication via SPI bus
+# Platform: Linux only (Raspberry Pi GPIO SPI)
+spidev>=3.5
+
+# RPi.GPIO - Raspberry Pi GPIO control
+# Required for: LoRa module reset, DIO pins, board configuration
+# Platform: Raspberry Pi only
+RPi.GPIO>=0.7.1
+
+# ----------------------------------------------------------------------------
+# Optional Dependencies (Not required but recommended)
+# ----------------------------------------------------------------------------
+
+# If you want to use QtWebEngine for Leaflet map (NOT RECOMMENDED on Pi 5):
+# PyQtWebEngine>=5.15.0
+# NOTE: Chromium crashes on Raspberry Pi 5 are common. Use PyQtGraph map instead.
+
+# If you need additional numeric operations:
+# scipy>=1.9.0
+
+# If you want to log data to files:
+# pandas>=1.5.0
+
+# ----------------------------------------------------------------------------
+# Development Dependencies (Optional)
+# ----------------------------------------------------------------------------
+
+# For development/debugging only - uncomment if needed:
+# ipython>=8.0.0        # Better REPL for testing
+# pytest>=7.0.0         # Unit testing framework
+# black>=22.0.0         # Code formatter
+# pylint>=2.15.0        # Linting
+
+# ----------------------------------------------------------------------------
+# System Package Equivalents (Raspberry Pi OS)
+# ----------------------------------------------------------------------------
+#
+# Instead of pip, you can install some packages via apt-get:
+#
+# sudo apt-get install python3-pyqt5          # PyQt5
+# sudo apt-get install python3-pyqt5.qtwebengine  # PyQtWebEngine (crashes!)
+# sudo apt-get install python3-spidev        # spidev
+# sudo apt-get install python3-rpi.gpio     # RPi.GPIO
+#
+# However, pip installation in venv is recommended to get latest versions
+# and avoid system package conflicts.
+#
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# External Library Dependencies (Not in PyPI)
+# ----------------------------------------------------------------------------
+#
+# SX127x LoRa Library:
+#   Source: https://github.com/mayeranalytics/pySX127x
+#   Installation: Clone repo and copy SX127x/ folder to project directory
+#   Required files:
+#     - SX127x/__init__.py
+#     - SX127x/LoRa.py
+#     - SX127x/constants.py
+#     - SX127x/board_config.py
+#     - SX127x/board_config_ada.py (optional)
+#     - SX127x/LoRaArgumentParser.py
+#
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Version Compatibility Notes
+# ----------------------------------------------------------------------------
+#
+# Tested on:
+#   - Raspberry Pi 5 Model B
+#   - Raspberry Pi OS Bookworm (Debian 12)
+#   - Python 3.11.2
+#   - PyQt5 5.15.9
+#   - PyQtGraph 0.14.0
+#
+# Known Issues:
+#   - PyQtGraph 0.13.1 (system default) → TypeError with PyQt5 5.15.9
+#     Fix: Use 0.14.0+ (auto-handled by main.py path insertion)
+#   
+#   - PyQtWebEngine → Chromium crashes on Raspberry Pi 5
+#     Fix: Use PyQtGraph map (map_view.py) instead of Leaflet
+#
+#   - NumPy 2.x → Breaking changes with older code
+#     Fix: Pin to 1.x series (numpy>=1.25.0,<2.0)
+#
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Package Size & Download Time Estimates
+# ----------------------------------------------------------------------------
+#
+# Package sizes (approximate):
+#   PyQt5:        50 MB (wheels available for ARM)
+#   pyqtgraph:     3 MB
+#   numpy:        15 MB (optimized ARM builds on piwheels)
+#   PyOpenGL:      2 MB
+#   numpy-stl:     1 MB
+#   spidev:      <1 MB
+#   RPi.GPIO:    <1 MB
+#
+# Total download: ~70 MB
+# Installation time on Pi 5: 2-5 minutes
+#
+# Note: Use piwheels (https://www.piwheels.org/) for pre-compiled ARM wheels
+# pip automatically uses piwheels on Raspberry Pi OS
+#
+# ============================================================================
