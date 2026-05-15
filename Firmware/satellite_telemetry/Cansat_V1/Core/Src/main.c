@@ -122,6 +122,7 @@ Barometer_Data_t latest_baro;
 IMU_Data_t latest_imu;
 LIDAR_Data_t latest_lidar = { .distance = 99.0f };
 BMP_t bmp_sensor;
+Battery_Data_t latest_battery;
 
 // Calibration Variables
 double reference_pressure_Pa = 101325.0;
@@ -1160,7 +1161,7 @@ void startTaskFSM(void *argument)
 				test_pkt.gnss.latitude = latest_gnss.latitude;
 				test_pkt.gnss.longitude = latest_gnss.longitude;
 				test_pkt.gnss.satellites = latest_gnss.satellites;
-
+				test_pkt.bat.voltage = latest_battery.voltage;
 				// Drop it in the mailbox! TaskLoRa will wake up instantly.
 				xQueueSend(qLoRa, &test_pkt, 0);
 
@@ -1168,13 +1169,16 @@ void startTaskFSM(void *argument)
 				xQueueSend(qSDCard, &test_pkt, 0);
 			}
 
-			// --- GNSS UPDATE TRIGGER ---
+			// --- GNSS and Battery UPDATE TRIGGER ---
 			// Tell the Sensor Task to fetch the latest background GPS data once per second
 			static uint32_t last_gnss_fetch = 0;
 			if (HAL_GetTick() - last_gnss_fetch > 1000) {
 				last_gnss_fetch = HAL_GetTick();
 				SensorEvent_t gnss_ticket = EVENT_GNSS_READY;
 				xQueueSend(qSensorEvents, &gnss_ticket, 0);
+
+				SensorEvent_t bat_ticket = EVENT_BATTERY_READY;
+				    xQueueSend(qSensorEvents, &bat_ticket, 0);
 
 			}
 			// -------------------------
@@ -1387,6 +1391,18 @@ void startTaskSensors(void *argument)
 
 					break;
 				}
+
+				case EVENT_BATTERY_READY:
+				{
+		            // --- READ LIVE BATTERY VOLTAGE (ADC1) ---
+		            HAL_ADC_Start(&hadc1);
+		            if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
+		                uint32_t raw_adc = HAL_ADC_GetValue(&hadc1);
+		                latest_battery.voltage = ((float)raw_adc / 4095.0f) * 3.3f * 3.0f * 1.025f;
+		            }
+		            HAL_ADC_Stop(&hadc1);
+		            // ----------------------------------------
+				}
             }
         }
     }
@@ -1430,7 +1446,7 @@ void startTaskSDCard(void *argument)
     HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
 
     // Creating the headers
-    Update_File("DATA.CSV", "AccelX,AccelY,AccelZ,GyroX,GyroY,GyroZ,Roll,Pitch,Head,Temp,Height,Lat,Lon,Sats,Flags,Time\r\n");
+    Update_File("DATA.CSV", "tx_timestamp_ms,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,roll,pitch,yaw,temperature,altitude,latitude,longitude,satellites,flags_raw,battery_voltage\r\n");
     HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
     Update_File("LIDAR.CSV", "Time,Distance,Roll,Pitch,Yaw,Height\r\n");
     HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
@@ -1456,13 +1472,13 @@ void startTaskSDCard(void *argument)
             if (currentState >= STATE_DROP)      flags |= 0x04;
             if (currentState >= STATE_RECOVERY)  flags |= 0x08;
 
-            sprintf(csv_buffer, "%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.1f,%.1f,%.1f,%.2f,%.2f,%.6f,%.6f,%d,%d,%s\r\n",
-                    pkt.imu.accelX, pkt.imu.accelY, pkt.imu.accelZ,
+            sprintf(csv_buffer, "%s,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.1f,%.1f,%.1f,%.2f,%.2f,%.6f,%.6f,%d,%d,%.2f\r\n",
+            		time_val,pkt.imu.accelX, pkt.imu.accelY, pkt.imu.accelZ,
                     pkt.imu.gyroX, pkt.imu.gyroY, pkt.imu.gyroZ,
                     pkt.imu.roll, pkt.imu.pitch, pkt.imu.head,
                     pkt.baro.temperature, pkt.baro.height,
                     pkt.gnss.latitude, pkt.gnss.longitude,
-                    pkt.gnss.satellites, flags, time_val);
+                    pkt.gnss.satellites, flags, pkt.bat.voltage);
 
 
             sprintf(lidar_buffer, "%s,%.2f,%.1f,%.1f,%.1f,%.2f\r\n",
@@ -1549,15 +1565,7 @@ void startTaskLoRa(void *argument)
         // Wait infinitely for a fully-populated packet to arrive from the Sensor Task
         if (xQueueReceive(qLoRa, &pkt, portMAX_DELAY) == pdTRUE) {
 
-            // --- READ LIVE BATTERY VOLTAGE (ADC1) ---
-            float vbat = 0.0f;
-            HAL_ADC_Start(&hadc1);
-            if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
-                uint32_t raw_adc = HAL_ADC_GetValue(&hadc1);
-                vbat = ((float)raw_adc / 4095.0f) * 3.3f * 3.0f * 1.025f;
-            }
-            HAL_ADC_Stop(&hadc1);
-            // ----------------------------------------
+
 
             // Ensure timestamp isn't empty (send "0" if it is)
             char* time_val = (strlen(pkt.baro.timestamp) > 0) ? pkt.baro.timestamp : "0";
@@ -1577,7 +1585,7 @@ void startTaskLoRa(void *argument)
 					pkt.imu.roll, pkt.imu.pitch, pkt.imu.head,
 					pkt.baro.temperature, pkt.baro.height,
 					pkt.gnss.latitude, pkt.gnss.longitude,
-					pkt.gnss.satellites, flags, time_val, vbat); // <--- PERFECTLY ALIGNED!
+					pkt.gnss.satellites, flags, time_val, pkt.bat.voltage); // <--- PERFECTLY ALIGNED!
 
             // Send the packet over the air
             SX1276_SendPacket((uint8_t*)payload_str, strlen(payload_str));

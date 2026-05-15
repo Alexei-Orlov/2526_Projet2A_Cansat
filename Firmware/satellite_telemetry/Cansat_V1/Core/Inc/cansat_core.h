@@ -46,12 +46,17 @@ typedef struct {
     float distance;
 } LIDAR_Data_t;
 
+typedef struct {
+    float voltage;
+} Battery_Data_t;
+
 // Composite struct for SD and LoRa Queues
 typedef struct {
     GNSS_Data_t gnss;
     Barometer_Data_t baro;
     IMU_Data_t imu;
     LIDAR_Data_t lidar;
+    Battery_Data_t bat;
 } TelemetryPacket_t;
 
 // --- SENSOR EVENT ENUM ---
@@ -59,7 +64,8 @@ typedef enum {
     EVENT_GNSS_READY,
     EVENT_BARO_READY,
     EVENT_IMU_READY,
-    EVENT_LIDAR_READY
+    EVENT_LIDAR_READY,
+    EVENT_BATTERY_READY
 } SensorEvent_t;
 
 // --- FSM STATES ---
