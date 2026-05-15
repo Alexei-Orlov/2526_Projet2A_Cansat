@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "app_fatfs.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -26,6 +27,9 @@
 #include <string.h>
 #include <math.h>
 #include "math.h"
+
+#include "File_Handling_RTOS.h"
+#include "File_Handling_RTOS.h"
 
 // Devices
 #include "bmp581.h"
@@ -61,8 +65,10 @@ I2C_HandleTypeDef hi2c3;
 DMA_HandleTypeDef hdma_i2c1_tx;
 DMA_HandleTypeDef hdma_i2c1_rx;
 
+SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi2;
 
+TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart1;
@@ -86,8 +92,8 @@ const osThreadAttr_t TaskSensors_attributes = {
 osThreadId_t TaskSDCardHandle;
 const osThreadAttr_t TaskSDCard_attributes = {
   .name = "TaskSDCard",
-  .priority = (osPriority_t) osPriorityLow,
-  .stack_size = 256 * 4
+  .priority = (osPriority_t) osPriorityHigh,
+  .stack_size = 1024 * 4
 };
 /* Definitions for TaskLoRa */
 osThreadId_t TaskLoRaHandle;
@@ -99,6 +105,9 @@ const osThreadAttr_t TaskLoRa_attributes = {
 /* USER CODE BEGIN PV */
 uint8_t TX_to_Baro [] = "A" ;
 uint8_t RX_from_Baro [] = "A" ;
+
+extern volatile uint8_t FatFsCnt;
+extern void SDTimer_Handler(void);
 
 // --- GLOBAL VARIABLES (Accessible by all tasks) ---
 uint8_t configFlag = 1; // Triggered by external switch/button
@@ -136,6 +145,8 @@ static void MX_I2C3_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_USART3_UART_Init(void);
+static void MX_SPI1_Init(void);
+static void MX_TIM1_Init(void);
 void startTaskFSM(void *argument);
 void startTaskSensors(void *argument);
 void startTaskSDCard(void *argument);
@@ -151,6 +162,7 @@ int _write(int file, char *ptr, int len) {
     HAL_UART_Transmit(&huart1, (uint8_t*)ptr, len, HAL_MAX_DELAY);
     return len;
 }
+uint8_t debug = 1;
 /* USER CODE END 0 */
 
 /**
@@ -190,6 +202,11 @@ int main(void)
   MX_SPI2_Init();
   MX_TIM3_Init();
   MX_USART3_UART_Init();
+  MX_SPI1_Init();
+  MX_TIM1_Init();
+  if (MX_FATFS_Init() != APP_OK) {
+    Error_Handler();
+  }
   /* USER CODE BEGIN 2 */
 
   // --- 1. POWER ON LORA AND SENSORS ---
@@ -334,10 +351,18 @@ int main(void)
 
 
 
-	// Initialize background GNSS listening on USART2
+
+	// Initialize background GNSS listening on USART1
 	char gnss_init_msg[] = "[*] Arming GNSS Interrupt...\r\n";
 	HAL_UART_Transmit(&huart1, (uint8_t*)gnss_init_msg, strlen(gnss_init_msg), 100);
-	GNSS_Init();
+
+	//================================================================================For debugging purposes i put GNSS initialisation in comment
+	if (debug==0){
+		GNSS_Init();
+	}
+
+	char startup2_msg[] = "\r\n[i] System Booting... Testing Hardware\r\n";
+	HAL_UART_Transmit(&huart1, (uint8_t*)startup2_msg, strlen(startup2_msg), HAL_MAX_DELAY);
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -358,7 +383,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_QUEUES */
     // MUST CREATE THE QUEUES BEFORE STARTING THE TASKS
     qSensorEvents = xQueueCreate(10, sizeof(SensorEvent_t));
-    qSDCard       = xQueueCreate(20, sizeof(TelemetryPacket_t));
+    qSDCard       = xQueueCreate(5, sizeof(TelemetryPacket_t));
     qLoRa         = xQueueCreate(5,  sizeof(TelemetryPacket_t));
   /* USER CODE END RTOS_QUEUES */
 
@@ -417,12 +442,11 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV4;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV3;
   RCC_OscInitStruct.PLL.PLLN = 85;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
@@ -612,6 +636,46 @@ static void MX_I2C3_Init(void)
 }
 
 /**
+  * @brief SPI1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI1_Init(void)
+{
+
+  /* USER CODE BEGIN SPI1_Init 0 */
+
+  /* USER CODE END SPI1_Init 0 */
+
+  /* USER CODE BEGIN SPI1_Init 1 */
+
+  /* USER CODE END SPI1_Init 1 */
+  /* SPI1 parameter configuration*/
+  hspi1.Instance = SPI1;
+  hspi1.Init.Mode = SPI_MODE_MASTER;
+  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi1.Init.NSS = SPI_NSS_SOFT;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi1.Init.CRCPolynomial = 7;
+  hspi1.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
+  hspi1.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
+  if (HAL_SPI_Init(&hspi1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI1_Init 2 */
+
+  /* USER CODE END SPI1_Init 2 */
+
+}
+
+/**
   * @brief SPI2 Initialization Function
   * @param None
   * @retval None
@@ -634,13 +698,13 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi2.Init.CRCPolynomial = 7;
   hspi2.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
-  hspi2.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
+  hspi2.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
   if (HAL_SPI_Init(&hspi2) != HAL_OK)
   {
     Error_Handler();
@@ -648,6 +712,53 @@ static void MX_SPI2_Init(void)
   /* USER CODE BEGIN SPI2_Init 2 */
 
   /* USER CODE END SPI2_Init 2 */
+
+}
+
+/**
+  * @brief TIM1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM1_Init(void)
+{
+
+  /* USER CODE BEGIN TIM1_Init 0 */
+
+  /* USER CODE END TIM1_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM1_Init 1 */
+
+  /* USER CODE END TIM1_Init 1 */
+  htim1.Instance = TIM1;
+  htim1.Init.Prescaler = 0;
+  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim1.Init.Period = 65535;
+  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1.Init.RepetitionCounter = 0;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM1_Init 2 */
+
+  /* USER CODE END TIM1_Init 2 */
 
 }
 
@@ -726,7 +837,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 9600;
+  huart1.Init.BaudRate = 115200;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -841,8 +952,11 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(SD_GPIO_CS_GPIO_Port, SD_GPIO_CS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LED_GPIO_OUT_Pin|LORA_NSS_Pin|LORA_RST_Pin|VPOWER_EN_GPIO_OUT_Pin, GPIO_PIN_RESET);
@@ -853,12 +967,25 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BARO_EXTI_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : SD_GPIO_CS_Pin */
+  GPIO_InitStruct.Pin = SD_GPIO_CS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(SD_GPIO_CS_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pins : LED_GPIO_OUT_Pin LORA_NSS_Pin LORA_RST_Pin VPOWER_EN_GPIO_OUT_Pin */
   GPIO_InitStruct.Pin = LED_GPIO_OUT_Pin|LORA_NSS_Pin|LORA_RST_Pin|VPOWER_EN_GPIO_OUT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : SD_GPIO_DETECT_Pin */
+  GPIO_InitStruct.Pin = SD_GPIO_DETECT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(SD_GPIO_DETECT_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
@@ -876,6 +1003,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
         GNSS_UART_RxCpltCallback(huart);
     }
 }
+
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_startTaskFSM */
@@ -976,7 +1105,12 @@ void startTaskFSM(void *argument)
 			HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), 100);
 
 			// --- GNSS SATELLITE LOCK ---
-			GNSS_CalibrateSatellite();
+
+			//========================================================================================================= Turned Off for debugging :
+			if (debug == 0){
+				GNSS_CalibrateSatellite();
+			}
+
 
 
 
@@ -1029,6 +1163,9 @@ void startTaskFSM(void *argument)
 
 				// Drop it in the mailbox! TaskLoRa will wake up instantly.
 				xQueueSend(qLoRa, &test_pkt, 0);
+
+				//We save it on the SD CARD as well
+				xQueueSend(qSDCard, &test_pkt, 0);
 			}
 
 			// --- GNSS UPDATE TRIGGER ---
@@ -1038,6 +1175,7 @@ void startTaskFSM(void *argument)
 				last_gnss_fetch = HAL_GetTick();
 				SensorEvent_t gnss_ticket = EVENT_GNSS_READY;
 				xQueueSend(qSensorEvents, &gnss_ticket, 0);
+
 			}
 			// -------------------------
 
@@ -1198,13 +1336,14 @@ void startTaskSensors(void *argument)
                                 print_counter = 0;
                             }
                         }
-
+/*
                         // Data Logging
                         if (currentState == STATE_DROP) {
                             pkt.lidar = latest_lidar;
                             pkt.imu = latest_imu;
                             xQueueSend(qSDCard, &pkt, 0);
                         }
+          */
                     }
                     break;
                 }
@@ -1232,17 +1371,18 @@ void startTaskSensors(void *argument)
 				case EVENT_GNSS_READY:
 				{
 					// Copy background parsed data into the global RTOS struct
-					if (parsed_gnss.fixed) {
+					//========================================================================================Removed for debugging :
+					//if (parsed_gnss.fixed) {
 						latest_gnss.latitude = parsed_gnss.latitude;
 						latest_gnss.longitude = parsed_gnss.longitude;
 						latest_gnss.satellites = parsed_gnss.satellites;
 
 //						sprintf(sensor_msg, "[GNSS | %lu] Lat: %.6f | Lon: %.6f | Sats: %d\r\n",
 //								current_ms, latest_gnss.latitude, latest_gnss.longitude, parsed_gnss.satellites);
-					} else {
+					//} else {
 //						sprintf(sensor_msg, "[GNSS | %lu] Searching for satellites... (Sats: %d)\r\n",
 //								current_ms, parsed_gnss.satellites);
-					}
+					//}
 //					HAL_UART_Transmit(&huart1, (uint8_t*)sensor_msg, strlen(sensor_msg), 100);
 
 					break;
@@ -1259,15 +1399,95 @@ void startTaskSensors(void *argument)
 * @param argument: Not used
 * @retval None
 */
+uint8_t is_sd_inserted(void) {
+    return (HAL_GPIO_ReadPin(SD_GPIO_DETECT_GPIO_Port, SD_GPIO_DETECT_Pin) == GPIO_PIN_RESET);
+}
 /* USER CODE END Header_startTaskSDCard */
 void startTaskSDCard(void *argument)
 {
   /* USER CODE BEGIN startTaskSDCard */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+	if (is_sd_inserted()) {
+		char SD_init_msg[] = "[*]SD Card Inserted\r\n";
+	    HAL_UART_Transmit(&huart1, (uint8_t*)SD_init_msg, strlen(SD_init_msg), 100);
+	}
+	else{
+		char SD_init_out_msg[] = "[*]SD Card NOT Inserted\r\n";
+	    HAL_UART_Transmit(&huart1, (uint8_t*)SD_init_out_msg, strlen(SD_init_out_msg), 100);
+
+	}
+	char SD_carriage[] = "\r";
+
+    // Mount
+    Mount_SD("/");
+    HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
+    //Erasing the Card for test might have to remove later :
+    Format_SD();
+    HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
+    // Creating a telemetry file and a Cloud of points file
+    Create_File("DATA.CSV");
+    HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
+    Create_File("LIDAR.CSV");
+    HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
+
+    // Creating the headers
+    Update_File("DATA.CSV", "AccelX,AccelY,AccelZ,GyroX,GyroY,GyroZ,Roll,Pitch,Head,Temp,Height,Lat,Lon,Sats,Flags,Time\r\n");
+    HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
+    Update_File("LIDAR.CSV", "Time,Distance,Roll,Pitch,Yaw,Height\r\n");
+    HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
+
+
+    char SD_end_msg[] = "[*] SD ready for logging\r\n";
+    HAL_UART_Transmit(&huart1, (uint8_t*)SD_end_msg, strlen(SD_end_msg), 100);
+
+    TelemetryPacket_t pkt;
+    char csv_buffer[256];
+    char lidar_buffer[128];
+    /* Infinite loop */
+   for(;;)
+    {
+       // Waiting for a telemetry packet and checking if the SD is still inserted
+        if (xQueueReceive(qSDCard, &pkt, portMAX_DELAY) == pdTRUE && is_sd_inserted()) {
+
+            char* time_val = (strlen(pkt.baro.timestamp) > 0) ? pkt.baro.timestamp : "0";
+
+            uint8_t flags = 0;
+            if (currentState >= STATE_READY)     flags |= 0x01;
+            if (currentState >= STATE_ASCENSION) flags |= 0x02;
+            if (currentState >= STATE_DROP)      flags |= 0x04;
+            if (currentState >= STATE_RECOVERY)  flags |= 0x08;
+
+            sprintf(csv_buffer, "%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.1f,%.1f,%.1f,%.2f,%.2f,%.6f,%.6f,%d,%d,%s\r\n",
+                    pkt.imu.accelX, pkt.imu.accelY, pkt.imu.accelZ,
+                    pkt.imu.gyroX, pkt.imu.gyroY, pkt.imu.gyroZ,
+                    pkt.imu.roll, pkt.imu.pitch, pkt.imu.head,
+                    pkt.baro.temperature, pkt.baro.height,
+                    pkt.gnss.latitude, pkt.gnss.longitude,
+                    pkt.gnss.satellites, flags, time_val);
+
+
+            sprintf(lidar_buffer, "%s,%.2f,%.1f,%.1f,%.1f,%.2f\r\n",
+                                time_val,
+                                pkt.lidar.distance,
+                                pkt.imu.roll,
+                                pkt.imu.pitch,
+                                pkt.imu.head,
+                                pkt.baro.height);
+
+
+            // Safely saving on the SD Card :
+
+            Update_File("DATA.CSV", csv_buffer);
+            HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
+            Update_File("LIDAR.CSV", lidar_buffer);
+            HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
+
+
+            // Break
+            osDelay(5);
+            //vTaskDelay(1000);
+        }
+    }
+
   /* USER CODE END startTaskSDCard */
 }
 
@@ -1293,7 +1513,7 @@ void startTaskLoRa(void *argument)
     // 1. Initialize the LoRa Module
     SX1276_Init();
 
-    // Explicitly lock in the Python Sync Word just in case
+    // Explicitly lock in the P.ython Sync Word just in case
     SX1276_WriteRegister(REG_SYNC_WORD, 0x12);
 
     // --- WAIT FOR FSM CALIBRATION AND BROADCAST GNSS STATUS ---
@@ -1380,7 +1600,12 @@ void startTaskLoRa(void *argument)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
-
+	FatFsCnt++;
+	if(FatFsCnt >= 10)
+	{
+	  FatFsCnt = 0;
+	  SDTimer_Handler();
+	}
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6)
   {
