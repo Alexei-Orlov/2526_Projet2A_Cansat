@@ -7,6 +7,7 @@
 #include "FreeRTOS.h"
 #include "cansat_core.h"
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 // THE DMA buffer (this is the buffer that will do the ping pong
@@ -124,14 +125,15 @@ void Process_Lidar_Buffer_Chunk(uint8_t* chunk_start, uint16_t chunk_length, uin
 
                     // --- ENVOI DIRECT À LA CARTE SD ---
                     if (currentState >= STATE_READY) {
-                        FastPacket_t fast_pkt;
-                        fast_pkt.lidar = latest_lidar;
-                        fast_pkt.imu = latest_imu;
-                        fast_pkt.baro = latest_baro;
-                        fast_pkt.gnss = latest_gnss;
-
-                        // Timeout de 0 crucial pour ne pas ralentir le parseur
-                        xQueueSend(qSDCard_LIDAR, &fast_pkt, 0);
+                        LidarPacket_t lidar_pkt;
+                        lidar_pkt.lidar     = latest_lidar;
+                        lidar_pkt.roll      = latest_imu.roll;
+                        lidar_pkt.pitch     = latest_imu.pitch;
+                        lidar_pkt.yaw       = latest_imu.yaw;
+                        lidar_pkt.height    = latest_baro.height;
+                        lidar_pkt.latitude  = latest_gnss.latitude;
+                        lidar_pkt.longitude = latest_gnss.longitude;
+                        xQueueSend(qSDCard_LIDAR, &lidar_pkt, 0);
                     }
                 }
             }

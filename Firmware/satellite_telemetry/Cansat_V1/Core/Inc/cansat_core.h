@@ -66,6 +66,17 @@ typedef struct {
     LIDAR_Data_t lidar;
 } FastPacket_t;
 
+// Lightweight packet for LIDAR queue (50Hz) - saves RAM vs FastPacket_t
+typedef struct {
+    LIDAR_Data_t lidar;      // 20 bytes: timestamp + distance
+    float roll;              //  4 bytes
+    float pitch;             //  4 bytes
+    float yaw;               //  4 bytes
+    float height;            //  4 bytes: from baro
+    float latitude;          //  4 bytes: from gnss
+    float longitude;         //  4 bytes: from gnss
+} LidarPacket_t;             // Total: 44 bytes (vs 132 bytes)
+
 // --- SENSOR EVENT ENUM ---
 typedef enum {
     EVENT_GNSS_READY,

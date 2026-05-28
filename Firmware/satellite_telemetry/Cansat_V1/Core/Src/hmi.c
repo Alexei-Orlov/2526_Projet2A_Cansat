@@ -14,6 +14,8 @@
 #include "ssd1306.h"
 #include "ssd1306_fonts.h"
 #include "cansat_core.h"
+#include "cmsis_os.h"
+#include "FreeRTOS.h"
 HMI_Display_Data_t HMI_display_data = {0};
 
 static const BatteryLUT_t battery_lut[] = {

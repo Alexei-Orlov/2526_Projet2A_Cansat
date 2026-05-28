@@ -117,6 +117,8 @@ uint8_t RX_from_Baro [] = "A" ;
 
 extern volatile uint8_t FatFsCnt;
 extern void SDTimer_Handler(void);
+FIL fil_lidar;
+uint8_t lidar_file_open = 0;
 
 // --- GLOBAL VARIABLES (Accessible by all tasks) ---
 volatile uint8_t configFlag = 1; // Triggered by external switch/button
@@ -420,7 +422,7 @@ int main(void)
     qSensorEvents = xQueueCreate(10, sizeof(SensorEvent_t));
     qSDCard       = xQueueCreate(5, sizeof(TelemetryPacket_t));
     qLoRa         = xQueueCreate(5,  sizeof(TelemetryPacket_t));
-    qSDCard_LIDAR = xQueueCreate(10, sizeof(FastPacket_t));  // Larger buffer for 50Hz
+    qSDCard_LIDAR = xQueueCreate(100, sizeof(LidarPacket_t));  // Larger buffer for 50Hz
     qHMI_Events = xQueueCreate(10, sizeof(uint8_t));
   /* USER CODE END RTOS_QUEUES */
 
@@ -1311,31 +1313,42 @@ void startTaskFSM(void *argument)
                   break;
 
               case STATE_CONFIG:
-            	  char config_msg[128];
-            	                    sprintf(config_msg, "\r\n[*] Calibrating Barometer (Do not move)...\r\n");
-            	                    HAL_UART_Transmit(&huart1, (uint8_t*)config_msg, strlen(config_msg), 100);
+              {
+                  static uint8_t is_calibrated = 0;
 
-            	                    uint32_t start_time = HAL_GetTick();
+                  if (!is_calibrated) {
+                      char config_msg[128];
 
-            	                    if (BMP581_CalibrateGroundPressure(&reference_pressure_Pa, &reference_temp_C, &bmp_sensor) == HAL_OK) {
-            	                        calibration_duration_ms = HAL_GetTick() - start_time;
-            	                        sprintf(config_msg, "[+] Calibration completed: %.2f Pa | %.2f C\r\n", reference_pressure_Pa, reference_temp_C);
-            	                    } else {
-            	                        sprintf(config_msg, "[-] Calibration Failed! Using defaults.\r\n");
-            	                        reference_pressure_Pa = 101325.0;
-            	                        reference_temp_C = 25.0;
-            	                        calibration_duration_ms = 0;
-            	                    }
-            	                    HAL_UART_Transmit(&huart1, (uint8_t*)config_msg, strlen(config_msg), 100);
-            	  if (configFlag == 0) {
-            	  currentState = STATE_READY;
-            	  }
+                      sprintf(config_msg, "\r\n[*] Calibrating Barometer (Do not move)...\r\n");
+                      HAL_UART_Transmit(&huart1, (uint8_t*)config_msg, strlen(config_msg), 100);
+
+                      uint32_t start_time = HAL_GetTick();
+
+                      if (BMP581_CalibrateGroundPressure(&reference_pressure_Pa, &reference_temp_C, &bmp_sensor) == HAL_OK) {
+                          calibration_duration_ms = HAL_GetTick() - start_time;
+                          sprintf(config_msg, "[+] Calibration completed: %.2f Pa | %.2f C\r\n", reference_pressure_Pa, reference_temp_C);
+                      } else {
+                          sprintf(config_msg, "[-] Calibration Failed! Using defaults.\r\n");
+                          reference_pressure_Pa = 101325.0;
+                          reference_temp_C = 25.0;
+                          calibration_duration_ms = 0;
+                      }
+
+                      HAL_UART_Transmit(&huart1, (uint8_t*)config_msg, strlen(config_msg), 100);
+                      is_calibrated = 1;
+                  }
+
+                  if (configFlag == 0) {
+                      is_calibrated = 0;  // Reset pour le prochain cycle si on revient en CONFIG
+                      currentState = STATE_READY;
+                  }
                   break;
+              }
 
               case STATE_READY:
                   if (configFlag == 1) {
                       currentState = STATE_CONFIG;
-                  } else if (latest_lidar.distance < THRESH_LIDAR_IN_BOX_M && current_height > THRESH_ALTITUDE_LAUNCH_M) {
+                  } else if (/*latest_lidar.distance < THRESH_LIDAR_IN_BOX_M &&*/ current_height > THRESH_ALTITUDE_LAUNCH_M) {
                       currentState = STATE_ASCENSION;
                   }
                   break;
@@ -1366,7 +1379,7 @@ void startTaskFSM(void *argument)
 
       // Horloge maître et pause absolue de 10 ms
       tick_10ms++;
-      osDelay(50);
+      osDelay(10);
   }
   /* USER CODE END 5 */
 }
@@ -1651,75 +1664,104 @@ void startTaskSDCard(void *argument)
     HAL_UART_Transmit(&huart1, (uint8_t*)SD_end_msg, strlen(SD_end_msg), 100);
 
     TelemetryPacket_t pkt;
-    FastPacket_t fast_pkt;
+    LidarPacket_t fast_pkt;
     char csv_buffer[256];
     char lidar_buffer[128];
     /* Infinite loop */
    for(;;)
     {
+	   // At the top of startTaskSDCard for loop, add SD removal detection:
+
+	   static uint8_t sd_was_inserted = 0;
+
+	   // Detect SD card removal: close file cleanly before card is pulled
+	   if (sd_was_inserted && !is_sd_inserted()) {
+	       // Card just removed - close LIDAR file safely
+	       if (lidar_file_open) {
+	           f_sync(&fil_lidar);   // Flush pending writes
+	           f_close(&fil_lidar);  // Close properly
+	           lidar_file_open = 0;
+	       }
+	       // Unmount filesystem cleanly
+	       f_mount(NULL, "/", 0);
+	       sd_was_inserted = 0;
+	   }
+
+	   // Track insertion state
+	   if (is_sd_inserted()) {
+	       sd_was_inserted = 1;
+	   }
+
 	   // Handle high-frequency LIDAR data (50 Hz)
 	   if (uxQueueMessagesWaiting(qSDCard_LIDAR) > 0 && is_sd_inserted()) {
 
-	               FIL fil_lidar;
-	               // Variable requise par f_write pour retourner le nombre d'octets écrits
-	               UINT bytes_written;
+		   // --- LIDAR.CSV: Keep file open for the entire flight ---
+		   // File is opened once when entering STATE_READY and closed on STATE_RECOVERY
+		   // This avoids costly f_open/f_close on every burst at 50Hz
 
-	               if (f_open(&fil_lidar, "LIDAR.CSV", FA_OPEN_ALWAYS | FA_WRITE) == FR_OK) {
 
-	                   f_lseek(&fil_lidar, f_size(&fil_lidar));
+		   // Open the file once when we enter flight states
+		   if (currentState >= STATE_READY && !lidar_file_open && is_sd_inserted()) {
+		       if (f_open(&fil_lidar, "LIDAR.CSV", FA_OPEN_ALWAYS | FA_WRITE) == FR_OK) {
+		           f_lseek(&fil_lidar, f_size(&fil_lidar));
+		           lidar_file_open = 1;
+		       }
+		   }
 
-	                   while (xQueueReceive(qSDCard_LIDAR, &fast_pkt, 0) == pdTRUE) {
+		   // Close the file when flight is over
+		   if (currentState == STATE_RECOVERY && lidar_file_open) {
+		       f_close(&fil_lidar);
+		       lidar_file_open = 0;
+		   }
 
-	                       uint8_t lidar_flags = 0;
-	                       if (currentState >= STATE_READY)     lidar_flags |= 0x01;
-	                       if (currentState >= STATE_ASCENSION) lidar_flags |= 0x02;
-	                       if (currentState >= STATE_DROP)      lidar_flags |= 0x04;
-	                       if (currentState >= STATE_RECOVERY)  lidar_flags |= 0x08;
+		   // Drain the queue and write to file
+		   if (lidar_file_open && uxQueueMessagesWaiting(qSDCard_LIDAR) > 0) {
 
-	                       char tmp[16];
-	                       int offset = 0;
+		       UINT bytes_written;
 
-	                       // Timestamp
-	                       offset += sprintf(lidar_buffer + offset, "%s,", fast_pkt.lidar.timestamp);
+		       while (xQueueReceive(qSDCard_LIDAR, &fast_pkt, 0) == pdTRUE) {
 
-	                       // Distance (%.2f)
-	                       float_to_str(fast_pkt.lidar.distance, 2, tmp);
-	                       offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+		           uint8_t lidar_flags = 0;
+		           if (currentState >= STATE_READY)     lidar_flags |= 0x01;
+		           if (currentState >= STATE_ASCENSION) lidar_flags |= 0x02;
+		           if (currentState >= STATE_DROP)      lidar_flags |= 0x04;
+		           if (currentState >= STATE_RECOVERY)  lidar_flags |= 0x08;
 
-	                       // Roll (%.1f)
-	                       float_to_str(fast_pkt.imu.roll, 1, tmp);
-	                       offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+		           char tmp[16];
+		           int offset = 0;
 
-	                       // Pitch (%.1f)
-	                       float_to_str(fast_pkt.imu.pitch, 1, tmp);
-	                       offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+		           offset += sprintf(lidar_buffer + offset, "%s,", fast_pkt.lidar.timestamp);
 
-	                       // Yaw (%.1f)
-	                       float_to_str(fast_pkt.imu.yaw, 1, tmp);
-	                       offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+		           float_to_str(fast_pkt.lidar.distance, 2, tmp);
+		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
 
-	                       // Latitude (%.6f)
-	                       float_to_str(fast_pkt.gnss.latitude, 6, tmp);
-	                       offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+		           float_to_str(fast_pkt.roll, 1, tmp);
+		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
 
-	                       // Longitude (%.6f)
-	                       float_to_str(fast_pkt.gnss.longitude, 6, tmp);
-	                       offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+		           float_to_str(fast_pkt.pitch, 1, tmp);
+		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
 
-	                       // Height (%.2f)
-	                       float_to_str(fast_pkt.baro.height, 2, tmp);
-	                       offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+		           float_to_str(fast_pkt.yaw, 1, tmp);
+		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
 
-	                       // Flags
-	                       sprintf(lidar_buffer + offset, "%d\r\n", lidar_flags);
+		           float_to_str(fast_pkt.latitude, 6, tmp);
+		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
 
-	                       // CORRECTION : Écriture brute sans interprétation textuelle
-	                       f_write(&fil_lidar, lidar_buffer, strlen(lidar_buffer), &bytes_written);
-	                   }
+		           float_to_str(fast_pkt.longitude, 6, tmp);
+		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
 
-	                   f_close(&fil_lidar);
-	               }
-	           }
+		           float_to_str(fast_pkt.height, 2, tmp);
+		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+
+		           sprintf(lidar_buffer + offset, "%d\r\n", lidar_flags);
+
+		           f_write(&fil_lidar, lidar_buffer, strlen(lidar_buffer), &bytes_written);
+		       }
+
+		       // Flush to SD card periodically to avoid data loss if power cuts
+		       f_sync(&fil_lidar);
+		   }
+	       }
        // Waiting for a telemetry packet and checking if the SD is still inserted
 	   if (xQueueReceive(qSDCard, &pkt, 10) == pdTRUE) {
 	               if (is_sd_inserted()) {
