@@ -132,11 +132,10 @@ void HMI_display_overview(HMI_State_t *state)
     ssd1306_WriteString(bat_buf, Font_6x8, White);
 }
 
-// ========== AFFICHAGE MENU PRINCIPAL ==========
+// ========== MENU PRINCIPAL (updated) ==========
 void HMI_display_menu(HMI_State_t *state)
 {
     ssd1306_Fill(Black);
-
     ssd1306_SetCursor(0, 0);
     ssd1306_WriteString("-- MENU CONFIG --", Font_7x10, White);
 
@@ -144,24 +143,33 @@ void HMI_display_menu(HMI_State_t *state)
         "LoRa Setup",
         "Sensors Check",
         "Battery Info",
+        "Recalibrate Baro",  // New
+        "Format SD",         // New
         "Quit Config"
     };
 
-    for (int i = 0; i < 4; i++) {
-        ssd1306_SetCursor(0, 16 + i * 11);
+    // Show only 4 items at a time with scrolling
+    uint8_t start_idx = 0;
+    if (state->cursor_position >= 4) {
+        start_idx = state->cursor_position - 3;
+    }
 
-        if (state->cursor_position == i) {
+    for (int i = 0; i < 4; i++) {
+        uint8_t item_idx = start_idx + i;
+        if (item_idx >= 6) break;
+
+        ssd1306_SetCursor(0, 14 + i * 12);
+        if (state->cursor_position == item_idx) {
             ssd1306_WriteString(">", Font_7x10, White);
         } else {
             ssd1306_WriteString(" ", Font_7x10, White);
         }
-
-        ssd1306_SetCursor(10, 16 + i * 11);
-        ssd1306_WriteString((char*)menu_items[i], Font_7x10, White);
+        ssd1306_SetCursor(10, 14 + i * 12);
+        ssd1306_WriteString((char*)menu_items[item_idx], Font_7x10, White);
     }
 
     ssd1306_SetCursor(0, 56);
-    ssd1306_WriteString("Court=Nav Long=OK", Font_6x8, White);
+    ssd1306_WriteString("Short=Nav Long=OK", Font_6x8, White);
 }
 
 // ========== AFFICHAGE PAGE LORA ==========
@@ -349,18 +357,19 @@ void HMI_exit_config_mode(void)
     configFlag = 0;
 }
 
-// ========== GESTION BOUTON ==========
+// ========== GESTION BOUTON (updated) ==========
 void HMI_handle_button(HMI_State_t *state)
 {
     uint32_t press_duration = 0;
     uint32_t start_time = HAL_GetTick();
 
-    while (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == GPIO_PIN_SET) {
+    while (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == GPIO_PIN_RESET) {
         osDelay(10);
         press_duration = HAL_GetTick() - start_time;
         if (press_duration > 2000) break;
     }
 
+    // ========== SHORT PRESS: Navigation ==========
     if (press_duration < 500) {
 
         switch (state->current_page) {
@@ -370,11 +379,19 @@ void HMI_handle_button(HMI_State_t *state)
                 break;
 
             case HMI_PAGE_MENU:
-                state->cursor_position = (state->cursor_position + 1) % 4;
+                state->cursor_position = (state->cursor_position + 1) % 6;
                 break;
 
             case HMI_PAGE_LORA:
                 state->cursor_position = (state->cursor_position + 1) % 2;
+                break;
+
+            case HMI_PAGE_FORMAT_SD:
+                state->cursor_position = (state->cursor_position + 1) % 2;
+                break;
+
+            case HMI_PAGE_RECALIB:
+                // No navigation on recalib page - only long press to go back
                 break;
 
             case HMI_PAGE_SENSORS:
@@ -384,6 +401,7 @@ void HMI_handle_button(HMI_State_t *state)
                 break;
         }
     }
+    // ========== LONG PRESS: Validation ==========
     else if (press_duration >= 1000) {
 
         switch (state->current_page) {
@@ -405,6 +423,15 @@ void HMI_handle_button(HMI_State_t *state)
                         state->current_page = HMI_PAGE_BATTERY;
                         break;
                     case 3:
+                        // Trigger recalibration - handled in TaskHMI
+                        state->current_page = HMI_PAGE_RECALIB;
+                        state->cursor_position = 0;
+                        break;
+                    case 4:
+                        state->current_page = HMI_PAGE_FORMAT_SD;
+                        state->cursor_position = 1;  // Default on NO for safety
+                        break;
+                    case 5:
                         HMI_exit_config_mode();
                         break;
                 }
@@ -419,12 +446,132 @@ void HMI_handle_button(HMI_State_t *state)
                 }
                 break;
 
+            case HMI_PAGE_FORMAT_SD:
+                if (state->cursor_position == 0) {
+                    // YES selected - format SD
+                    // Signal to TaskHMI via flag
+                    state->format_sd_requested = 1;
+                } else {
+                    // NO selected - cancel
+                    state->current_page = HMI_PAGE_MENU;
+                    state->cursor_position = 0;
+                }
+                break;
+
+            case HMI_PAGE_RECALIB:
+                // Long press on result page -> back to menu
+                state->current_page = HMI_PAGE_MENU;
+                state->cursor_position = 0;
+                break;
+
             case HMI_PAGE_SENSORS:
             case HMI_PAGE_BATTERY:
                 state->current_page = HMI_PAGE_MENU;
                 state->cursor_position = 0;
                 break;
         }
+    }
+}
+
+// ========== RECALIBRATION PAGE ==========
+void HMI_display_recalib(HMI_State_t *state)
+{
+    ssd1306_Fill(Black);
+    ssd1306_SetCursor(0, 0);
+    ssd1306_WriteString("-- Baro Calib --", Font_7x10, White);
+    ssd1306_SetCursor(0, 20);
+    ssd1306_WriteString("Calibrating...", Font_7x10, White);
+    ssd1306_SetCursor(0, 32);
+    ssd1306_WriteString("Do not move!", Font_7x10, White);
+    HMI_safe_update_screen();
+}
+
+void HMI_display_recalib_progress(uint8_t percent)
+{
+    // Only redraw the progress bar area to avoid flickering
+    ssd1306_FillRectangle(0, 44, 127, 56, Black);
+
+    // Progress bar
+    ssd1306_SetCursor(0, 44);
+    ssd1306_WriteString("[", Font_7x10, White);
+
+    int bar_length = (percent * 10) / 100;
+    for (int i = 0; i < 10; i++) {
+        ssd1306_SetCursor(7 + i * 7, 44);
+        if (i < bar_length) {
+            ssd1306_WriteString("=", Font_7x10, White);
+        } else {
+            ssd1306_WriteString(" ", Font_7x10, White);
+        }
+    }
+    ssd1306_SetCursor(77, 44);
+    ssd1306_WriteString("]", Font_7x10, White);
+
+    // Percentage text
+    ssd1306_FillRectangle(90, 44, 127, 56, Black);
+    char pct_buf[8];
+    sprintf(pct_buf, " %d%%", percent);
+    ssd1306_SetCursor(90, 44);
+    ssd1306_WriteString(pct_buf, Font_7x10, White);
+
+    HMI_safe_update_screen();
+}
+
+void HMI_display_recalib_done(float pressure_pa, float temp_c)
+{
+    ssd1306_Fill(Black);
+    ssd1306_SetCursor(0, 0);
+    ssd1306_WriteString("-- Baro Calib --", Font_7x10, White);
+
+    ssd1306_SetCursor(0, 16);
+    ssd1306_WriteString("Calibration OK!", Font_7x10, White);
+
+    // Pressure without float sprintf
+    ssd1306_SetCursor(0, 30);
+    char buf[24];
+    int p_int = (int)pressure_pa;
+    int p_dec = (int)((pressure_pa - p_int) * 10);
+    sprintf(buf, "Ref: %d.%d Pa", p_int, p_dec);
+    ssd1306_WriteString(buf, Font_6x8, White);
+
+    // Temperature without float sprintf
+    ssd1306_SetCursor(0, 42);
+    int t_int = (int)temp_c;
+    int t_dec = (int)((temp_c - t_int) * 10);
+    sprintf(buf, "Temp: %d.%d C", t_int, t_dec);
+    ssd1306_WriteString(buf, Font_6x8, White);
+
+    ssd1306_SetCursor(0, 56);
+    ssd1306_WriteString("[BTN] -> Menu", Font_6x8, White);
+
+    HMI_safe_update_screen();
+}
+
+// ========== FORMAT SD PAGE ==========
+void HMI_display_format_sd(HMI_State_t *state)
+{
+    ssd1306_Fill(Black);
+    ssd1306_SetCursor(0, 0);
+    ssd1306_WriteString("-- Format SD? --", Font_7x10, White);
+
+    ssd1306_SetCursor(0, 14);
+    ssd1306_WriteString("WARNING: All data", Font_6x8, White);
+    ssd1306_SetCursor(0, 24);
+    ssd1306_WriteString("will be erased!", Font_6x8, White);
+
+    // Cursor on YES
+    ssd1306_SetCursor(0, 38);
+    if (state->cursor_position == 0) {
+        ssd1306_WriteString("> YES - Erase all", Font_7x10, White);
+    } else {
+        ssd1306_WriteString("  YES - Erase all", Font_7x10, White);
+    }
+
+    ssd1306_SetCursor(0, 52);
+    if (state->cursor_position == 1) {
+        ssd1306_WriteString("> NO  - Cancel", Font_7x10, White);
+    } else {
+        ssd1306_WriteString("  NO  - Cancel", Font_7x10, White);
     }
 }
 

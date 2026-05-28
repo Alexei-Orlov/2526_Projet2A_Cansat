@@ -23,6 +23,7 @@
 #define THRESH_ALTITUDE_LANDING_M  		5.0f  	// Max altitude to trigger RECOVERY state (buzzer on)
 #define SAMPLES_BAROMETER_CALIBRATION  	100  	// Samples in order to determine the calibration state of the barometer
 #define TIME_BETWEEN_PACKET_LORA_mS 	100 	// Time between each packet sent through the lora
+#define HMI_MENU_ITEM_COUNT 6
 
 // ====================================================================
 

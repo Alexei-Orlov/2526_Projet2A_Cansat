@@ -112,6 +112,12 @@ const osThreadAttr_t TaskHMIHandle_attributes = {
   .stack_size = 512 * 4
 };
 /* USER CODE BEGIN PV */
+// Flight session number (auto-incremented at boot based on existing files)
+uint8_t flight_session = 1;
+char data_filename[16];    // e.g. "DATA_001.CSV"
+char lidar_filename[16];   // e.g. "LIDAR_001.CSV"
+uint8_t is_calibrated = 0;
+
 uint8_t TX_to_Baro [] = "A" ;
 uint8_t RX_from_Baro [] = "A" ;
 
@@ -1314,7 +1320,6 @@ void startTaskFSM(void *argument)
 
               case STATE_CONFIG:
               {
-                  static uint8_t is_calibrated = 0;
 
                   if (!is_calibrated) {
                       char config_msg[128];
@@ -1641,27 +1646,71 @@ void startTaskSDCard(void *argument)
 	}
 	char SD_carriage[] = "\r";
 
+	// ✅ REMPLACER PAR
+	extern char data_filename[];
+	extern char lidar_filename[];
+	extern uint8_t flight_session;
+
+	if (is_sd_inserted()) {
+	    Mount_SD("/");
+
+	    // Find the next available session number
+	    flight_session = 1;
+	    while (flight_session < 999) {
+	        sprintf(data_filename, "DATA_%03d.CSV", flight_session);
+	        FILINFO check_fno;
+	        if (f_stat(data_filename, &check_fno) != FR_OK) {
+	            break;  // This number is free
+	        }
+	        flight_session++;
+	    }
+
+	    sprintf(data_filename,  "DATA_%03d.CSV",  flight_session);
+	    sprintf(lidar_filename, "LIDAR_%03d.CSV", flight_session);
+
+	    // Create both files with headers
+	    Create_File(data_filename);
+	    Update_File(data_filename,
+	        "tx_timestamp_ms,accel_x,accel_y,accel_z,"
+	        "gyro_x,gyro_y,gyro_z,roll,pitch,yaw,"
+	        "temperature,altitude,latitude,longitude,"
+	        "satellites,flags_raw,battery_voltage\r\n");
+
+	    Create_File(lidar_filename);
+	    Update_File(lidar_filename,
+	        "tx_timestamp_ms,distance,roll,pitch,yaw,"
+	        "latitude,longitude,altitude,flags_raw\r\n");
+
+	    char boot_msg[64];
+	    sprintf(boot_msg, "[SD] Session %d: %s / %s\r\n",
+	            flight_session, data_filename, lidar_filename);
+	    HAL_UART_Transmit(&huart1, (uint8_t*)boot_msg, strlen(boot_msg), 100);
+	}
+
+	char SD_end_msg[] = "[*] SD ready for logging\r\n";
+	HAL_UART_Transmit(&huart1, (uint8_t*)SD_end_msg, strlen(SD_end_msg), 100);
+
     // Mount
-    Mount_SD("/");
-    HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
+    //Mount_SD("/");
+    //HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
     //Erasing the Card for test might have to remove later :
-    Format_SD();
-    HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
+    //Format_SD();
+    //HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
     // Creating a telemetry file and a Cloud of points file
-    Create_File("DATA.CSV");
-    HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
-    Create_File("LIDAR.CSV");
-    HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
+    //Create_File("DATA.CSV");
+    //HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
+    //Create_File("LIDAR.CSV");
+    //HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
 
     // Creating the headers
-    Update_File("DATA.CSV", "tx_timestamp_ms,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,roll,pitch,yaw,temperature,altitude,latitude,longitude,satellites,flags_raw,battery_voltage\r\n");
-    HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
-    Update_File("LIDAR.CSV", "tx_timestamp_ms,distance,roll,pitch,yaw,latitude,longitude,altitude,flags_raw\r\n");
-    HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
+    //Update_File("DATA.CSV", "tx_timestamp_ms,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,roll,pitch,yaw,temperature,altitude,latitude,longitude,satellites,flags_raw,battery_voltage\r\n");
+    //HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
+    //Update_File("LIDAR.CSV", "tx_timestamp_ms,distance,roll,pitch,yaw,latitude,longitude,altitude,flags_raw\r\n");
+    //HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
 
 
-    char SD_end_msg[] = "[*] SD ready for logging\r\n";
-    HAL_UART_Transmit(&huart1, (uint8_t*)SD_end_msg, strlen(SD_end_msg), 100);
+    //char SD_end_msg[] = "[*] SD ready for logging\r\n";
+    //HAL_UART_Transmit(&huart1, (uint8_t*)SD_end_msg, strlen(SD_end_msg), 100);
 
     TelemetryPacket_t pkt;
     LidarPacket_t fast_pkt;
@@ -1702,7 +1751,7 @@ void startTaskSDCard(void *argument)
 
 		   // Open the file once when we enter flight states
 		   if (currentState >= STATE_READY && !lidar_file_open && is_sd_inserted()) {
-		       if (f_open(&fil_lidar, "LIDAR.CSV", FA_OPEN_ALWAYS | FA_WRITE) == FR_OK) {
+			   if (f_open(&fil_lidar, lidar_filename, FA_OPEN_ALWAYS | FA_WRITE) == FR_OK) {
 		           f_lseek(&fil_lidar, f_size(&fil_lidar));
 		           lidar_file_open = 1;
 		       }
@@ -1835,7 +1884,7 @@ void startTaskSDCard(void *argument)
 
             // Safely saving on the SD Card :
 
-            Update_File("DATA.CSV", csv_buffer);
+            Update_File(data_filename, csv_buffer);
             HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
          /*   Update_File("LIDAR.CSV", lidar_buffer);
             HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);*/
@@ -1992,10 +2041,12 @@ void startTaskHMI(void *argument)
         vTaskSuspend(NULL);
     }
 
-    HMI_State_t HMI_state = {
-        .current_page = HMI_PAGE_OVERVIEW,
-        .cursor_position = 0,
-        .lora_enabled = 0
+    HMI_State_t hmi_state = {
+            .current_page = HMI_PAGE_OVERVIEW,
+            .cursor_position = 0,
+            .lora_enabled = 0,
+            .format_sd_requested = 0,
+            .recalib_requested = 0
     };
 
     ssd1306_Init();
@@ -2011,58 +2062,135 @@ void startTaskHMI(void *argument)
     osDelay(1500);
 
     uint8_t event;
-    uint8_t HMI_failure_count = 0;
+    uint8_t hmi_failure_count = 0;
 
     for(;;)
     {
-        extern CanSatState_t currentState;
-        uint8_t last_battery_check = HAL_GetTick();
-        if (currentState == STATE_CONFIG) {
+    	extern CanSatState_t currentState;
 
-            if (HAL_GetTick() - last_battery_check > 1000) {
-            last_battery_check = HAL_GetTick();
-            SensorEvent_t bat_ticket = EVENT_BATTERY_READY;
-            xQueueSend(qSensorEvents, &bat_ticket, 0);
-            HMI_display_data.battery_voltage = latest_battery.voltage;
-            HMI_display_data.battery_percent = calculate_battery_percent(latest_battery.voltage);
-            }
+    	if (currentState == STATE_CONFIG) {
 
-            if (xQueueReceive(qHMI_Events, &event, pdMS_TO_TICKS(500)) == pdTRUE) {
-                HMI_handle_button(&HMI_state);
-            }
+    		// ========== HANDLE RECALIBRATION REQUEST ==========
+    		if (hmi_state.current_page == HMI_PAGE_RECALIB) {
+    			extern BMP_t bmp_sensor;
+    	        extern double reference_pressure_Pa;
+    	        extern double reference_temp_C;
+    	        extern uint8_t is_calibrated;  // The flag from BUG 1 fix
 
-            switch (HMI_state.current_page) {
-                case HMI_PAGE_OVERVIEW:
-                    HMI_display_overview(&HMI_state);
-                    break;
-                case HMI_PAGE_MENU:
-                    HMI_display_menu(&HMI_state);
-                    break;
-                case HMI_PAGE_LORA:
-                    HMI_display_lora(&HMI_state);
-                    break;
-                case HMI_PAGE_SENSORS:
-                    HMI_display_sensors(&HMI_state);
-                    break;
-                case HMI_PAGE_BATTERY:
-                    HMI_display_battery(&HMI_state);
-                    break;
-            }
+    	        // Show initial calibration screen
+    	        HMI_display_recalib(&hmi_state);
 
-            if (HMI_safe_update_screen() == 0) {
-                HMI_failure_count++;
-                if (HMI_failure_count >= 3) {
-                    vTaskSuspend(NULL);
-                }
-            } else {
-                HMI_failure_count = 0;
-            }
+    	        // Run calibration with progress updates
+    	        double sum_pressure = 0.0;
+    	        double sum_temp = 0.0;
+    	        int valid_reads = 0;
 
-        } else {
-            vTaskSuspend(NULL);
-        }
+    	        for (int i = 0; i < SAMPLES_BAROMETER_CALIBRATION; i++) {
 
-        osDelay(100);
+    	        	if (bmp581_read_precise_normal(&bmp_sensor) == 0) {
+    	        		extern double bmppress;
+    	                extern double bmptemp;
+    	                sum_pressure += bmppress;
+    	                sum_temp += bmptemp;
+    	                valid_reads++;
+    	        	}
+
+    	        	// Update progress bar every 5 samples
+    	            if (i % 5 == 0) {
+    	            	uint8_t percent = (i * 100) / SAMPLES_BAROMETER_CALIBRATION;
+    	                HMI_display_recalib_progress(percent);
+    	            }
+
+    	            osDelay(60);
+    	        }
+
+    	        // Store results
+    	        if (valid_reads > 0) {
+    	        	reference_pressure_Pa = sum_pressure / valid_reads;
+    	            reference_temp_C = sum_temp / valid_reads;
+    	            is_calibrated = 1;  // Prevent STATE_CONFIG from re-running calibration
+    	        }
+
+    	        // Show result
+    	        HMI_display_recalib_progress(100);
+    	        osDelay(300);
+    	        HMI_display_recalib_done((float)reference_pressure_Pa, (float)reference_temp_C);
+
+    	        // Wait for button press to go back
+    	        uint8_t dummy_event;
+    	        xQueueReceive(qHMI_Events, &dummy_event, portMAX_DELAY);
+    	        hmi_state.current_page = HMI_PAGE_MENU;
+    	        hmi_state.cursor_position = 0;
+    	        continue;
+    		}
+
+    	        // ========== HANDLE FORMAT SD REQUEST ==========
+    	            if (hmi_state.format_sd_requested) {
+    	                hmi_state.format_sd_requested = 0;
+
+    	                // Show formatting screen
+    	                ssd1306_Fill(Black);
+    	                ssd1306_SetCursor(0, 10);
+    	                ssd1306_WriteString("Formatting...", Font_11x18, White);
+    	                ssd1306_SetCursor(0, 36);
+    	                ssd1306_WriteString("Do not remove SD", Font_6x8, White);
+    	                HMI_safe_update_screen();
+
+    	                // Format SD
+    	                Format_SD();
+
+    	                // Recreate files with new session number
+    	                // (session number logic handled at boot - see PART 6)
+    	                // After format, reset to session 1
+    	                extern uint8_t flight_session;
+    	                flight_session = 1;
+    	                Create_File("DATA_001.CSV");
+    	                Update_File("DATA_001.CSV", "tx_timestamp_ms,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,roll,pitch,yaw,temperature,altitude,latitude,longitude,satellites,flags_raw,battery_voltage\r\n");
+    	                Create_File("LIDAR_001.CSV");
+    	                Update_File("LIDAR_001.CSV", "tx_timestamp_ms,distance,roll,pitch,yaw,altitude,latitude,longitude,flags_raw\r\n");
+
+    	                // Confirm
+    	                ssd1306_Fill(Black);
+    	                ssd1306_SetCursor(10, 10);
+    	                ssd1306_WriteString("Format OK!", Font_11x18, White);
+    	                ssd1306_SetCursor(0, 36);
+    	                ssd1306_WriteString("Files recreated", Font_6x8, White);
+    	                HMI_safe_update_screen();
+    	                osDelay(2000);
+
+    	                hmi_state.current_page = HMI_PAGE_MENU;
+    	                hmi_state.cursor_position = 0;
+    	                continue;
+    	            }
+
+    	            // ========== NORMAL BUTTON HANDLING ==========
+    	            if (xQueueReceive(qHMI_Events, &event, pdMS_TO_TICKS(500)) == pdTRUE) {
+    	                HMI_handle_button(&hmi_state);
+    	            }
+
+    	            // ========== DISPLAY CURRENT PAGE ==========
+    	            switch (hmi_state.current_page) {
+    	                case HMI_PAGE_OVERVIEW:   HMI_display_overview(&hmi_state);  break;
+    	                case HMI_PAGE_MENU:       HMI_display_menu(&hmi_state);      break;
+    	                case HMI_PAGE_LORA:       HMI_display_lora(&hmi_state);      break;
+    	                case HMI_PAGE_SENSORS:    HMI_display_sensors(&hmi_state);   break;
+    	                case HMI_PAGE_BATTERY:    HMI_display_battery(&hmi_state);   break;
+    	                case HMI_PAGE_FORMAT_SD:  HMI_display_format_sd(&hmi_state); break;
+    	                case HMI_PAGE_RECALIB:    break;  // Handled above
+    	            }
+
+    	            if (HMI_safe_update_screen() == 0) {
+    	                hmi_failure_count++;
+    	                if (hmi_failure_count >= 3) vTaskSuspend(NULL);
+    	            } else {
+    	                hmi_failure_count = 0;
+    	            }
+
+    	        } else {
+    	            vTaskSuspend(NULL);
+    	        }
+
+    	        osDelay(100);
     }
   /* USER CODE END startTaskHMI */
 }
