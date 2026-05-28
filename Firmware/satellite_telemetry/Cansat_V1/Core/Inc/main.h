@@ -61,6 +61,9 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define VBAT_ADC1_IN3_Pin GPIO_PIN_2
 #define VBAT_ADC1_IN3_GPIO_Port GPIOA
+#define HMIBTN_EXTI3_Pin GPIO_PIN_3
+#define HMIBTN_EXTI3_GPIO_Port GPIOA
+#define HMIBTN_EXTI3_EXTI_IRQn EXTI3_IRQn
 #define BARO_EXTI_Pin GPIO_PIN_4
 #define BARO_EXTI_GPIO_Port GPIOA
 #define SD_SPI1_SCK_Pin GPIO_PIN_5
@@ -75,6 +78,8 @@ void Error_Handler(void);
 #define LED_GPIO_OUT_GPIO_Port GPIOB
 #define SD_GPIO_DETECT_Pin GPIO_PIN_2
 #define SD_GPIO_DETECT_GPIO_Port GPIOB
+#define HMILED_GPIO_Pin GPIO_PIN_10
+#define HMILED_GPIO_GPIO_Port GPIOB
 #define LIDAR_USART3_RX_Pin GPIO_PIN_11
 #define LIDAR_USART3_RX_GPIO_Port GPIOB
 #define LORA_NSS_Pin GPIO_PIN_12

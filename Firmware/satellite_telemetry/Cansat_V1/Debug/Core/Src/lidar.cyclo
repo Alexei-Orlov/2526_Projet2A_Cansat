@@ -1,5 +1,7 @@
-../Core/Src/lidar.c:23:6:Lidar_Init	1
-../Core/Src/lidar.c:31:6:Lidar_RequestMenu	1
-../Core/Src/lidar.c:37:6:Lidar_RequestStream	1
-../Core/Src/lidar.c:44:6:Lidar_RxCallback	7
-../Core/Src/lidar.c:74:6:Lidar_DirectDebug	6
+../Core/Src/lidar.c:28:6:Lidar_Init	1
+../Core/Src/lidar.c:40:6:Lidar_RequestMenu	1
+../Core/Src/lidar.c:46:6:Lidar_RequestStream	1
+../Core/Src/lidar.c:52:6:HAL_UART_RxHalfCpltCallback	3
+../Core/Src/lidar.c:62:6:HAL_UART_RxCpltCallback	3
+../Core/Src/lidar.c:74:6:Process_Lidar_Buffer_Chunk	12
+../Core/Src/lidar.c:238:6:Lidar_DirectDebug	6

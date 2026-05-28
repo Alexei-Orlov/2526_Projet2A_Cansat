@@ -161,7 +161,7 @@ uint8_t getOrientationIMU(IMU_Data_t *data) {
     int16_t r = (int16_t)((euler_buf[3] << 8) | euler_buf[2]);
     int16_t p = (int16_t)((euler_buf[5] << 8) | euler_buf[4]);
 
-    data->head  = (float)h / 16.0f;
+    data->yaw  = (float)h / 16.0f;
     data->roll  = (float)r / 16.0f;
     data->pitch = (float)p / 16.0f;
 
@@ -198,4 +198,80 @@ uint8_t getOrientationIMU(IMU_Data_t *data) {
     data->mag_calib   = (calib) & 0x03;
 
     return 1;
+}
+
+
+// =========================================================================
+// VARIABLES PRIVÉES POUR LE DMA
+// =========================================================================
+// Tableau de 34 octets pour lire de 0x14 (Gyro X) à 0x35 (Calib) en une fois
+static uint8_t imu_dma_rx_buf[34];
+
+// =========================================================================
+// 1. LE DÉCLENCHEUR (Appelé par la FSM à 100 Hz)
+// =========================================================================
+uint8_t IMU_RequestData_DMA(void) {
+    HAL_StatusTypeDef status = HAL_I2C_Mem_Read_DMA(imu_i2c, BNO055_I2C_ADDR, BNO055_GYRO_DATA_X_LSB, I2C_MEMADD_SIZE_8BIT, imu_dma_rx_buf, 34);
+
+    if (status != HAL_OK) {
+        extern UART_HandleTypeDef huart1;
+        char msg[128];
+        // On affiche : Le statut, l'état de la machine I2C, le code d'erreur, et l'adresse du pointeur DMA
+        sprintf(msg, "[-] DMA Fail! Stat:%d | Etat:0x%02X | Err:0x%02lX | LienDMA:%p\r\n",
+                status, imu_i2c->State, imu_i2c->ErrorCode, (void*)imu_i2c->hdmarx);
+        HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+
+
+
+
+
+
+
+        return 0; // Erreur
+    }
+    return 1; // Succès
+}
+
+// =========================================================================
+// 2. LE RÉCOLTEUR (Appelé par l'interruption quand le DMA a terminé)
+// =========================================================================
+void IMU_ProcessData_DMA(IMU_Data_t *data) {
+
+    // --- 1. GYROSCOPE (Index 0 à 5, correspondant à 0x14 - 0x19) ---
+    int16_t gx = (int16_t)((imu_dma_rx_buf[1] << 8) | imu_dma_rx_buf[0]);
+    int16_t gy = (int16_t)((imu_dma_rx_buf[3] << 8) | imu_dma_rx_buf[2]);
+    int16_t gz = (int16_t)((imu_dma_rx_buf[5] << 8) | imu_dma_rx_buf[4]);
+
+    data->gyroX = (float)gx / 16.0f;
+    data->gyroY = (float)gy / 16.0f;
+    data->gyroZ = (float)gz / 16.0f;
+
+    // --- 2. EULER ANGLES (Index 6 à 11, correspondant à 0x1A - 0x1F) ---
+    int16_t h = (int16_t)((imu_dma_rx_buf[7] << 8) | imu_dma_rx_buf[6]);
+    int16_t r = (int16_t)((imu_dma_rx_buf[9] << 8) | imu_dma_rx_buf[8]);
+    int16_t p = (int16_t)((imu_dma_rx_buf[11] << 8) | imu_dma_rx_buf[10]);
+
+    data->yaw   = (float)h / 16.0f;
+    data->roll  = (float)r / 16.0f;
+    data->pitch = (float)p / 16.0f;
+
+    // (Index 12 à 19 ignorés : ce sont les Quaternions)
+
+    // --- 3. ACCÉLÉRATION LINÉAIRE (Index 20 à 25, correspondant à 0x28 - 0x2D) ---
+    int16_t ax = (int16_t)((imu_dma_rx_buf[21] << 8) | imu_dma_rx_buf[20]);
+    int16_t ay = (int16_t)((imu_dma_rx_buf[23] << 8) | imu_dma_rx_buf[22]);
+    int16_t az = (int16_t)((imu_dma_rx_buf[25] << 8) | imu_dma_rx_buf[24]);
+
+    data->accelX = (float)ax / 100.0f;
+    data->accelY = (float)ay / 100.0f;
+    data->accelZ = (float)az / 100.0f;
+
+    // (Index 26 à 32 ignorés : ce sont les Gravité et Température)
+
+    // --- 4. STATUT DE CALIBRATION (Index 33, correspondant à 0x35) ---
+    uint8_t calib = imu_dma_rx_buf[33];
+    data->sys_calib   = (calib >> 6) & 0x03;
+    data->gyro_calib  = (calib >> 4) & 0x03;
+    data->accel_calib = (calib >> 2) & 0x03;
+    data->mag_calib   = (calib) & 0x03;
 }

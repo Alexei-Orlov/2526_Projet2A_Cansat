@@ -30,7 +30,7 @@ uint32_t total, free_space;
 
 void Send_Uart (char *string)
 {
-	HAL_UART_Transmit(UART, (uint8_t *)string, strlen (string), HAL_MAX_DELAY);
+	//HAL_UART_Transmit(UART, (uint8_t *)string, strlen (string), HAL_MAX_DELAY);
 }
 
 

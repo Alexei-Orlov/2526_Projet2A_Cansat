@@ -59,12 +59,21 @@ typedef struct {
     Battery_Data_t bat;
 } TelemetryPacket_t;
 
+typedef struct {
+    GNSS_Data_t gnss;
+    Barometer_Data_t baro;
+    IMU_Data_t imu;
+    LIDAR_Data_t lidar;
+} FastPacket_t;
+
 // --- SENSOR EVENT ENUM ---
 typedef enum {
     EVENT_GNSS_READY,
     EVENT_BARO_READY,
     EVENT_IMU_READY,
-    EVENT_LIDAR_READY,
+    //EVENT_LIDAR_READY, Before the DMA update
+	EVENT_LIDAR_HALF_CPLT,
+	EVENT_LIDAR_FULL_CPLT,
     EVENT_BATTERY_READY
 } SensorEvent_t;
 
@@ -82,7 +91,9 @@ typedef enum {
 // --- RTOS HANDLES ---
 extern QueueHandle_t qSensorEvents;
 extern QueueHandle_t qSDCard;
+extern QueueHandle_t qSDCard_LIDAR;
 extern QueueHandle_t qLoRa;
+extern QueueHandle_t qHMI_Events;
 
 extern CanSatState_t currentState;
 extern float current_height; // Global for FSM transitions

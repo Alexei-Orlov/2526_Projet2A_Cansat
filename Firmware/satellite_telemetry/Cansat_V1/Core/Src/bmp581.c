@@ -20,6 +20,39 @@ double bmpalt=0.0;
 extern float temp;
 uint8_t odrcheck=0;
 
+uint8_t bmp581_init_precise_normal(BMP_t * bmp581){
+    int check = 0;
+
+    // 1. Masques de configuration
+    uint8_t OSR_mask      = 0x60; // Pression ON, OSR_P = x16, OSR_T = x1
+    uint8_t DSP_IIR_mask  = 0x01; // Filtre IIR activé (coeff 1) pour lisser le bruit
+    uint8_t DSP_conf_mask = 0x23; // Lecture après filtre IIR + Compensation ON
+
+    // Désactivation totale de la broche d'interruption matérielle
+    uint8_t INT_CONFIG_mask = 0x00;
+
+    // Mode CONTINU (Le capteur tourne tout seul en boucle)
+    uint8_t ODR_mask      = 0x03;
+
+    // =========================================================================
+    // 2. ÉCRITURE DES CONFIGURATIONS (LE CAPTEUR DOIT ÊTRE EN STANDBY)
+    // =========================================================================
+    if(HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, BMP581_OSR_CONFIG, 1, &OSR_mask, 1, 100) != HAL_OK) check = 1;
+    if(HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, 0x31 /* DSP_IIR */, 1, &DSP_IIR_mask, 1, 100) != HAL_OK) check = 1;
+    if(HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, BMP581_DSP_CONFIG, 1, &DSP_conf_mask, 1, 100) != HAL_OK) check = 1;
+    if(HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, 0x14 /* INT_CONFIG */, 1, &INT_CONFIG_mask, 1, 100) != HAL_OK) check = 1;
+
+    // =========================================================================
+    // 3. LE DÉCLENCHEUR : On réveille le capteur SEULEMENT quand tout est prêt
+    // =========================================================================
+    if(HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, BMP581_ODR_CONFIG, 1, &ODR_mask, 1, 100) != HAL_OK) check = 1;
+
+    // 4. Vérification pour s'assurer que le capteur est vivant
+    if(HAL_I2C_Mem_Read(&hi2c1, BMP581_READ_ADDR, BMP581_OSR_EFF, 1, &odrcheck, 1, 100) != HAL_OK) check = 1;
+
+    return check;
+}
+/* Previous code :
 //Ox18 donc 11000 pour ODR donc 5hz en mode normal avec oversampling a 128 pour la pression et 8 pour la temperature
 
 uint8_t bmp581_init_precise_normal(BMP_t * bmp581){
@@ -52,7 +85,7 @@ uint8_t bmp581_init_precise_normal(BMP_t * bmp581){
 	return check;
 
 }
-
+*/
 uint8_t bmp581_read_precise_normal(BMP_t * bmp581){
 		int check=0;
 		uint8_t recarray[6];

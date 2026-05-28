@@ -1,7 +1,8 @@
 ../Core/Src/imu.c:21:13:BNO_WriteReg	1
-../Core/Src/imu.c:26:13:BNO_ReadRegs	1
-../Core/Src/imu.c:30:9:IMU_Init	2
 ../Core/Src/imu.c:62:6:IMU_GetCalibrationProfile	1
 ../Core/Src/imu.c:73:6:IMU_SetCalibrationProfile	2
+../Core/Src/imu.c:30:9:IMU_Init	2
 ../Core/Src/imu.c:83:9:IMU_calibration	8
 ../Core/Src/imu.c:154:9:getOrientationIMU	4
+../Core/Src/imu.c:213:9:IMU_RequestData_DMA	2
+../Core/Src/imu.c:238:6:IMU_ProcessData_DMA	1

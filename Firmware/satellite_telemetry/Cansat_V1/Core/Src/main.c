@@ -38,7 +38,7 @@
 #include "imu.h"
 #include "sx1276.h"
 #include "gnss_reader.h"
-
+#include "hmi.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,8 +48,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define SX_NSS_LOW()   HAL_GPIO_WritePin(SX_NSS_PORT, SX_NSS_PIN, GPIO_PIN_RESET)
-#define SX_NSS_HIGH()  HAL_GPIO_WritePin(SX_NSS_PORT, SX_NSS_PIN, GPIO_PIN_SET)
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -64,15 +63,18 @@ I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c3;
 DMA_HandleTypeDef hdma_i2c1_tx;
 DMA_HandleTypeDef hdma_i2c1_rx;
+DMA_HandleTypeDef hdma_i2c3_rx;
 
 SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi2;
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim16;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
+DMA_HandleTypeDef hdma_usart3_rx;
 
 /* Definitions for TaskFSM */
 osThreadId_t TaskFSMHandle;
@@ -102,6 +104,13 @@ const osThreadAttr_t TaskLoRa_attributes = {
   .priority = (osPriority_t) osPriorityLow,
   .stack_size = 512 * 4
 };
+/* Definitions for TaskHMIHandle */
+osThreadId_t TaskHMIHandleHandle;
+const osThreadAttr_t TaskHMIHandle_attributes = {
+  .name = "TaskHMIHandle",
+  .priority = (osPriority_t) osPriorityBelowNormal1,
+  .stack_size = 512 * 4
+};
 /* USER CODE BEGIN PV */
 uint8_t TX_to_Baro [] = "A" ;
 uint8_t RX_from_Baro [] = "A" ;
@@ -110,7 +119,7 @@ extern volatile uint8_t FatFsCnt;
 extern void SDTimer_Handler(void);
 
 // --- GLOBAL VARIABLES (Accessible by all tasks) ---
-uint8_t configFlag = 1; // Triggered by external switch/button
+volatile uint8_t configFlag = 1; // Triggered by external switch/button
 CanSatState_t currentState = STATE_STANDBY;
 float current_height = 0.0f;
 uint8_t imu_is_connected = 0;
@@ -123,7 +132,14 @@ IMU_Data_t latest_imu;
 LIDAR_Data_t latest_lidar = { .distance = 99.0f };
 BMP_t bmp_sensor;
 Battery_Data_t latest_battery;
+extern HMI_Display_Data_t HMI_display_data;
+// Lidar variables to handle the DMA and broken DMA parts
+char lidar_cut_char[32] = {0};
+uint8_t cut_char_len = 0;
+extern uint8_t lidar_dma_buf[];
 
+//IMU Variables for the DMA
+uint8_t imu_dma_rx_buf[34];
 // Calibration Variables
 double reference_pressure_Pa = 101325.0;
 double reference_temp_C = 25.0;
@@ -133,6 +149,8 @@ double PRESS_TEMP_COEF = -8.5; // Datasheet: Pressure Temperature-induced offset
 QueueHandle_t qSensorEvents;
 QueueHandle_t qSDCard;
 QueueHandle_t qLoRa;
+QueueHandle_t qSDCard_LIDAR;  // High-frequency LIDAR-only queue (50 Hz)
+QueueHandle_t qHMI_Events;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -148,10 +166,12 @@ static void MX_TIM3_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_TIM16_Init(void);
 void startTaskFSM(void *argument);
 void startTaskSensors(void *argument);
 void startTaskSDCard(void *argument);
 void startTaskLoRa(void *argument);
+void startTaskHMI(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -174,7 +194,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+	//__disable_irq(); //to avoid crash but it also disables interrupts for uart
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -190,7 +210,15 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
+  __HAL_RCC_USART3_FORCE_RESET();
+    __HAL_RCC_USART1_FORCE_RESET();
 
+    // 2. On attend quelques millisecondes que les condensateurs internes se vident
+    HAL_Delay(10);
+
+    // 3. On relâche le Reset pour les laisser s'allumer proprement
+    __HAL_RCC_USART3_RELEASE_RESET();
+    __HAL_RCC_USART1_RELEASE_RESET();
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -208,20 +236,21 @@ int main(void)
   if (MX_FATFS_Init() != APP_OK) {
     Error_Handler();
   }
+  MX_TIM16_Init();
   /* USER CODE BEGIN 2 */
 
   // --- 1. POWER ON LORA AND SENSORS ---
-    HAL_GPIO_WritePin(GPIOB, VPOWER_EN_GPIO_OUT_Pin, GPIO_PIN_SET);
+    //HAL_GPIO_WritePin(VPOWER_EN_GPIO_OUT_GPIO_Port, VPOWER_EN_GPIO_OUT_Pin, GPIO_PIN_SET);
 
     // --- 2. FIX SPI CHIP SELECT (NSS) ---
-    // NSS must idle HIGH. If it starts LOW, the SPI bus crashes.
+    //NSS must idle HIGH. If it starts LOW, the SPI bus crashes.
     HAL_GPIO_WritePin(GPIOB, LORA_NSS_Pin, GPIO_PIN_SET);
 
     char startup_msg[] = "\r\n[i] System Booting... Testing Hardware\r\n";
     HAL_UART_Transmit(&huart1, (uint8_t*)startup_msg, strlen(startup_msg), HAL_MAX_DELAY);
 
     // Give the LoRa module a full second to power up and stabilize
-    HAL_Delay(1000);
+    //HAL_Delay(1000);
 
 
 
@@ -248,13 +277,14 @@ int main(void)
 
         float true_battery_voltage = pin_voltage * voltage_divider_ratio*1.025f;
 
-        sprintf(adc_msg, "    -> SUCCESS! Battery: %.2f V (Raw ADC: %lu)\r\n", true_battery_voltage, raw_adc);
-        HAL_UART_Transmit(&huart1, (uint8_t*)adc_msg, strlen(adc_msg), 100);
-    } else {
-        sprintf(adc_msg, "    -> FAILED! ADC Conversion Timeout.\r\n");
+        // Séparation en partie entière et partie décimale (2 chiffres après la virgule)
+        int part_ent = (int)true_battery_voltage;
+        int part_dec = (int)((true_battery_voltage - part_ent) * 100);
+
+        // On utilise %d pour les entiers et %02d pour forcer l'affichage du zéro (ex: 8.05V)
+        sprintf(adc_msg, "    -> SUCCESS! Battery: %d.%02d V (Raw ADC: %lu)\r\n", part_ent, part_dec, raw_adc);
         HAL_UART_Transmit(&huart1, (uint8_t*)adc_msg, strlen(adc_msg), 100);
     }
-
     // Stop the ADC to save power
     HAL_ADC_Stop(&hadc1);
     // ------------------------------------
@@ -302,6 +332,8 @@ int main(void)
         uint8_t test_rx[1] = {0};
         HAL_StatusTypeDef uart_status = HAL_UART_Receive(&huart3, test_rx, 1, 500);
 
+
+
         if (uart_status == HAL_OK) {
             // We received a byte! Let's see if it is a readable ASCII character.
             if (test_rx[0] >= 32 && test_rx[0] <= 126) {
@@ -314,6 +346,8 @@ int main(void)
             sprintf(diag_msg, "    -> FAILED! No response from LiDAR. (Check TX/RX wiring)\r\n\n");
             HAL_UART_Transmit(&huart1, (uint8_t*)diag_msg, strlen(diag_msg), 100);
         }
+
+
         // -----------------------------
 
 
@@ -386,6 +420,8 @@ int main(void)
     qSensorEvents = xQueueCreate(10, sizeof(SensorEvent_t));
     qSDCard       = xQueueCreate(5, sizeof(TelemetryPacket_t));
     qLoRa         = xQueueCreate(5,  sizeof(TelemetryPacket_t));
+    qSDCard_LIDAR = xQueueCreate(10, sizeof(FastPacket_t));  // Larger buffer for 50Hz
+    qHMI_Events = xQueueCreate(10, sizeof(uint8_t));
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -401,12 +437,16 @@ int main(void)
   /* creation of TaskLoRa */
   TaskLoRaHandle = osThreadNew(startTaskLoRa, NULL, &TaskLoRa_attributes);
 
+  /* creation of TaskHMIHandle */
+  TaskHMIHandleHandle = osThreadNew(startTaskHMI, NULL, &TaskHMIHandle_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
+
   /* USER CODE END RTOS_EVENTS */
 
   /* Start scheduler */
@@ -419,7 +459,7 @@ int main(void)
   //HAL_GPIO_TogglePin(PW_Enable_GPIO_Port, PW_Enable_Pin);
   while (1)
   {
-    /* USER CODE END WHILE */
+    /* USER CODE END WHILEt */
 
     /* USER CODE BEGIN 3 */
 
@@ -823,6 +863,38 @@ static void MX_TIM3_Init(void)
 }
 
 /**
+  * @brief TIM16 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM16_Init(void)
+{
+
+  /* USER CODE BEGIN TIM16_Init 0 */
+
+  /* USER CODE END TIM16_Init 0 */
+
+  /* USER CODE BEGIN TIM16_Init 1 */
+
+  /* USER CODE END TIM16_Init 1 */
+  htim16.Instance = TIM16;
+  htim16.Init.Prescaler = 0;
+  htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim16.Init.Period = 839;
+  htim16.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim16.Init.RepetitionCounter = 0;
+  htim16.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim16) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM16_Init 2 */
+
+  /* USER CODE END TIM16_Init 2 */
+
+}
+
+/**
   * @brief USART1 Initialization Function
   * @param None
   * @retval None
@@ -847,7 +919,8 @@ static void MX_USART1_UART_Init(void)
   huart1.Init.OverSampling = UART_OVERSAMPLING_16;
   huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
-  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_RXOVERRUNDISABLE_INIT;
+  huart1.AdvancedInit.OverrunDisable = UART_ADVFEATURE_OVERRUN_DISABLE;
   if (HAL_UART_Init(&huart1) != HAL_OK)
   {
     Error_Handler();
@@ -895,7 +968,8 @@ static void MX_USART3_UART_Init(void)
   huart3.Init.OverSampling = UART_OVERSAMPLING_16;
   huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart3.Init.ClockPrescaler = UART_PRESCALER_DIV1;
-  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_RXOVERRUNDISABLE_INIT;
+  huart3.AdvancedInit.OverrunDisable = UART_ADVFEATURE_OVERRUN_DISABLE;
   if (HAL_UART_Init(&huart3) != HAL_OK)
   {
     Error_Handler();
@@ -927,6 +1001,7 @@ static void MX_DMA_Init(void)
   /* DMA controller clock enable */
   __HAL_RCC_DMAMUX1_CLK_ENABLE();
   __HAL_RCC_DMA1_CLK_ENABLE();
+  __HAL_RCC_DMA2_CLK_ENABLE();
 
   /* DMA interrupt init */
   /* DMA1_Channel1_IRQn interrupt configuration */
@@ -935,6 +1010,12 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel2_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
+  /* DMA1_Channel3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
+  /* DMA2_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Channel1_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Channel1_IRQn);
 
 }
 
@@ -960,7 +1041,14 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(SD_GPIO_CS_GPIO_Port, SD_GPIO_CS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LED_GPIO_OUT_Pin|LORA_NSS_Pin|LORA_RST_Pin|VPOWER_EN_GPIO_OUT_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, LED_GPIO_OUT_Pin|HMILED_GPIO_Pin|LORA_NSS_Pin|LORA_RST_Pin
+                          |VPOWER_EN_GPIO_OUT_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : HMIBTN_EXTI3_Pin */
+  GPIO_InitStruct.Pin = HMIBTN_EXTI3_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(HMIBTN_EXTI3_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : BARO_EXTI_Pin */
   GPIO_InitStruct.Pin = BARO_EXTI_Pin;
@@ -975,8 +1063,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(SD_GPIO_CS_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LED_GPIO_OUT_Pin LORA_NSS_Pin LORA_RST_Pin VPOWER_EN_GPIO_OUT_Pin */
-  GPIO_InitStruct.Pin = LED_GPIO_OUT_Pin|LORA_NSS_Pin|LORA_RST_Pin|VPOWER_EN_GPIO_OUT_Pin;
+  /*Configure GPIO pins : LED_GPIO_OUT_Pin HMILED_GPIO_Pin LORA_NSS_Pin LORA_RST_Pin
+                           VPOWER_EN_GPIO_OUT_Pin */
+  GPIO_InitStruct.Pin = LED_GPIO_OUT_Pin|HMILED_GPIO_Pin|LORA_NSS_Pin|LORA_RST_Pin
+                          |VPOWER_EN_GPIO_OUT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -988,24 +1078,125 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(SD_GPIO_DETECT_GPIO_Port, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
+
+// ========== CALLBACK EXTI BOUTON PA3 ==========
+
+static uint32_t last_button_press = 0;
+#define DEBOUNCE_DELAY_MS 200
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == GPIO_PIN_3) {
+        uint32_t now = HAL_GetTick();
+
+        if (now - last_button_press < DEBOUNCE_DELAY_MS) {
+            return;
+        }
+        last_button_press = now;
+// Protections to not write if we are not ready to recieve
+        if (qHMI_Events != NULL) {
+                    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+                    uint8_t event = 1;
+                    xQueueSendFromISR(qHMI_Events, &event, &xHigherPriorityTaskWoken);
+                    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+                }
+    }
+}
+
+void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+    // Si c'est l'I2C de notre IMU (I2C3) qui a terminé son DMA
+    if (hi2c->Instance == I2C3) {
+
+        // On horodate précisément la mesure à l'instant où elle arrive
+        sprintf(latest_imu.timestamp, "%lu", HAL_GetTick());
+
+        // On demande à notre driver de transformer le buffer brut en données exploitables
+        IMU_ProcessData_DMA(&latest_imu);
+    }
+}
+
+/**
+ * @brief Convertit un float en string sans sprintf (évite heap overflow)
+ * @param value Float à convertir
+ * @param decimals Nombre de décimales (1, 2, ou 6)
+ * @param buffer Buffer de sortie (min 16 bytes)
+ *
+ * Exemple: float_to_str(7.42, 2, buf) → "7.42"
+ *          float_to_str(-123.5, 1, buf) → "-123.5"
+ */
+void float_to_str(float value, uint8_t decimals, char* buffer)
+{
+    int idx = 0;
+
+    // Gestion signe négatif
+    if (value < 0) {
+        buffer[idx++] = '-';
+        value = -value;
+    }
+
+    // Partie entière
+    int int_part = (int)value;
+
+    // Convertir partie entière en string (manuellement)
+    if (int_part == 0) {
+        buffer[idx++] = '0';
+    } else {
+        char temp[12];
+        int temp_idx = 0;
+        int num = int_part;
+
+        while (num > 0) {
+            temp[temp_idx++] = '0' + (num % 10);
+            num /= 10;
+        }
+
+        // Inverser (car on a construit à l'envers)
+        for (int i = temp_idx - 1; i >= 0; i--) {
+            buffer[idx++] = temp[i];
+        }
+    }
+
+    // Point décimal
+    if (decimals > 0) {
+        buffer[idx++] = '.';
+
+        // Partie décimale
+        float dec_part = value - int_part;
+
+        for (uint8_t i = 0; i < decimals; i++) {
+            dec_part *= 10;
+            int digit = (int)dec_part;
+            buffer[idx++] = '0' + digit;
+            dec_part -= digit;
+        }
+    }
+
+    buffer[idx] = '\0';
+}
+/*
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     // Route UART3 interrupts directly to the LiDAR driver
     if (huart->Instance == USART3) {
         Lidar_RxCallback(huart);
     }
+
     // Route UART2 interrupts directly to the GNSS driver
     if (huart->Instance == USART1) {
         GNSS_UART_RxCpltCallback(huart);
     }
 }
 
-
+*/
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_startTaskFSM */
@@ -1018,8 +1209,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 void startTaskFSM(void *argument)
 {
   /* USER CODE BEGIN 5 */
-
-    // Assuming huart1 is PC serial port
     extern UART_HandleTypeDef huart1;
     char debug_msg[128];
 
@@ -1028,201 +1217,156 @@ void startTaskFSM(void *argument)
     sprintf(debug_msg, "[+] LiDAR Interrupt Armed (RTOS Safe)\r\n");
     HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), 100);
 
-    // Tracker to prevent UART spam (only print when state actually changes)
     CanSatState_t last_printed_state = (CanSatState_t)-1;
 
-    // JUST FOR FIRST TESTS
-    configFlag = 1;
+    uint32_t tick_10ms = 0;
 
   /* Infinite loop */
   for(;;)
   {
-    // DEBUG PRINT LOGIC ---
-    if (currentState != last_printed_state) {
-        switch(currentState) {
-            case STATE_STANDBY:   sprintf(debug_msg, "\r\n[FSM] State: STANDBY\r\n"); break;
-            case STATE_CONFIG:    sprintf(debug_msg, "\r\n[FSM] State: CONFIG\r\n"); break;
-            case STATE_READY:
-                sprintf(debug_msg, "\r\n[FSM] State: READY\r\n");
-                // START THE LIDAR DATA STREAM WHEN WE ENTER READY
-                Lidar_RequestStream();
-                break;
-            case STATE_ASCENSION: sprintf(debug_msg, "\r\n[FSM] State: ASCENSION\r\n"); break;
-            case STATE_DROP:      sprintf(debug_msg, "\r\n[FSM] State: DROP\r\n"); break;
-            case STATE_RECOVERY:  sprintf(debug_msg, "\r\n[FSM] State: RECOVERY\r\n"); break;
-            case STATE_OFF:       sprintf(debug_msg, "\r\n[FSM] State: OFF\r\n"); break;
-        }
-        HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), HAL_MAX_DELAY);
-        last_printed_state = currentState;
-    }
+      // ====================================================================
+      // 1. BLOC HAUTE FRÉQUENCE (Exécuté toutes les 10 ms -> 100 Hz)
+      // ====================================================================
+      if (currentState >= STATE_READY && currentState < STATE_OFF) {
 
-    // STATE TRANSITION LOGIC ---
-    switch(currentState) {
-        // --------------------------------------------------------------------------------------------
-        case STATE_STANDBY:
-            if (configFlag == 1) {
-                currentState = STATE_CONFIG;
-            }
-            break;
+          // GNSS et Batterie (Protégés à 1 Hz par leur propre chronomètre)
+          static uint32_t last_gnss_fetch = 0;
+          if (HAL_GetTick() - last_gnss_fetch > 1000) {
+              last_gnss_fetch = HAL_GetTick();
+              SensorEvent_t gnss_ticket = EVENT_GNSS_READY;
+              xQueueSend(qSensorEvents, &gnss_ticket, 0);
 
-        // --------------------------------------------------------------------------------------------
-            // --------------------------------------------------------------------------------------------
-	case STATE_CONFIG:
-		{
-			if (imu_is_connected) {
-				sprintf(debug_msg, "[+] IMU Hardcoded Profile Loaded.\r\n");
-				HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), 100);
-			} else {
-				sprintf(debug_msg, "[-] IMU Not Detected.\r\n");
-				HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), 100);
-			}
+              SensorEvent_t bat_ticket = EVENT_BATTERY_READY;
+              xQueueSend(qSensorEvents, &bat_ticket, 0);
+          }
 
-			//Lidar_DirectDebug(&huart1);
+          // Baromètre et IMU demandés à 100 Hz
 
-			sprintf(debug_msg, "[*] LIDAR configurations:.\r\n");
-			HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), 100);
+          // not needed because we got baro EXTI
+          SensorEvent_t baro_ticket = EVENT_BARO_READY;
+          xQueueSend(qSensorEvents, &baro_ticket, 0);
 
-			sprintf(debug_msg, "\r\n[*] Calibrating Barometer...\r\n");
-			HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), 100);
+          SensorEvent_t imu_ticket = EVENT_IMU_READY;
+          xQueueSend(qSensorEvents, &imu_ticket, 0);
+      }
 
-			// --- DYNAMIC CALIBRATION TRACKING ---
-			uint32_t start_time = HAL_GetTick(); // Capture start time
+      // ====================================================================
+      // 2. BLOC BASSE FRÉQUENCE (Exécuté 1 fois sur 5 -> 20 Hz)
+      // ====================================================================
+      if (tick_10ms % 5 == 0)
+      {
+          // --- A. LOGIQUE D'AFFICHAGE DEBUG ---
+          if (currentState != last_printed_state) {
+              switch(currentState) {
+                  case STATE_STANDBY:   sprintf(debug_msg, "\r\n[FSM] State: STANDBY\r\n"); break;
+                  case STATE_CONFIG:    sprintf(debug_msg, "\r\n[FSM] State: CONFIG\r\n"); break;
+                  case STATE_READY:
+                      sprintf(debug_msg, "\r\n[FSM] State: READY\r\n");
+                      Lidar_RequestStream();
+                      break;
+                  case STATE_ASCENSION: sprintf(debug_msg, "\r\n[FSM] State: ASCENSION\r\n"); break;
+                  case STATE_DROP:      sprintf(debug_msg, "\r\n[FSM] State: DROP\r\n"); break;
+                  case STATE_RECOVERY:  sprintf(debug_msg, "\r\n[FSM] State: RECOVERY\r\n"); break;
+                  case STATE_OFF:       sprintf(debug_msg, "\r\n[FSM] State: OFF\r\n"); break;
+              }
+              HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), HAL_MAX_DELAY);
+              last_printed_state = currentState;
+          } // <=== L'ACCOLADE MANQUANTE ÉTAIT ICI !
 
-			// Barometer calibration
-			if (BMP581_CalibrateGroundPressure(&reference_pressure_Pa, &reference_temp_C, &bmp_sensor) == HAL_OK) {
+          // --- B. ENVOI DE LA TÉLÉMÉTRIE (LoRa & SD lente) ---
+          if (currentState >= STATE_READY && currentState < STATE_OFF) {
+              static uint32_t last_lora_tx = 0;
+              if (HAL_GetTick() - last_lora_tx > TIME_BETWEEN_PACKET_LORA_mS) {
+                  last_lora_tx = HAL_GetTick();
 
-				// Calculate exact millisecond duration
-				calibration_duration_ms = HAL_GetTick() - start_time;
-				float elapsed_sec = (float)calibration_duration_ms / 1000.0f;
+                  TelemetryPacket_t telemetry_pkt;
+                  memset(&telemetry_pkt, 0, sizeof(TelemetryPacket_t));
 
-				sprintf(debug_msg, "[+] Calibration completed: %.2f Pa | %.2f C (Elapsed time %.1f s)\r\n",
-						reference_pressure_Pa, reference_temp_C, elapsed_sec);
-			} else {
-				sprintf(debug_msg, "[-] Calibration Failed! Using defaults.\r\n");
-				reference_pressure_Pa = 101325.0;
-				reference_temp_C = 25.0;
-				calibration_duration_ms = 0; // Send 0 to GUI if it fails
-			}
-			HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), 100);
+                  sprintf(telemetry_pkt.baro.timestamp, "%lu", HAL_GetTick());
+                  telemetry_pkt.baro.height = current_height;
+                  telemetry_pkt.baro.temperature = latest_baro.temperature;
+                  telemetry_pkt.imu.pitch = latest_imu.pitch;
+                  telemetry_pkt.imu.roll = latest_imu.roll;
+                  telemetry_pkt.imu.yaw = latest_imu.yaw;
+                  telemetry_pkt.imu.accelX = latest_imu.accelX;
+                  telemetry_pkt.imu.accelY = latest_imu.accelY;
+                  telemetry_pkt.imu.accelZ = latest_imu.accelZ;
+                  telemetry_pkt.imu.gyroX = latest_imu.gyroX;
+                  telemetry_pkt.imu.gyroY = latest_imu.gyroY;
+                  telemetry_pkt.imu.gyroZ = latest_imu.gyroZ;
+                  telemetry_pkt.gnss.latitude = latest_gnss.latitude;
+                  telemetry_pkt.gnss.longitude = latest_gnss.longitude;
+                  telemetry_pkt.gnss.satellites = latest_gnss.satellites;
+                  telemetry_pkt.bat.voltage = latest_battery.voltage;
 
-			// --- GNSS SATELLITE LOCK ---
+                  xQueueSend(qLoRa, &telemetry_pkt, 0);
+                  xQueueSend(qSDCard, &telemetry_pkt, 0);
+              }
+          }
 
-			//========================================================================================================= Turned Off for debugging :
-			if (debug == 0){
-				GNSS_CalibrateSatellite();
-			}
+          // --- C. MACHINE À ÉTATS (Transitions de vol) ---
+          switch(currentState) {
+              case STATE_STANDBY:
+                  if (configFlag == 1) currentState = STATE_CONFIG;
+                  break;
 
+              case STATE_CONFIG:
+            	  char config_msg[128];
+            	                    sprintf(config_msg, "\r\n[*] Calibrating Barometer (Do not move)...\r\n");
+            	                    HAL_UART_Transmit(&huart1, (uint8_t*)config_msg, strlen(config_msg), 100);
 
+            	                    uint32_t start_time = HAL_GetTick();
 
+            	                    if (BMP581_CalibrateGroundPressure(&reference_pressure_Pa, &reference_temp_C, &bmp_sensor) == HAL_OK) {
+            	                        calibration_duration_ms = HAL_GetTick() - start_time;
+            	                        sprintf(config_msg, "[+] Calibration completed: %.2f Pa | %.2f C\r\n", reference_pressure_Pa, reference_temp_C);
+            	                    } else {
+            	                        sprintf(config_msg, "[-] Calibration Failed! Using defaults.\r\n");
+            	                        reference_pressure_Pa = 101325.0;
+            	                        reference_temp_C = 25.0;
+            	                        calibration_duration_ms = 0;
+            	                    }
+            	                    HAL_UART_Transmit(&huart1, (uint8_t*)config_msg, strlen(config_msg), 100);
+            	  if (configFlag == 0) {
+            	  currentState = STATE_READY;
+            	  }
+                  break;
 
-			// ---------------------------
+              case STATE_READY:
+                  if (configFlag == 1) {
+                      currentState = STATE_CONFIG;
+                  } else if (latest_lidar.distance < THRESH_LIDAR_IN_BOX_M && current_height > THRESH_ALTITUDE_LAUNCH_M) {
+                      currentState = STATE_ASCENSION;
+                  }
+                  break;
 
-			currentState = STATE_READY;
-			break;
-		}
-        // --------------------------------------------------------------------------------------------
-        case STATE_READY:
-		{
-			// 1. Create and send a ticket for the Barometer
-			SensorEvent_t baro_ticket = EVENT_BARO_READY;
-			xQueueSend(qSensorEvents, &baro_ticket, 0);
+              case STATE_ASCENSION:
+                  if (latest_lidar.distance > THRESH_LIDAR_DEPLOYED_M && current_height > THRESH_ALTITUDE_LAUNCH_M) {
+                      currentState = STATE_DROP;
+                  }
+                  break;
 
+              case STATE_DROP:
+                  if (current_height < THRESH_ALTITUDE_LANDING_M) {
+                      currentState = STATE_RECOVERY;
+                  }
+                  break;
 
-			// 2. Create and send a ticket for the IMU
-			SensorEvent_t imu_ticket = EVENT_IMU_READY;
-			xQueueSend(qSensorEvents, &imu_ticket, 0);
+              case STATE_RECOVERY:
+                  break;
 
-			// --- LORA TEST TRIGGER ---
-			// Send a test packet every 100 milliseconds (0.1 seconds)
-			static uint32_t last_lora_tx = 0;
-			if (HAL_GetTick() - last_lora_tx > TIME_BETWEEN_PACKET_LORA_mS) {
-				last_lora_tx = HAL_GetTick();
+              case STATE_OFF:
+                  break;
+          }
 
-				TelemetryPacket_t test_pkt;
+          // Clignotement de la LED exécuté à 20 Hz
+          HAL_GPIO_TogglePin(LED_GPIO_OUT_GPIO_Port, LED_GPIO_OUT_Pin);
 
-				// CRITICAL FIX: Wipe the garbage memory out of the struct!
-				memset(&test_pkt, 0, sizeof(TelemetryPacket_t));
+      } // <=== FIN DU BLOC if (tick_10ms % 5 == 0)
 
-				// Pack it with our global variables and some fake GNSS data
-				sprintf(test_pkt.baro.timestamp, "%lu", HAL_GetTick());
-				test_pkt.gnss.latitude = 49.039506f; // Fake Lat
-				test_pkt.gnss.longitude = 2.072491f; // Fake Lon
-				test_pkt.baro.height = current_height;
-				test_pkt.baro.temperature = latest_baro.temperature;
-				test_pkt.imu.pitch = latest_imu.pitch;
-				test_pkt.imu.roll = latest_imu.roll;
-				test_pkt.imu.head = latest_imu.head;
-				test_pkt.imu.accelX = latest_imu.accelX;
-				test_pkt.imu.accelY = latest_imu.accelY;
-				test_pkt.imu.accelZ = latest_imu.accelZ;
-				test_pkt.imu.gyroX = latest_imu.gyroX;
-				test_pkt.imu.gyroY = latest_imu.gyroY;
-				test_pkt.imu.gyroZ = latest_imu.gyroZ;
-				test_pkt.gnss.latitude = latest_gnss.latitude;
-				test_pkt.gnss.longitude = latest_gnss.longitude;
-				test_pkt.gnss.satellites = latest_gnss.satellites;
-				test_pkt.bat.voltage = latest_battery.voltage;
-				// Drop it in the mailbox! TaskLoRa will wake up instantly.
-				xQueueSend(qLoRa, &test_pkt, 0);
-
-				//We save it on the SD CARD as well
-				xQueueSend(qSDCard, &test_pkt, 0);
-			}
-
-			// --- GNSS and Battery UPDATE TRIGGER ---
-			// Tell the Sensor Task to fetch the latest background GPS data once per second
-			static uint32_t last_gnss_fetch = 0;
-			if (HAL_GetTick() - last_gnss_fetch > 1000) {
-				last_gnss_fetch = HAL_GetTick();
-				SensorEvent_t gnss_ticket = EVENT_GNSS_READY;
-				xQueueSend(qSensorEvents, &gnss_ticket, 0);
-
-				SensorEvent_t bat_ticket = EVENT_BATTERY_READY;
-				    xQueueSend(qSensorEvents, &bat_ticket, 0);
-
-			}
-			// -------------------------
-
-			// 2. LAUNCH DETECTION LOGIC
-			if (configFlag == 0) {
-				currentState = STATE_CONFIG; // Return to config if flag drops
-			}
-			// If inside box AND altitude is high enough
-			else if (latest_lidar.distance < THRESH_LIDAR_IN_BOX_M && current_height > THRESH_ALTITUDE_LAUNCH_M) {
-				currentState = STATE_ASCENSION;
-			}
-			break;
-		}
-		// --------------------------------------------------------------------------------------------
-		case STATE_ASCENSION:
-			// Wait for Drop condition (LiDAR shoots past 1 meter, meaning we left the box!)
-			if (latest_lidar.distance > THRESH_LIDAR_DEPLOYED_M && current_height > THRESH_ALTITUDE_LAUNCH_M) {
-				currentState = STATE_DROP;
-			}
-			break;
-
-		// --------------------------------------------------------------------------------------------
-		case STATE_DROP:
-			// Check if we hit the ground
-			if (current_height < THRESH_ALTITUDE_LANDING_M) {
-				currentState = STATE_RECOVERY;
-			}
-			break;
-
-        // --------------------------------------------------------------------------------------------
-        case STATE_RECOVERY:
-
-            // Deploy buzzer, stop measurements
-            break;
-
-        // --------------------------------------------------------------------------------------------
-        case STATE_OFF:
-            break;
-    }
-
-    // Evaluate FSM at 20Hz (every 50ms)
-    HAL_GPIO_TogglePin(LED_GPIO_OUT_GPIO_Port, LED_GPIO_OUT_Pin);
-    osDelay(50);
+      // Horloge maître et pause absolue de 10 ms
+      tick_10ms++;
+      osDelay(50);
   }
   /* USER CODE END 5 */
 }
@@ -1239,9 +1383,9 @@ void startTaskSensors(void *argument)
   /* USER CODE BEGIN startTaskSensors */
 
     SensorEvent_t current_event;
-    TelemetryPacket_t pkt;
+    //FastPacket_t fast_pkt;
     extern UART_HandleTypeDef huart1;
-    char sensor_msg[256];
+    //char sensor_msg[256];
 
     /* Infinite loop */
     for(;;)
@@ -1303,10 +1447,32 @@ void startTaskSensors(void *argument)
 //                        sprintf(sensor_msg, "[BAR | ERROR] Error reading data!\r\n");
 //                        HAL_UART_Transmit(&huart1, (uint8_t*)sensor_msg, strlen(sensor_msg), 100);
                     }
+                    //uint8_t dummy_status;
+                    //HAL_I2C_Mem_Read(&hi2c1, BMP581_READ_ADDR, 0x27, 1, &dummy_status, 1, 10);
                     break;
                 }
 
                 // ---------------------------------------------------------
+
+                // The Lidar Has 2 event states because of the ping pong buffer from the DMA
+                // ---------------------------------------------------------
+                case EVENT_LIDAR_HALF_CPLT:
+                {
+                    // Le DMA a rempli la première moitié : de l'index 0 à 99
+                    // On passe l'adresse du début du buffer, et on lui dit de lire 100 cases
+                    Process_Lidar_Buffer_Chunk(&lidar_dma_buf[0], DMA_BUFFER_SIZE / 2, current_ms);
+                    break;
+                }
+
+                // ---------------------------------------------------------
+                case EVENT_LIDAR_FULL_CPLT:
+                {
+                    // Le DMA a rempli la deuxième moitié : de l'index 100 à 199
+                    // On passe l'adresse du milieu du buffer, et on lui dit de lire 100 cases
+                    Process_Lidar_Buffer_Chunk(&lidar_dma_buf[DMA_BUFFER_SIZE / 2], DMA_BUFFER_SIZE / 2, current_ms);
+                    break;
+                }
+                /* Before the DMA update :
                 case EVENT_LIDAR_READY:
                 {
                     extern volatile uint8_t lidar_stream_mode;
@@ -1340,18 +1506,42 @@ void startTaskSensors(void *argument)
                                 print_counter = 0;
                             }
                         }
-/*
                         // Data Logging
-                        if (currentState == STATE_DROP) {
-                            pkt.lidar = latest_lidar;
-                            pkt.imu = latest_imu;
-                            xQueueSend(qSDCard, &pkt, 0);
+                        if (currentState == STATE_READY) {//State Ready for debugging
+                            fast_pkt.lidar = latest_lidar;
+                            fast_pkt.imu = latest_imu;
+                            fast_pkt.baro = latest_baro;
+                            fast_pkt.gnss = latest_gnss;
                         }
-          */
-                    }
-                    break;
-                }
+                        // Send LIDAR data to SD card queue at ~50Hz
+                        if (currentState >= STATE_READY) {  // Only log after drop
+                            xQueueSend(qSDCard_LIDAR, &fast_pkt, 0);
+                        }
 
+                    }
+
+                    break;
+                }*/
+
+
+                case EVENT_IMU_READY:
+                                {
+                                    // Lancement du Burst Read DMA (Non-bloquant)
+                                    // Taille : 34 octets. Registre de départ : BNO055_GYRO_DATA_X_LSB (0x14)
+                                    if (IMU_RequestData_DMA() == 0) {
+                                        // En cas de bus occupé ou erreur matérielle grave
+                                        extern UART_HandleTypeDef huart1;
+                                        char sensor_msg[] = "[-] DMA I2C Start Failed!\r\n";
+                                        HAL_UART_Transmit(&huart1, (uint8_t*)sensor_msg, strlen(sensor_msg), 10);
+                                    }
+//                                                            sprintf(sensor_msg, "[IMU | %s] H:%6.1f | P:%6.1f | R:%6.1f || ax:%5.2f | ay:%5.2f | az:%5.2f\r\n",
+//                                                                    latest_imu.timestamp,
+//                                                                    latest_imu.yaw, latest_imu.pitch, latest_imu.roll,
+//                                                                    latest_imu.accelX, latest_imu.accelY, latest_imu.accelZ);
+//                                                            HAL_UART_Transmit(&huart1, (uint8_t*)sensor_msg, strlen(sensor_msg), 100);
+                                    break;
+                                }
+                /*
                 // ---------------------------------------------------------
                 case EVENT_IMU_READY:
                 {
@@ -1361,7 +1551,7 @@ void startTaskSensors(void *argument)
 
 //                        sprintf(sensor_msg, "[IMU | %s] H:%6.1f | P:%6.1f | R:%6.1f || ax:%5.2f | ay:%5.2f | az:%5.2f\r\n",
 //                                latest_imu.timestamp,
-//                                latest_imu.head, latest_imu.pitch, latest_imu.roll,
+//                                latest_imu.yaw, latest_imu.pitch, latest_imu.roll,
 //                                latest_imu.accelX, latest_imu.accelY, latest_imu.accelZ);
 //                        HAL_UART_Transmit(&huart1, (uint8_t*)sensor_msg, strlen(sensor_msg), 100);
                     } else {
@@ -1370,7 +1560,7 @@ void startTaskSensors(void *argument)
                     }
                     break;
                 }
-
+*/
                 // ---------------------------------------------------------
 				case EVENT_GNSS_READY:
 				{
@@ -1422,6 +1612,11 @@ uint8_t is_sd_inserted(void) {
 void startTaskSDCard(void *argument)
 {
   /* USER CODE BEGIN startTaskSDCard */
+	extern GNSS_Data_t latest_gnss;
+	extern Barometer_Data_t latest_baro;
+	extern IMU_Data_t latest_imu;
+	extern CanSatState_t currentState;
+
 	if (is_sd_inserted()) {
 		char SD_init_msg[] = "[*]SD Card Inserted\r\n";
 	    HAL_UART_Transmit(&huart1, (uint8_t*)SD_init_msg, strlen(SD_init_msg), 100);
@@ -1448,7 +1643,7 @@ void startTaskSDCard(void *argument)
     // Creating the headers
     Update_File("DATA.CSV", "tx_timestamp_ms,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,roll,pitch,yaw,temperature,altitude,latitude,longitude,satellites,flags_raw,battery_voltage\r\n");
     HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
-    Update_File("LIDAR.CSV", "Time,Distance,Roll,Pitch,Yaw,Height\r\n");
+    Update_File("LIDAR.CSV", "tx_timestamp_ms,distance,roll,pitch,yaw,latitude,longitude,altitude,flags_raw\r\n");
     HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
 
 
@@ -1456,13 +1651,78 @@ void startTaskSDCard(void *argument)
     HAL_UART_Transmit(&huart1, (uint8_t*)SD_end_msg, strlen(SD_end_msg), 100);
 
     TelemetryPacket_t pkt;
+    FastPacket_t fast_pkt;
     char csv_buffer[256];
     char lidar_buffer[128];
     /* Infinite loop */
    for(;;)
     {
+	   // Handle high-frequency LIDAR data (50 Hz)
+	   if (uxQueueMessagesWaiting(qSDCard_LIDAR) > 0 && is_sd_inserted()) {
+
+	               FIL fil_lidar;
+	               // Variable requise par f_write pour retourner le nombre d'octets écrits
+	               UINT bytes_written;
+
+	               if (f_open(&fil_lidar, "LIDAR.CSV", FA_OPEN_ALWAYS | FA_WRITE) == FR_OK) {
+
+	                   f_lseek(&fil_lidar, f_size(&fil_lidar));
+
+	                   while (xQueueReceive(qSDCard_LIDAR, &fast_pkt, 0) == pdTRUE) {
+
+	                       uint8_t lidar_flags = 0;
+	                       if (currentState >= STATE_READY)     lidar_flags |= 0x01;
+	                       if (currentState >= STATE_ASCENSION) lidar_flags |= 0x02;
+	                       if (currentState >= STATE_DROP)      lidar_flags |= 0x04;
+	                       if (currentState >= STATE_RECOVERY)  lidar_flags |= 0x08;
+
+	                       char tmp[16];
+	                       int offset = 0;
+
+	                       // Timestamp
+	                       offset += sprintf(lidar_buffer + offset, "%s,", fast_pkt.lidar.timestamp);
+
+	                       // Distance (%.2f)
+	                       float_to_str(fast_pkt.lidar.distance, 2, tmp);
+	                       offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+
+	                       // Roll (%.1f)
+	                       float_to_str(fast_pkt.imu.roll, 1, tmp);
+	                       offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+
+	                       // Pitch (%.1f)
+	                       float_to_str(fast_pkt.imu.pitch, 1, tmp);
+	                       offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+
+	                       // Yaw (%.1f)
+	                       float_to_str(fast_pkt.imu.yaw, 1, tmp);
+	                       offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+
+	                       // Latitude (%.6f)
+	                       float_to_str(fast_pkt.gnss.latitude, 6, tmp);
+	                       offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+
+	                       // Longitude (%.6f)
+	                       float_to_str(fast_pkt.gnss.longitude, 6, tmp);
+	                       offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+
+	                       // Height (%.2f)
+	                       float_to_str(fast_pkt.baro.height, 2, tmp);
+	                       offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+
+	                       // Flags
+	                       sprintf(lidar_buffer + offset, "%d\r\n", lidar_flags);
+
+	                       // CORRECTION : Écriture brute sans interprétation textuelle
+	                       f_write(&fil_lidar, lidar_buffer, strlen(lidar_buffer), &bytes_written);
+	                   }
+
+	                   f_close(&fil_lidar);
+	               }
+	           }
        // Waiting for a telemetry packet and checking if the SD is still inserted
-        if (xQueueReceive(qSDCard, &pkt, portMAX_DELAY) == pdTRUE && is_sd_inserted()) {
+	   if (xQueueReceive(qSDCard, &pkt, 10) == pdTRUE) {
+	               if (is_sd_inserted()) {
 
             char* time_val = (strlen(pkt.baro.timestamp) > 0) ? pkt.baro.timestamp : "0";
 
@@ -1472,36 +1732,77 @@ void startTaskSDCard(void *argument)
             if (currentState >= STATE_DROP)      flags |= 0x04;
             if (currentState >= STATE_RECOVERY)  flags |= 0x08;
 
-            sprintf(csv_buffer, "%s,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.1f,%.1f,%.1f,%.2f,%.2f,%.6f,%.6f,%d,%d,%.2f\r\n",
-            		time_val,pkt.imu.accelX, pkt.imu.accelY, pkt.imu.accelZ,
-                    pkt.imu.gyroX, pkt.imu.gyroY, pkt.imu.gyroZ,
-                    pkt.imu.roll, pkt.imu.pitch, pkt.imu.head,
-                    pkt.baro.temperature, pkt.baro.height,
-                    pkt.gnss.latitude, pkt.gnss.longitude,
-                    pkt.gnss.satellites, flags, pkt.bat.voltage);
+            char tmp[16];
+            int offset = 0;
+
+            // Timestamp
+            offset += sprintf(csv_buffer + offset, "%s,", time_val);
+
+            // Accel X,Y,Z (%.2f)
+            float_to_str(pkt.imu.accelX, 2, tmp);
+            offset += sprintf(csv_buffer + offset, "%s,", tmp);
+            float_to_str(pkt.imu.accelY, 2, tmp);
+            offset += sprintf(csv_buffer + offset, "%s,", tmp);
+            float_to_str(pkt.imu.accelZ, 2, tmp);
+            offset += sprintf(csv_buffer + offset, "%s,", tmp);
+
+            // Gyro X,Y,Z (%.2f)
+            float_to_str(pkt.imu.gyroX, 2, tmp);
+            offset += sprintf(csv_buffer + offset, "%s,", tmp);
+            float_to_str(pkt.imu.gyroY, 2, tmp);
+            offset += sprintf(csv_buffer + offset, "%s,", tmp);
+            float_to_str(pkt.imu.gyroZ, 2, tmp);
+            offset += sprintf(csv_buffer + offset, "%s,", tmp);
+
+            // Roll, Pitch, Yaw (%.1f)
+            float_to_str(pkt.imu.roll, 1, tmp);
+            offset += sprintf(csv_buffer + offset, "%s,", tmp);
+            float_to_str(pkt.imu.pitch, 1, tmp);
+            offset += sprintf(csv_buffer + offset, "%s,", tmp);
+            float_to_str(pkt.imu.yaw, 1, tmp);
+            offset += sprintf(csv_buffer + offset, "%s,", tmp);
+
+            // Temperature, Height (%.2f)
+            float_to_str(pkt.baro.temperature, 2, tmp);
+            offset += sprintf(csv_buffer + offset, "%s,", tmp);
+            float_to_str(pkt.baro.height, 2, tmp);
+            offset += sprintf(csv_buffer + offset, "%s,", tmp);
+
+            // Latitude, Longitude (%.6f)
+            float_to_str(pkt.gnss.latitude, 6, tmp);
+            offset += sprintf(csv_buffer + offset, "%s,", tmp);
+            float_to_str(pkt.gnss.longitude, 6, tmp);
+            offset += sprintf(csv_buffer + offset, "%s,", tmp);
+
+            // Satellites, Flags (int)
+            offset += sprintf(csv_buffer + offset, "%d,%d,", pkt.gnss.satellites, flags);
+
+            // Battery voltage (%.2f)
+            float_to_str(pkt.bat.voltage, 2, tmp);
+            sprintf(csv_buffer + offset, "%s\r\n", tmp);
 
 
-            sprintf(lidar_buffer, "%s,%.2f,%.1f,%.1f,%.1f,%.2f\r\n",
+/*            sprintf(lidar_buffer, "%s,%.2f,%.1f,%.1f,%.1f,%.2f\r\n",
                                 time_val,
                                 pkt.lidar.distance,
                                 pkt.imu.roll,
                                 pkt.imu.pitch,
-                                pkt.imu.head,
-                                pkt.baro.height);
+                                pkt.imu.yaw,
+                                pkt.baro.height);*/
 
 
             // Safely saving on the SD Card :
 
             Update_File("DATA.CSV", csv_buffer);
             HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
-            Update_File("LIDAR.CSV", lidar_buffer);
-            HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
-
-
-            // Break
-            osDelay(5);
+         /*   Update_File("LIDAR.CSV", lidar_buffer);
+            HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);*/
             //vTaskDelay(1000);
         }
+	   }
+
+       // Break
+       //osDelay(5);
     }
 
   /* USER CODE END startTaskSDCard */
@@ -1534,26 +1835,26 @@ void startTaskLoRa(void *argument)
 
     // --- WAIT FOR FSM CALIBRATION AND BROADCAST GNSS STATUS ---
         // Broadcast the full 17-value packet so the Python GUI populates the map and satellite counts!
-        while (currentState < STATE_READY) {
-
-            // Read Live Battery
-            float vbat = 0.0f;
-            HAL_ADC_Start(&hadc1);
-            if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
-                vbat = ((float)HAL_ADC_GetValue(&hadc1) / 4095.0f) * 3.3f * 3.0f * 1.025f;
-            }
-            HAL_ADC_Stop(&hadc1);
-
-            // Build the standard packet, putting "0" for the flight flags and injecting live GPS
-            sprintf(payload_str, "0.00,0.00,0.00,0.00,0.00,0.00,0.0,0.0,0.0,%.2f,%.2f,%.6f,%.6f,0,%lu,%.2f,%d\r\n",
-                    latest_baro.temperature, current_height,
-                    parsed_gnss.latitude, parsed_gnss.longitude,
-                    HAL_GetTick(), vbat, parsed_gnss.satellites);
-
-            SX1276_SendPacket((uint8_t*)payload_str, strlen(payload_str));
-
-            osDelay(1000); // 1 Hz refresh rate during standby
-        }
+//        while (currentState < STATE_READY) {
+//
+//            // Read Live Battery
+//            float vbat = 0.0f;
+//            HAL_ADC_Start(&hadc1);
+//            if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
+//                vbat = ((float)HAL_ADC_GetValue(&hadc1) / 4095.0f) * 3.3f * 3.0f * 1.025f;
+//            }
+//            HAL_ADC_Stop(&hadc1);
+//
+//            // Build the standard packet, putting "0" for the flight flags and injecting live GPS
+//            sprintf(payload_str, "0.00,0.00,0.00,0.00,0.00,0.00,0.0,0.0,0.0,%.2f,%.2f,%.6f,%.6f,0,%lu,%.2f,%d\r\n",
+//                    latest_baro.temperature, current_height,
+//                    parsed_gnss.latitude, parsed_gnss.longitude,
+//                    HAL_GetTick(), vbat, parsed_gnss.satellites);
+//
+//            SX1276_SendPacket((uint8_t*)payload_str, strlen(payload_str));
+//
+//            osDelay(1000); // 1 Hz refresh rate during standby
+//        }
 
         // --- SEND DYNAMIC CALIBRATION PACKET ---
         // The FSM has locked 4+ satellites and entered STATE_READY. Fire the CAL packet!
@@ -1579,13 +1880,51 @@ void startTaskLoRa(void *argument)
 
             // --- FORMAT 15-VALUE PYTHON PROTOCOL V2.2 + VBAT ---
             // --- FORMAT 17-VALUE PYTHON PROTOCOL V2.3 ---
-			sprintf(payload_str, "%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.1f,%.1f,%.1f,%.2f,%.2f,%.6f,%.6f,%d,%d,%s,%.2f\r\n",
-					pkt.imu.accelX, pkt.imu.accelY, pkt.imu.accelZ,
-					pkt.imu.gyroX, pkt.imu.gyroY, pkt.imu.gyroZ,
-					pkt.imu.roll, pkt.imu.pitch, pkt.imu.head,
-					pkt.baro.temperature, pkt.baro.height,
-					pkt.gnss.latitude, pkt.gnss.longitude,
-					pkt.gnss.satellites, flags, time_val, pkt.bat.voltage); // <--- PERFECTLY ALIGNED!
+            char tmp[16];
+            int offset = 0;
+
+            // Accel X,Y,Z (%.2f)
+            float_to_str(pkt.imu.accelX, 2, tmp);
+            offset += sprintf(payload_str + offset, "%s,", tmp);
+            float_to_str(pkt.imu.accelY, 2, tmp);
+            offset += sprintf(payload_str + offset, "%s,", tmp);
+            float_to_str(pkt.imu.accelZ, 2, tmp);
+            offset += sprintf(payload_str + offset, "%s,", tmp);
+
+            // Gyro X,Y,Z (%.2f)
+            float_to_str(pkt.imu.gyroX, 2, tmp);
+            offset += sprintf(payload_str + offset, "%s,", tmp);
+            float_to_str(pkt.imu.gyroY, 2, tmp);
+            offset += sprintf(payload_str + offset, "%s,", tmp);
+            float_to_str(pkt.imu.gyroZ, 2, tmp);
+            offset += sprintf(payload_str + offset, "%s,", tmp);
+
+            // Roll, Pitch, Yaw (%.1f)
+            float_to_str(pkt.imu.roll, 1, tmp);
+            offset += sprintf(payload_str + offset, "%s,", tmp);
+            float_to_str(pkt.imu.pitch, 1, tmp);
+            offset += sprintf(payload_str + offset, "%s,", tmp);
+            float_to_str(pkt.imu.yaw, 1, tmp);
+            offset += sprintf(payload_str + offset, "%s,", tmp);
+
+            // Temperature, Height (%.2f)
+            float_to_str(pkt.baro.temperature, 2, tmp);
+            offset += sprintf(payload_str + offset, "%s,", tmp);
+            float_to_str(pkt.baro.height, 2, tmp);
+            offset += sprintf(payload_str + offset, "%s,", tmp);
+
+            // Latitude, Longitude (%.6f)
+            float_to_str(pkt.gnss.latitude, 6, tmp);
+            offset += sprintf(payload_str + offset, "%s,", tmp);
+            float_to_str(pkt.gnss.longitude, 6, tmp);
+            offset += sprintf(payload_str + offset, "%s,", tmp);
+
+            // Satellites, Flags, Timestamp
+            offset += sprintf(payload_str + offset, "%d,%d,%s,", pkt.gnss.satellites, flags, time_val);
+
+            // Battery voltage (%.2f)
+            float_to_str(pkt.bat.voltage, 2, tmp);
+            sprintf(payload_str + offset, "%s\r\n", tmp);
 
             // Send the packet over the air
             SX1276_SendPacket((uint8_t*)payload_str, strlen(payload_str));
@@ -1595,6 +1934,95 @@ void startTaskLoRa(void *argument)
         }
     }
   /* USER CODE END startTaskLoRa */
+}
+
+/* USER CODE BEGIN Header_startTaskHMI */
+/**
+* @brief Function implementing the TaskHMIHandle thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_startTaskHMI */
+void startTaskHMI(void *argument)
+{
+  /* USER CODE BEGIN startTaskHMI */
+    if (HAL_I2C_IsDeviceReady(&hi2c1, SSD1306_I2C_ADDR, 3, 100) != HAL_OK) {
+        vTaskSuspend(NULL);
+    }
+
+    HMI_State_t HMI_state = {
+        .current_page = HMI_PAGE_OVERVIEW,
+        .cursor_position = 0,
+        .lora_enabled = 0
+    };
+
+    ssd1306_Init();
+
+    ssd1306_Fill(Black);
+    ssd1306_SetCursor(0, 0);
+    ssd1306_WriteString("CanSat HMI", Font_11x18, White);
+    ssd1306_SetCursor(0, 24);
+    ssd1306_WriteString("Initializing...", Font_7x10, White);
+    ssd1306_SetCursor(0, 40);
+    ssd1306_WriteString("SBC-OLED01", Font_7x10, White);
+    HMI_safe_update_screen();
+    osDelay(1500);
+
+    uint8_t event;
+    uint8_t HMI_failure_count = 0;
+
+    for(;;)
+    {
+        extern CanSatState_t currentState;
+        uint8_t last_battery_check = HAL_GetTick();
+        if (currentState == STATE_CONFIG) {
+
+            if (HAL_GetTick() - last_battery_check > 1000) {
+            last_battery_check = HAL_GetTick();
+            SensorEvent_t bat_ticket = EVENT_BATTERY_READY;
+            xQueueSend(qSensorEvents, &bat_ticket, 0);
+            HMI_display_data.battery_voltage = latest_battery.voltage;
+            HMI_display_data.battery_percent = calculate_battery_percent(latest_battery.voltage);
+            }
+
+            if (xQueueReceive(qHMI_Events, &event, pdMS_TO_TICKS(500)) == pdTRUE) {
+                HMI_handle_button(&HMI_state);
+            }
+
+            switch (HMI_state.current_page) {
+                case HMI_PAGE_OVERVIEW:
+                    HMI_display_overview(&HMI_state);
+                    break;
+                case HMI_PAGE_MENU:
+                    HMI_display_menu(&HMI_state);
+                    break;
+                case HMI_PAGE_LORA:
+                    HMI_display_lora(&HMI_state);
+                    break;
+                case HMI_PAGE_SENSORS:
+                    HMI_display_sensors(&HMI_state);
+                    break;
+                case HMI_PAGE_BATTERY:
+                    HMI_display_battery(&HMI_state);
+                    break;
+            }
+
+            if (HMI_safe_update_screen() == 0) {
+                HMI_failure_count++;
+                if (HMI_failure_count >= 3) {
+                    vTaskSuspend(NULL);
+                }
+            } else {
+                HMI_failure_count = 0;
+            }
+
+        } else {
+            vTaskSuspend(NULL);
+        }
+
+        osDelay(100);
+    }
+  /* USER CODE END startTaskHMI */
 }
 
 /**

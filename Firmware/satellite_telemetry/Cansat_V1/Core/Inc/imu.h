@@ -14,6 +14,8 @@
 #ifndef IMU_H_
 #define IMU_H_
 
+
+
 // Changed to G4 HAL to match your STM32G431CBU6
 #include "stm32g4xx_hal.h"
 
@@ -41,7 +43,7 @@
 // Updated Structure to hold sensor data for RTOS queues
 typedef struct {
     char timestamp[16];
-    float head;
+    float yaw;
     float pitch;
     float roll;
     float accelX;
@@ -67,4 +69,10 @@ void IMU_SetCalibrationProfile(const uint8_t *profile);
 // Gets Euler and Linear Acceleration
 uint8_t getOrientationIMU(IMU_Data_t *data);
 
+
+// --- DMA ---
+// Triggers instant reading
+uint8_t IMU_RequestData_DMA(void);
+// Transform bytes in floats (for the callback)
+void IMU_ProcessData_DMA(IMU_Data_t *data);
 #endif /* IMU_H_ */

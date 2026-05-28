@@ -47,6 +47,8 @@ void SX1276_Init(void) {
     HAL_GPIO_WritePin(SX_RESET_PORT, SX_RESET_PIN, GPIO_PIN_SET);
     HAL_Delay(10);
 
+    SX_NSS_LOW();
+
     // 2. Set Sleep Mode
     // Transition to Sleep is required to switch between LoRa and FSK contexts
     SX1276_WriteRegister(REG_OP_MODE, MODE_SLEEP);

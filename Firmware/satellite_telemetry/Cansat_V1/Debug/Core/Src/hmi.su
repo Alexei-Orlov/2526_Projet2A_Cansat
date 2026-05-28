@@ -1,0 +1,11 @@
+../Core/Src/hmi.c:37:9:calculate_battery_percent	8	static
+../Core/Src/hmi.c:61:9:hmi_safe_update_screen	8	static
+../Core/Src/hmi.c:73:9:HMI_safe_update_screen	8	static
+../Core/Src/hmi.c:83:6:HMI_display_overview	56	static
+../Core/Src/hmi.c:134:6:HMI_display_menu	56	static
+../Core/Src/hmi.c:166:6:HMI_display_lora	24	static
+../Core/Src/hmi.c:202:6:HMI_display_sensors	56	static
+../Core/Src/hmi.c:241:6:HMI_display_battery	88	static
+../Core/Src/hmi.c:288:6:HMI_toggle_lora	24	static
+../Core/Src/hmi.c:319:6:HMI_exit_config_mode	24	static
+../Core/Src/hmi.c:351:6:HMI_handle_button	32	static
