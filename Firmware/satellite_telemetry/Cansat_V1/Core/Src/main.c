@@ -1348,7 +1348,7 @@ void startTaskFSM(void *argument)
               case STATE_READY:
                   if (configFlag == 1) {
                       currentState = STATE_CONFIG;
-                  } else if (/*latest_lidar.distance < THRESH_LIDAR_IN_BOX_M &&*/ current_height > THRESH_ALTITUDE_LAUNCH_M) {
+                  } else if (latest_lidar.distance < THRESH_LIDAR_IN_BOX_M && current_height > THRESH_ALTITUDE_LAUNCH_M) {
                       currentState = STATE_ASCENSION;
                   }
                   break;
