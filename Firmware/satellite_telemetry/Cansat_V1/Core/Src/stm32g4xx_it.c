@@ -195,7 +195,7 @@ void EXTI3_IRQHandler(void)
   /* USER CODE END EXTI3_IRQn 1 */
 }
 
-/**r
+/**
   * @brief This function handles DMA1 channel1 global interrupt.
   */
 void DMA1_Channel1_IRQHandler(void)

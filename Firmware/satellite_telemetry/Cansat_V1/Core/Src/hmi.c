@@ -59,24 +59,14 @@ uint8_t calculate_battery_percent(float voltage)  // ← uint8_t, pas char!
     return 0;
 }
 
-// ========== WRAPPER SÉCURISÉ I2C ==========
-uint8_t hmi_safe_update_screen(void)  // ← uint8_t, pas char!
+uint8_t hmi_safe_update_screen(void)
 {
-    if (HAL_I2C_IsDeviceReady(&hi2c1, SSD1306_I2C_ADDR, 1, 10) != HAL_OK) {
-        return 0;
-    }
     ssd1306_UpdateScreen();
     return 1;
 }
 
-
-
-// ========== WRAPPER SÉCURISÉ I2C ==========
 uint8_t HMI_safe_update_screen(void)
 {
-    if (HAL_I2C_IsDeviceReady(&hi2c1, SSD1306_I2C_ADDR, 1, 10) != HAL_OK) {
-        return 0;
-    }
     ssd1306_UpdateScreen();
     return 1;
 }
@@ -483,7 +473,7 @@ void HMI_display_recalib(HMI_State_t *state)
     ssd1306_WriteString("Calibrating...", Font_7x10, White);
     ssd1306_SetCursor(0, 32);
     ssd1306_WriteString("Do not move!", Font_7x10, White);
-    HMI_safe_update_screen();
+    //HMI_safe_update_screen();
 }
 
 void HMI_display_recalib_progress(uint8_t percent)
@@ -514,7 +504,7 @@ void HMI_display_recalib_progress(uint8_t percent)
     ssd1306_SetCursor(90, 44);
     ssd1306_WriteString(pct_buf, Font_7x10, White);
 
-    HMI_safe_update_screen();
+    //HMI_safe_update_screen();
 }
 
 void HMI_display_recalib_done(float pressure_pa, float temp_c)
@@ -544,7 +534,7 @@ void HMI_display_recalib_done(float pressure_pa, float temp_c)
     ssd1306_SetCursor(0, 56);
     ssd1306_WriteString("[BTN] -> Menu", Font_6x8, White);
 
-    HMI_safe_update_screen();
+    //HMI_safe_update_screen();
 }
 
 // ========== FORMAT SD PAGE ==========

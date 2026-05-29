@@ -109,7 +109,7 @@ osThreadId_t TaskHMIHandleHandle;
 const osThreadAttr_t TaskHMIHandle_attributes = {
   .name = "TaskHMIHandle",
   .priority = (osPriority_t) osPriorityBelowNormal1,
-  .stack_size = 512 * 4
+  .stack_size = 1024 * 4
 };
 /* USER CODE BEGIN PV */
 // Flight session number (auto-incremented at boot based on existing files)
@@ -464,10 +464,9 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  //HAL_GPIO_TogglePin(PW_Enable_GPIO_Port, PW_Enable_Pin);
   while (1)
   {
-    /* USER CODE END WHILEt */
+    /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 
@@ -2062,7 +2061,7 @@ void startTaskHMI(void *argument)
     osDelay(1500);
 
     uint8_t event;
-    uint8_t hmi_failure_count = 0;
+    //uint8_t hmi_failure_count = 0;
 
     for(;;)
     {
@@ -2179,13 +2178,13 @@ void startTaskHMI(void *argument)
     	                case HMI_PAGE_RECALIB:    break;  // Handled above
     	            }
 
-    	            if (HMI_safe_update_screen() == 0) {
-    	                hmi_failure_count++;
-    	                if (hmi_failure_count >= 3) vTaskSuspend(NULL);
-    	            } else {
-    	                hmi_failure_count = 0;
-    	            }
-
+//    	            if (HMI_safe_update_screen() == 0) {
+//    	                hmi_failure_count++;
+//    	                if (hmi_failure_count >= 3) vTaskSuspend(NULL);
+//    	            } else {
+//    	                hmi_failure_count = 0;
+//    	            }
+    	            HMI_safe_update_screen();
     	        } else {
     	            vTaskSuspend(NULL);
     	        }
