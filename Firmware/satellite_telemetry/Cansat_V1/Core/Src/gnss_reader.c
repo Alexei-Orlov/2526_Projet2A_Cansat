@@ -130,13 +130,14 @@ void GNSS_Process_Data(void) {
     }
 }
 // Failsafe: Automatically restarts the UART if hardware overrun occurs
-void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
-    if (huart->Instance == GNSS_HUART.Instance) {
-        __HAL_UART_CLEAR_OREFLAG(huart);
-        __HAL_UART_CLEAR_NEFLAG(huart);
-        __HAL_UART_CLEAR_FEFLAG(huart);
-        HAL_UART_Receive_IT(&GNSS_HUART, (uint8_t*)RxBuffer, 1);
-    }
+void GNSS_UART_Error_Handler(UART_HandleTypeDef *huart) {
+    // Nettoyage des erreurs matérielles
+    __HAL_UART_CLEAR_OREFLAG(huart);
+    __HAL_UART_CLEAR_NEFLAG(huart);
+    __HAL_UART_CLEAR_FEFLAG(huart);
+
+    // Relance de l'écoute du GNSS
+    HAL_UART_Receive_IT(huart, (uint8_t*)RxBuffer, 1);
 }
 
 

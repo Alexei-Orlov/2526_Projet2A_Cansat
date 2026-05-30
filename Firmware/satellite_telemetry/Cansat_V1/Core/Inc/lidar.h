@@ -21,6 +21,9 @@ void Lidar_RxCallback(UART_HandleTypeDef *huart);
 // NEW: Direct Console Communication
 // Remplace l'ancienne définition par celle-ci :
 void Lidar_DirectDebug(UART_HandleTypeDef *huart_pc, UART_HandleTypeDef *huart_lidar);
+
+void Lidar_UART_Error_Handler(UART_HandleTypeDef *huart);
+
 // Prototype du parseur DMA
 void Process_Lidar_Buffer_Chunk(uint8_t* chunk_start, uint16_t chunk_length, uint32_t current_ms);
 #endif /* INC_LIDAR_H_ */

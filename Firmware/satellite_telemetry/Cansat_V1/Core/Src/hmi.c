@@ -17,6 +17,7 @@
 #include "cmsis_os.h"
 #include "FreeRTOS.h"
 HMI_Display_Data_t HMI_display_data = {0};
+extern osMutexId_t I2C1_MutexHandle; // To share the I2C Bus with the barometer
 
 static const BatteryLUT_t battery_lut[] = {
     {8.40f, 100},
@@ -347,20 +348,30 @@ void HMI_exit_config_mode(void)
     configFlag = 0;
 }
 
-// ========== GESTION BOUTON (updated) ==========
+
+// ========== GESTION BOUTON ==========
 void HMI_handle_button(HMI_State_t *state)
 {
     uint32_t press_duration = 0;
     uint32_t start_time = HAL_GetTick();
 
-    while (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == GPIO_PIN_RESET) {
+    // CORRECTION ICI : On attend tant que le bouton est HAUT (SET)
+    // car avec un Pull-Down, l'appui correspond à l'état SET.
+    while (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == GPIO_PIN_SET) {
         osDelay(10);
-        press_duration = HAL_GetTick() - start_time;
-        if (press_duration > 2000) break;
     }
 
-    // ========== SHORT PRESS: Navigation ==========
-    if (press_duration < 500) {
+    // Le code arrive ici au moment exact où tu relâches le bouton
+    press_duration = HAL_GetTick() - start_time;
+
+    // Anti-rebond : absorbe les parasites et le double-déclenchement
+    // dû à l'interruption "Front descendant" (Falling Edge).
+    if (press_duration < 50) {
+        return;
+    }
+
+    // ========== CLIC COURT : Navigation (< 800 ms) ==========
+    if (press_duration < 800) {
 
         switch (state->current_page) {
             case HMI_PAGE_OVERVIEW:
@@ -381,8 +392,7 @@ void HMI_handle_button(HMI_State_t *state)
                 break;
 
             case HMI_PAGE_RECALIB:
-                // No navigation on recalib page - only long press to go back
-                break;
+                break; // Pas de navigation sur cette page
 
             case HMI_PAGE_SENSORS:
             case HMI_PAGE_BATTERY:
@@ -391,8 +401,8 @@ void HMI_handle_button(HMI_State_t *state)
                 break;
         }
     }
-    // ========== LONG PRESS: Validation ==========
-    else if (press_duration >= 1000) {
+    // ========== CLIC LONG : Validation (>= 800 ms) ==========
+    else {
 
         switch (state->current_page) {
             case HMI_PAGE_OVERVIEW:
@@ -413,13 +423,12 @@ void HMI_handle_button(HMI_State_t *state)
                         state->current_page = HMI_PAGE_BATTERY;
                         break;
                     case 3:
-                        // Trigger recalibration - handled in TaskHMI
                         state->current_page = HMI_PAGE_RECALIB;
                         state->cursor_position = 0;
                         break;
                     case 4:
                         state->current_page = HMI_PAGE_FORMAT_SD;
-                        state->cursor_position = 1;  // Default on NO for safety
+                        state->cursor_position = 1;  // Par défaut sur "NO" par sécurité
                         break;
                     case 5:
                         HMI_exit_config_mode();
@@ -438,18 +447,14 @@ void HMI_handle_button(HMI_State_t *state)
 
             case HMI_PAGE_FORMAT_SD:
                 if (state->cursor_position == 0) {
-                    // YES selected - format SD
-                    // Signal to TaskHMI via flag
                     state->format_sd_requested = 1;
                 } else {
-                    // NO selected - cancel
                     state->current_page = HMI_PAGE_MENU;
                     state->cursor_position = 0;
                 }
                 break;
 
             case HMI_PAGE_RECALIB:
-                // Long press on result page -> back to menu
                 state->current_page = HMI_PAGE_MENU;
                 state->cursor_position = 0;
                 break;

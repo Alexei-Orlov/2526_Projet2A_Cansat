@@ -236,6 +236,18 @@ void Lidar_RxCallback(UART_HandleTypeDef *huart) {
     // 3. Re-arm the background interrupt for flight mode!
     Lidar_Init(lidar_huart);
 }*/
+void Lidar_UART_Error_Handler(UART_HandleTypeDef *huart) {
+    // Nettoyage des erreurs matérielles
+    __HAL_UART_CLEAR_OREFLAG(huart);
+    __HAL_UART_CLEAR_NEFLAG(huart);
+    __HAL_UART_CLEAR_FEFLAG(huart);
+
+    // Tuer la transaction DMA corrompue
+    HAL_UART_AbortReceive(huart);
+
+    // Relancer le LiDAR
+    Lidar_Init(huart);
+}
 
 void Lidar_DirectDebug(UART_HandleTypeDef *huart_pc, UART_HandleTypeDef *huart_lidar) {
 
