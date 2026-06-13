@@ -82,6 +82,15 @@ void Process_Lidar_Buffer_Chunk(uint8_t* chunk_start, uint16_t chunk_length, uin
     extern QueueHandle_t qSDCard_LIDAR;
     extern CanSatState_t currentState;
 
+    // Atomic snapshot: disable IRQ long enough to copy the 3 floats coherently
+    // Prevents a race condition with HAL_I2C_MemRxCpltCallback writing latest_imu from ISR
+    IMU_Data_t imu_snap;
+    uint32_t   imu_snap_ms;
+    taskENTER_CRITICAL();
+        imu_snap    = latest_imu;
+        imu_snap_ms = latest_imu.timestamp_ms;
+    taskEXIT_CRITICAL();
+
     char local_line[64]; // Ligne complète assemblée
     uint8_t local_idx = 0;
 
@@ -127,9 +136,10 @@ void Process_Lidar_Buffer_Chunk(uint8_t* chunk_start, uint16_t chunk_length, uin
                     if (currentState >= STATE_READY) {
                         LidarPacket_t lidar_pkt;
                         lidar_pkt.lidar     = latest_lidar;
-                        lidar_pkt.roll      = latest_imu.roll;
-                        lidar_pkt.pitch     = latest_imu.pitch;
-                        lidar_pkt.yaw       = latest_imu.yaw;
+                        lidar_pkt.roll       = imu_snap.roll;
+                        lidar_pkt.pitch      = imu_snap.pitch;
+                        lidar_pkt.yaw        = imu_snap.yaw;
+                        lidar_pkt.imu_age_ms = current_ms - imu_snap_ms; // age of IMU sample at log time (ms)
                         lidar_pkt.height    = latest_baro.height;
                         lidar_pkt.latitude  = latest_gnss.latitude;
                         lidar_pkt.longitude = latest_gnss.longitude;

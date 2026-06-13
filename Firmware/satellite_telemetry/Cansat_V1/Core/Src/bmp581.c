@@ -28,8 +28,10 @@ uint8_t bmp581_init_precise_normal(BMP_t * bmp581){
     uint8_t DSP_IIR_mask  = 0x01; // Filtre IIR activé (coeff 1) pour lisser le bruit
     uint8_t DSP_conf_mask = 0x23; // Lecture après filtre IIR + Compensation ON
 
-    // Désactivation totale de la broche d'interruption matérielle
-    uint8_t INT_CONFIG_mask = 0x00;
+    // Enable INT pin: push-pull, active high, latched
+    uint8_t INT_CONFIG_mask = 0x0B;
+    // Trigger INT on data ready only
+    uint8_t INT_SOURCE_mask = 0x01;
 
     // Mode CONTINU (Le capteur tourne tout seul en boucle)
     uint8_t ODR_mask      = 0x03;

@@ -425,7 +425,7 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_QUEUES */
     // MUST CREATE THE QUEUES BEFORE STARTING THE TASKS
-    qSensorEvents = xQueueCreate(10, sizeof(SensorEvent_t));
+    qSensorEvents = xQueueCreate(20, sizeof(SensorEvent_t));
     qSDCard       = xQueueCreate(5, sizeof(TelemetryPacket_t));
     qLoRa         = xQueueCreate(5,  sizeof(TelemetryPacket_t));
     qSDCard_LIDAR = xQueueCreate(100, sizeof(LidarPacket_t));  // Larger buffer for 50Hz
@@ -464,10 +464,9 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  //HAL_GPIO_TogglePin(PW_Enable_GPIO_Port, PW_Enable_Pin);
   while (1)
   {
-    /* USER CODE END WHILEt */
+    /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 
@@ -1122,14 +1121,20 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-    // Si c'est l'I2C de notre IMU (I2C3) qui a terminé son DMA
     if (hi2c->Instance == I2C3) {
-
-        // On horodate précisément la mesure à l'instant où elle arrive
-        sprintf(latest_imu.timestamp, "%lu", HAL_GetTick());
-
-        // On demande à notre driver de transformer le buffer brut en données exploitables
+        // Process raw DMA buffer into latest_imu fields
         IMU_ProcessData_DMA(&latest_imu);
+        // Timestamp AFTER processing — this is the actual measurement instant
+        latest_imu.timestamp_ms = HAL_GetTick();
+    }
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+    if (GPIO_Pin == GPIO_PIN_4) { // PA4 — BMP581 DRDY
+        SensorEvent_t ev = EVENT_BARO_READY;
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xQueueSendFromISR(qSensorEvents, &ev, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
 }
 
@@ -1251,8 +1256,8 @@ void startTaskFSM(void *argument)
           // Baromètre et IMU demandés à 100 Hz
 
           // not needed because we got baro EXTI
-          SensorEvent_t baro_ticket = EVENT_BARO_READY;
-          xQueueSend(qSensorEvents, &baro_ticket, 0);
+          //SensorEvent_t baro_ticket = EVENT_BARO_READY;
+          //xQueueSend(qSensorEvents, &baro_ticket, 0);
 
           SensorEvent_t imu_ticket = EVENT_IMU_READY;
           xQueueSend(qSensorEvents, &imu_ticket, 0);

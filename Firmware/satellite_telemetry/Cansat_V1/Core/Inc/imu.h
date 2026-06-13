@@ -43,6 +43,7 @@
 // Updated Structure to hold sensor data for RTOS queues
 typedef struct {
     char timestamp[16];
+    uint32_t timestamp_ms;  // add this
     float yaw;
     float pitch;
     float roll;
