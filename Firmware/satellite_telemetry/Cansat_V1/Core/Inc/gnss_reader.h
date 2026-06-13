@@ -34,7 +34,7 @@ extern GNSS_Parsed_t parsed_gnss;
 void GNSS_Init(void);
 void GNSS_UART_RxCpltCallback(UART_HandleTypeDef *huart);
 void GNSS_Process_Data(void);
-void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart);
+void GNSS_UART_Error_Handler(UART_HandleTypeDef *huart);
 void GNSS_CalibrateSatellite(void);
 
 #endif // GNSS_READER_H

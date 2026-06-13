@@ -306,11 +306,11 @@ FRESULT Update_File (char *name, char *data)
 	fresult = f_stat (name, &fno);
 	if (fresult != FR_OK)
 	{
-		char *buf = pvPortMalloc(100*sizeof(char));
-		sprintf (buf, "ERROR!!! *%s* does not exists\n\n", name);
-		Send_Uart (buf);
-		vPortFree(buf);
-	    return fresult;
+//		char *buf = pvPortMalloc(100*sizeof(char));
+//		sprintf (buf, "ERROR!!! *%s* does not exists\n\n", name);
+//		Send_Uart (buf);
+//		vPortFree(buf);
+//	    return fresult;
 	}
 
 	else
@@ -319,46 +319,46 @@ FRESULT Update_File (char *name, char *data)
 	    fresult = f_open(&fil, name, FA_OPEN_APPEND | FA_WRITE);
 	    if (fresult != FR_OK)
 	    {
-	    	char *buf = pvPortMalloc(100*sizeof(char));
-	    	sprintf (buf, "ERROR!!! No. %d in opening file *%s*\n\n", fresult, name);
-	    	Send_Uart(buf);
-	        vPortFree(buf);
-	        return fresult;
+//	    	char *buf = pvPortMalloc(100*sizeof(char));
+//	    	sprintf (buf, "ERROR!!! No. %d in opening file *%s*\n\n", fresult, name);
+//	    	Send_Uart(buf);
+//	        vPortFree(buf);
+//	        return fresult;
 	    }
 
 	    /* Writing text */
 	    fresult = f_write(&fil, data, strlen (data), &bw);
 	    if (fresult != FR_OK)
 	    {
-	    	char *buf = pvPortMalloc(100*sizeof(char));
-	    	sprintf (buf, "ERROR!!! No. %d in writing file *%s*\n\n", fresult, name);
-	    	Send_Uart(buf);
-	    	vPortFree(buf);
+//	    	char *buf = pvPortMalloc(100*sizeof(char));
+//	    	sprintf (buf, "ERROR!!! No. %d in writing file *%s*\n\n", fresult, name);
+//	    	Send_Uart(buf);
+//	    	vPortFree(buf);
 	    }
 
 	    else
 	    {
-	    	char *buf = pvPortMalloc(100*sizeof(char));
-	    	sprintf (buf, "*%s* UPDATED successfully\n", name);
-	    	Send_Uart(buf);
-	    	vPortFree(buf);
+//	    	char *buf = pvPortMalloc(100*sizeof(char));
+//	    	sprintf (buf, "*%s* UPDATED successfully\n", name);
+//	    	Send_Uart(buf);
+//	    	vPortFree(buf);
 	    }
 
 	    /* Close file */
 	    fresult = f_close(&fil);
 	    if (fresult != FR_OK)
 	    {
-	    	char *buf = pvPortMalloc(100*sizeof(char));
-	    	sprintf (buf, "ERROR!!! No. %d in closing file *%s*\n\n", fresult, name);
-	    	Send_Uart(buf);
-	    	vPortFree(buf);
+//	    	char *buf = pvPortMalloc(100*sizeof(char));
+//	    	sprintf (buf, "ERROR!!! No. %d in closing file *%s*\n\n", fresult, name);
+//	    	Send_Uart(buf);
+//	    	vPortFree(buf);
 	    }
 	    else
 	    {
-	    	char *buf = pvPortMalloc(100*sizeof(char));
-	    	sprintf (buf, "File *%s* CLOSED successfully\n", name);
-	    	Send_Uart(buf);
-	    	vPortFree(buf);
+//	    	char *buf = pvPortMalloc(100*sizeof(char));
+//	    	sprintf (buf, "File *%s* CLOSED successfully\n", name);
+//	    	Send_Uart(buf);
+//	    	vPortFree(buf);
 	     }
 	}
     return fresult;

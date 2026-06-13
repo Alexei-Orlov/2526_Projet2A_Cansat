@@ -3,5 +3,11 @@
 ../Core/Src/lidar.c:47:6:Lidar_RequestStream	16	static
 ../Core/Src/lidar.c:53:6:HAL_UART_RxHalfCpltCallback	16	static,ignoring_inline_asm
 ../Core/Src/lidar.c:63:6:HAL_UART_RxCpltCallback	16	static,ignoring_inline_asm
+<<<<<<< HEAD
 ../Core/Src/lidar.c:75:6:Process_Lidar_Buffer_Chunk	184	static
 ../Core/Src/lidar.c:250:6:Lidar_DirectDebug	264	static
+=======
+../Core/Src/lidar.c:75:6:Process_Lidar_Buffer_Chunk	160	static
+../Core/Src/lidar.c:239:6:Lidar_UART_Error_Handler	8	static
+../Core/Src/lidar.c:252:6:Lidar_DirectDebug	264	static
+>>>>>>> 94351d317cdc940301a199d09272ccb67bbc343e

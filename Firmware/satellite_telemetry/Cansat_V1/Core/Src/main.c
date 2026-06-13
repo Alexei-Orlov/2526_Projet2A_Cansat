@@ -87,14 +87,14 @@ const osThreadAttr_t TaskFSM_attributes = {
 osThreadId_t TaskSensorsHandle;
 const osThreadAttr_t TaskSensors_attributes = {
   .name = "TaskSensors",
-  .priority = (osPriority_t) osPriorityHigh,
+  .priority = (osPriority_t) osPriorityAboveNormal1,
   .stack_size = 512 * 4
 };
 /* Definitions for TaskSDCard */
 osThreadId_t TaskSDCardHandle;
 const osThreadAttr_t TaskSDCard_attributes = {
   .name = "TaskSDCard",
-  .priority = (osPriority_t) osPriorityHigh,
+  .priority = (osPriority_t) osPriorityAboveNormal,
   .stack_size = 1024 * 4
 };
 /* Definitions for TaskLoRa */
@@ -108,8 +108,13 @@ const osThreadAttr_t TaskLoRa_attributes = {
 osThreadId_t TaskHMIHandleHandle;
 const osThreadAttr_t TaskHMIHandle_attributes = {
   .name = "TaskHMIHandle",
-  .priority = (osPriority_t) osPriorityBelowNormal1,
-  .stack_size = 512 * 4
+  .priority = (osPriority_t) osPriorityHigh,
+  .stack_size = 1024 * 4
+};
+/* Definitions for I2C1_Mutex */
+osMutexId_t I2C1_MutexHandle;
+const osMutexAttr_t I2C1_Mutex_attributes = {
+  .name = "I2C1_Mutex"
 };
 /* USER CODE BEGIN PV */
 // Flight session number (auto-incremented at boot based on existing files)
@@ -256,12 +261,7 @@ int main(void)
 
     char startup_msg[] = "\r\n[i] System Booting... Testing Hardware\r\n";
     HAL_UART_Transmit(&huart1, (uint8_t*)startup_msg, strlen(startup_msg), HAL_MAX_DELAY);
-
-    // Give the LoRa module a full second to power up and stabilize
-    //HAL_Delay(1000);
-
-
-
+    HAL_Delay(2000);
   // --- BATTERY VOLTAGE CHECK (ADC1) ---
     char adc_msg[128];
     sprintf(adc_msg, "\r\n[*] Testing Power (ADC1)...\r\n");
@@ -410,6 +410,9 @@ int main(void)
 
   /* Init scheduler */
   osKernelInitialize();
+  /* Create the mutex(es) */
+  /* creation of I2C1_Mutex */
+  I2C1_MutexHandle = osMutexNew(&I2C1_Mutex_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -1196,6 +1199,25 @@ void float_to_str(float value, uint8_t decimals, char* buffer)
 
     buffer[idx] = '\0';
 }
+
+/* USER CODE BEGIN 4 */
+
+// ... tes autres callbacks existants ...
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+    // Routage vers le module GNSS (USART1)
+    if (huart->Instance == USART1) {
+        GNSS_UART_Error_Handler(huart);
+    }
+
+    // Routage vers le module LiDAR (USART3)
+    else if (huart->Instance == USART3) {
+        Lidar_UART_Error_Handler(huart);
+    }
+}
+
+/* USER CODE END 4 */
 /*
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
     // Route UART3 interrupts directly to the LiDAR driver
@@ -1224,12 +1246,46 @@ void startTaskFSM(void *argument)
   /* USER CODE BEGIN 5 */
     extern UART_HandleTypeDef huart1;
     char debug_msg[128];
+    sprintf(debug_msg, "\r\n[*] Executing LW20-C Advanced Boot Sequence...\r\n");
+        HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), 100);
 
-    // --- SAFE LIDAR INIT ---
-    Lidar_Init(&huart3);
-    sprintf(debug_msg, "[+] LiDAR Interrupt Armed (RTOS Safe)\r\n");
-    HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), 100);
+        // 1. REINITIALISATION MATERIELLE
+        // On part sur un UART totalement propre
+        HAL_UART_DeInit(&huart3);
+        extern void MX_USART3_UART_Init(void);
+        MX_USART3_UART_Init();
 
+        // 2. AUTODETECTION DU LIDAR
+        // On envoie des espaces et retours chariots pour satisfaire l'autodétection
+        // de baud rate du LW20 (mentionnée page 7 de la datasheet).
+        uint8_t dummy_cmd[] = {' ', ' ', '\r', '\n'};
+        HAL_UART_Transmit(&huart3, dummy_cmd, 4, 100);
+        osDelay(100); // On laisse le LiDAR réfléchir
+
+        // 3. FORCER LE MODE STREAM
+        // La touche ESC (0x1B) quitte l'éventuel menu, la flèche bas active le flux.
+        uint8_t stream_cmd[] = {0x1B, 0x1B, 0x5B, 0x42};
+        HAL_UART_Transmit(&huart3, stream_cmd, 4, 100);
+
+        // On attend que le LW20 commence effectivement à cracher ses données
+        osDelay(100);
+
+        // 4. PURGE DES ERREURS MATERIELLES (LE SECRET EST ICI)
+        // Pendant les 200ms précédentes, le LW20 a parlé mais on n'écoutait pas.
+        // Le STM32 a forcément généré une erreur "Overrun" (ORE).
+        // On purge absolument tout !
+        HAL_UART_AbortReceive(&huart3);
+        __HAL_UART_CLEAR_OREFLAG(&huart3);
+        __HAL_UART_CLEAR_NEFLAG(&huart3);
+        __HAL_UART_CLEAR_FEFLAG(&huart3);
+        __HAL_UART_FLUSH_DRREGISTER(&huart3);
+
+        // 5. ARMEMENT DU DMA
+        // L'UART est vierge, sans erreur, et le LiDAR crache son flux live.
+        Lidar_Init(&huart3);
+
+        sprintf(debug_msg, "[+] LiDAR Stream Locked & DMA Armed\r\n");
+        HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), 100);
     CanSatState_t last_printed_state = (CanSatState_t)-1;
 
     uint32_t tick_10ms = 0;
@@ -1333,7 +1389,7 @@ void startTaskFSM(void *argument)
                       HAL_UART_Transmit(&huart1, (uint8_t*)config_msg, strlen(config_msg), 100);
 
                       uint32_t start_time = HAL_GetTick();
-
+                      if (osMutexAcquire(I2C1_MutexHandle, osWaitForever) == osOK) {
                       if (BMP581_CalibrateGroundPressure(&reference_pressure_Pa, &reference_temp_C, &bmp_sensor) == HAL_OK) {
                           calibration_duration_ms = HAL_GetTick() - start_time;
                           sprintf(config_msg, "[+] Calibration completed: %.2f Pa | %.2f C\r\n", reference_pressure_Pa, reference_temp_C);
@@ -1342,6 +1398,8 @@ void startTaskFSM(void *argument)
                           reference_pressure_Pa = 101325.0;
                           reference_temp_C = 25.0;
                           calibration_duration_ms = 0;
+                      }
+                      osMutexRelease(I2C1_MutexHandle);
                       }
 
                       HAL_UART_Transmit(&huart1, (uint8_t*)config_msg, strlen(config_msg), 100);
@@ -1356,6 +1414,7 @@ void startTaskFSM(void *argument)
               }
 
               case STATE_READY:
+
                   if (configFlag == 1) {
                       currentState = STATE_CONFIG;
                   } else if (latest_lidar.distance < THRESH_LIDAR_IN_BOX_M && current_height > THRESH_ALTITUDE_LAUNCH_M) {
@@ -1671,7 +1730,7 @@ void startTaskSDCard(void *argument)
 	    }
 
 	    sprintf(data_filename,  "DATA_%03d.CSV",  flight_session);
-	    sprintf(lidar_filename, "LIDAR_%03d.CSV", flight_session);
+	    sprintf(lidar_filename, "LIDA_%03d.CSV", flight_session);
 
 	    // Create both files with headers
 	    Create_File(data_filename);
@@ -1680,7 +1739,7 @@ void startTaskSDCard(void *argument)
 	        "gyro_x,gyro_y,gyro_z,roll,pitch,yaw,"
 	        "temperature,altitude,latitude,longitude,"
 	        "satellites,flags_raw,battery_voltage\r\n");
-
+        osDelay(10);
 	    Create_File(lidar_filename);
 	    Update_File(lidar_filename,
 	        "tx_timestamp_ms,distance,roll,pitch,yaw,"
@@ -1692,7 +1751,7 @@ void startTaskSDCard(void *argument)
 	    HAL_UART_Transmit(&huart1, (uint8_t*)boot_msg, strlen(boot_msg), 100);
 	}
 
-	char SD_end_msg[] = "[*] SD ready for logging\r\n";
+	char SD_end_msg[] = "[SD] Ready for logging\r\n";
 	HAL_UART_Transmit(&huart1, (uint8_t*)SD_end_msg, strlen(SD_end_msg), 100);
 
     // Mount
@@ -1935,7 +1994,7 @@ void startTaskLoRa(void *argument)
 //
 //            // Read Live Battery
 //            float vbat = 0.0f;
-//            HAL_ADC_Start(&hadc1);
+//            HAL_ADC_Start(&hadc1);-
 //            if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
 //                vbat = ((float)HAL_ADC_GetValue(&hadc1) / 4095.0f) * 3.3f * 3.0f * 1.025f;
 //            }
@@ -2067,7 +2126,7 @@ void startTaskHMI(void *argument)
     osDelay(1500);
 
     uint8_t event;
-    uint8_t hmi_failure_count = 0;
+    //uint8_t hmi_failure_count = 0;
 
     for(;;)
     {
@@ -2148,12 +2207,20 @@ void startTaskHMI(void *argument)
     	                // (session number logic handled at boot - see PART 6)
     	                // After format, reset to session 1
     	                extern uint8_t flight_session;
+    	                extern char data_filename[];
+    	                extern char lidar_filename[];
     	                flight_session = 1;
-    	                Create_File("DATA_001.CSV");
-    	                Update_File("DATA_001.CSV", "tx_timestamp_ms,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,roll,pitch,yaw,temperature,altitude,latitude,longitude,satellites,flags_raw,battery_voltage\r\n");
-    	                Create_File("LIDAR_001.CSV");
-    	                Update_File("LIDAR_001.CSV", "tx_timestamp_ms,distance,roll,pitch,yaw,altitude,latitude,longitude,flags_raw\r\n");
 
+    	                sprintf(data_filename, "DATA_%03d.CSV", flight_session);
+    	                    sprintf(lidar_filename, "LIDA_%03d.CSV", flight_session);
+    	                // 2. Création des fichiers en utilisant les variables mises à jour
+    	                    Create_File(data_filename);
+    	                    Update_File(data_filename, "tx_timestamp_ms,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,roll,pitch,yaw,temperature,altitude,latitude,longitude,satellites,flags_raw,battery_voltage\r\n");
+
+    	                    osDelay(10);
+
+    	                    Create_File(lidar_filename);
+    	                    Update_File(lidar_filename, "tx_timestamp_ms,distance,roll,pitch,yaw,latitude,longitude,altitude,flags_raw\r\n");
     	                // Confirm
     	                ssd1306_Fill(Black);
     	                ssd1306_SetCursor(10, 10);
@@ -2184,15 +2251,19 @@ void startTaskHMI(void *argument)
     	                case HMI_PAGE_RECALIB:    break;  // Handled above
     	            }
 
-    	            if (HMI_safe_update_screen() == 0) {
-    	                hmi_failure_count++;
-    	                if (hmi_failure_count >= 3) vTaskSuspend(NULL);
-    	            } else {
-    	                hmi_failure_count = 0;
+//    	            if (HMI_safe_update_screen() == 0) {
+//    	                hmi_failure_count++;
+//    	                if (hmi_failure_count >= 3) vTaskSuspend(NULL);
+//    	            } else {
+//    	                hmi_failure_count = 0;
+//    	            }
+    	            if (osMutexAcquire(I2C1_MutexHandle, osWaitForever) == osOK) {
+    	            HMI_safe_update_screen();
+    	            osMutexRelease(I2C1_MutexHandle);
     	            }
-
     	        } else {
-    	            vTaskSuspend(NULL);
+    	            //vTaskSuspend(NULL); =================================================================== Penser à supprimer la tache pour libérer de la ram
+    	        	osDelay(100);
     	        }
 
     	        osDelay(100);

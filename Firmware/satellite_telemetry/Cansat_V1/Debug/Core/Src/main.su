@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ../Core/Src/main.c:1214:6:startTaskFSM	328	static
 ../Core/Src/main.c:1396:6:startTaskSensors	96	static
 ../Core/Src/main.c:2034:6:startTaskHMI	96	static
@@ -12,3 +13,21 @@
 ../Core/Src/main.c:1627:6:startTaskSDCard	720	static
 ../Core/Src/main.c:2203:6:HAL_TIM_PeriodElapsedCallback	8	static
 ../Core/Src/main.c:2226:6:Error_Handler	0	static,ignoring_inline_asm
+=======
+../Core/Src/main.c:1457:6:startTaskSensors	96	static
+../Core/Src/main.c:2095:6:startTaskHMI	88	static
+../Core/Src/main.c:961:13:MX_USART3_UART_Init	8	static,ignoring_inline_asm
+../Core/Src/main.c:1238:6:startTaskFSM	328	static
+../Core/Src/main.c:195:5:_write	8	static
+../Core/Src/main.c:484:6:SystemClock_Config	88	static,ignoring_inline_asm
+../Core/Src/main.c:206:5:main	984	static,ignoring_inline_asm
+../Core/Src/main.c:1106:6:HAL_GPIO_EXTI_Callback	16	static,ignoring_inline_asm
+../Core/Src/main.c:1125:6:HAL_I2C_MemRxCpltCallback	8	static
+../Core/Src/main.c:1147:6:float_to_str	48	static
+../Core/Src/main.c:1967:6:startTaskLoRa	448	static
+../Core/Src/main.c:1201:6:HAL_UART_ErrorCallback	8	static
+../Core/Src/main.c:1684:9:is_sd_inserted	8	static
+../Core/Src/main.c:1688:6:startTaskSDCard	712	static
+../Core/Src/main.c:2276:6:HAL_TIM_PeriodElapsedCallback	8	static
+../Core/Src/main.c:2299:6:Error_Handler	0	static,ignoring_inline_asm
+>>>>>>> 94351d317cdc940301a199d09272ccb67bbc343e
