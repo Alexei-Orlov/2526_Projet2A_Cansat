@@ -43,7 +43,7 @@ uint8_t bmp581_init_precise_normal(BMP_t * bmp581){
     if(HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, 0x31 /* DSP_IIR */, 1, &DSP_IIR_mask, 1, 100) != HAL_OK) check = 1;
     if(HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, BMP581_DSP_CONFIG, 1, &DSP_conf_mask, 1, 100) != HAL_OK) check = 1;
     if(HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, 0x14 /* INT_CONFIG */, 1, &INT_CONFIG_mask, 1, 100) != HAL_OK) check = 1;
-
+    if(HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, BMP581_INT_SOURCE, 1, &INT_SOURCE_mask, 1, 100) != HAL_OK) check = 1;
     // =========================================================================
     // 3. LE DÉCLENCHEUR : On réveille le capteur SEULEMENT quand tout est prêt
     // =========================================================================
@@ -90,6 +90,8 @@ uint8_t bmp581_init_precise_normal(BMP_t * bmp581){
 */
 uint8_t bmp581_read_precise_normal(BMP_t * bmp581){
 		int check=0;
+		uint8_t int_status = 0;
+		HAL_I2C_Mem_Read(&hi2c1, BMP581_READ_ADDR, BMP581_INT_STATUS, 1, &int_status, 1, 10);
 		uint8_t recarray[6];
 		int32_t intbuffertemp=0;
 		int32_t intbufferpres=0;

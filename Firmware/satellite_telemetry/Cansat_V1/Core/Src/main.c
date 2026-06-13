@@ -1092,6 +1092,9 @@ static void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI3_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
   /* USER CODE END MX_GPIO_Init_2 */
@@ -1105,6 +1108,13 @@ static uint32_t last_button_press = 0;
 #define DEBOUNCE_DELAY_MS 200
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+    if (GPIO_Pin == GPIO_PIN_4) { // PA4 — BMP581 DRDY
+        SensorEvent_t ev = EVENT_BARO_READY;
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xQueueSendFromISR(qSensorEvents, &ev, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+
     if (GPIO_Pin == GPIO_PIN_3) {
         uint32_t now = HAL_GetTick();
 
@@ -1112,6 +1122,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
             return;
         }
         last_button_press = now;
+
 // Protections to not write if we are not ready to recieve
         if (qHMI_Events != NULL) {
                     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -1132,14 +1143,6 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
     }
 }
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-    if (GPIO_Pin == GPIO_PIN_4) { // PA4 — BMP581 DRDY
-        SensorEvent_t ev = EVENT_BARO_READY;
-        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-        xQueueSendFromISR(qSensorEvents, &ev, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    }
-}
 
 /**
  * @brief Convertit un float en string sans sprintf (évite heap overflow)
@@ -1217,21 +1220,6 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
     }
 }
 
-/* USER CODE END 4 */
-/*
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-    // Route UART3 interrupts directly to the LiDAR driver
-    if (huart->Instance == USART3) {
-        Lidar_RxCallback(huart);
-    }
-
-    // Route UART2 interrupts directly to the GNSS driver
-    if (huart->Instance == USART1) {
-        GNSS_UART_RxCpltCallback(huart);
-    }
-}
-
-*/
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_startTaskFSM */
@@ -1340,7 +1328,7 @@ void startTaskFSM(void *argument)
               }
               HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), HAL_MAX_DELAY);
               last_printed_state = currentState;
-          } // <=== L'ACCOLADE MANQUANTE ÉTAIT ICI !
+          }
 
           // --- B. ENVOI DE LA TÉLÉMÉTRIE (LoRa & SD lente) ---
           if (currentState >= STATE_READY && currentState < STATE_OFF) {
@@ -1384,7 +1372,7 @@ void startTaskFSM(void *argument)
 
                   if (!is_calibrated) {
                       char config_msg[128];
-
+                      char press_str[16], temp_str[16];
                       sprintf(config_msg, "\r\n[*] Calibrating Barometer (Do not move)...\r\n");
                       HAL_UART_Transmit(&huart1, (uint8_t*)config_msg, strlen(config_msg), 100);
 
@@ -1392,7 +1380,9 @@ void startTaskFSM(void *argument)
                       if (osMutexAcquire(I2C1_MutexHandle, osWaitForever) == osOK) {
                       if (BMP581_CalibrateGroundPressure(&reference_pressure_Pa, &reference_temp_C, &bmp_sensor) == HAL_OK) {
                           calibration_duration_ms = HAL_GetTick() - start_time;
-                          sprintf(config_msg, "[+] Calibration completed: %.2f Pa | %.2f C\r\n", reference_pressure_Pa, reference_temp_C);
+                          float_to_str((float)reference_pressure_Pa, 2, press_str);
+                          float_to_str((float)reference_temp_C, 2, temp_str);
+                          sprintf(config_msg, "[+] Calibration completed: %s Pa | %s C\r\n", press_str, temp_str);
                       } else {
                           sprintf(config_msg, "[-] Calibration Failed! Using defaults.\r\n");
                           reference_pressure_Pa = 101325.0;

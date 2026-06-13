@@ -66,6 +66,7 @@ void Error_Handler(void);
 #define HMIBTN_EXTI3_EXTI_IRQn EXTI3_IRQn
 #define BARO_EXTI_Pin GPIO_PIN_4
 #define BARO_EXTI_GPIO_Port GPIOA
+#define BARO_EXTI_EXTI_IRQn EXTI4_IRQn
 #define SD_SPI1_SCK_Pin GPIO_PIN_5
 #define SD_SPI1_SCK_GPIO_Port GPIOA
 #define SD_SPI1_MISO_Pin GPIO_PIN_6
