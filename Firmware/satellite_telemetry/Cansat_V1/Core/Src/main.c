@@ -359,14 +359,15 @@ int main(void)
         // -----------------------------
 
 
-  // Initialize Barometer
+  // Initialize Barometer ====================================================================== Super strange is this a redudndant calibration ? when i do it we get
+        /*
   if (bmp581_init_precise_normal(&bmp_sensor) == 0) {
 	  char baro_msg[] = "[+] BMP581 Initialized Successfully\r\n";
 	  HAL_UART_Transmit(&huart1, (uint8_t*)baro_msg, strlen(baro_msg), HAL_MAX_DELAY);
   } else {
 	  char baro_msg[] = "[-] BMP581 Initialization FAILED\r\n";
 	  HAL_UART_Transmit(&huart1, (uint8_t*)baro_msg, strlen(baro_msg), HAL_MAX_DELAY);
-  }
+  }*/
 
   // Initialize IMU
   if (IMU_Init(&hi2c3) == 1) {
@@ -1246,6 +1247,7 @@ void startTaskFSM(void *argument)
         // 2. AUTODETECTION DU LIDAR
         // On envoie des espaces et retours chariots pour satisfaire l'autodétection
         // de baud rate du LW20 (mentionnée page 7 de la datasheet).
+        osDelay(1000);
         uint8_t dummy_cmd[] = {' ', ' ', '\r', '\n'};
         HAL_UART_Transmit(&huart3, dummy_cmd, 4, 100);
         osDelay(100); // On laisse le LiDAR réfléchir
