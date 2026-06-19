@@ -80,14 +80,14 @@ DMA_HandleTypeDef hdma_usart3_rx;
 osThreadId_t TaskFSMHandle;
 const osThreadAttr_t TaskFSM_attributes = {
   .name = "TaskFSM",
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityHigh,
   .stack_size = 256 * 4
 };
 /* Definitions for TaskSensors */
 osThreadId_t TaskSensorsHandle;
 const osThreadAttr_t TaskSensors_attributes = {
   .name = "TaskSensors",
-  .priority = (osPriority_t) osPriorityAboveNormal1,
+  .priority = (osPriority_t) osPriorityHigh1,
   .stack_size = 512 * 4
 };
 /* Definitions for TaskSDCard */
@@ -360,14 +360,14 @@ int main(void)
 
 
   // Initialize Barometer ====================================================================== Super strange is this a redudndant calibration ? when i do it we get
-        /*
+
   if (bmp581_init_precise_normal(&bmp_sensor) == 0) {
 	  char baro_msg[] = "[+] BMP581 Initialized Successfully\r\n";
 	  HAL_UART_Transmit(&huart1, (uint8_t*)baro_msg, strlen(baro_msg), HAL_MAX_DELAY);
   } else {
 	  char baro_msg[] = "[-] BMP581 Initialization FAILED\r\n";
 	  HAL_UART_Transmit(&huart1, (uint8_t*)baro_msg, strlen(baro_msg), HAL_MAX_DELAY);
-  }*/
+  }
 
   // Initialize IMU
   if (IMU_Init(&hi2c3) == 1) {
@@ -2254,7 +2254,7 @@ void startTaskHMI(void *argument)
     	            osMutexRelease(I2C1_MutexHandle);
     	            }
     	        } else {
-    	            //vTaskSuspend(NULL); =================================================================== Penser à supprimer la tache pour libérer de la ram
+    	            vTaskSuspend(NULL); //=================================================================== Penser à supprimer la tache pour libérer de la ram
     	        	osDelay(100);
     	        }
 
