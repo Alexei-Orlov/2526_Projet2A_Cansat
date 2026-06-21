@@ -24,14 +24,14 @@ uint8_t bmp581_init_precise_normal(BMP_t * bmp581){
     int check = 0;
 
     // 1. Masques de configuration
-    uint8_t OSR_mask      = 0x60; // Pression ON, OSR_P = x16, OSR_T = x1
+    // OSR_P = x8 (au lieu de x16) : la broche INT/DRDY ne réagit pas matériellement
+    // sur cette carte, donc plus d'interruption — on revient au polling manuel
+    // (cf. TaskFSM, appel à 100Hz comme l'IMU). x8 donne ~155Hz en mode continu
+    // (table 9 datasheet), ce qui garantit un échantillon frais à chaque poll
+    // 100Hz, au prix d'un bruit légèrement supérieur (0.30 Pa RMS vs 0.21 Pa en x16).
+    uint8_t OSR_mask      = 0x58; // Pression ON, OSR_P = x8, OSR_T = x1
     uint8_t DSP_IIR_mask  = 0x01; // Filtre IIR activé (coeff 1) pour lisser le bruit
     uint8_t DSP_conf_mask = 0x23; // Lecture après filtre IIR + Compensation ON
-
-    // Enable INT pin: push-pull, active high, latched
-    uint8_t INT_CONFIG_mask = 0x0B;
-    // Trigger INT on data ready only
-    uint8_t INT_SOURCE_mask = 0x01;
 
     // Mode CONTINU (Le capteur tourne tout seul en boucle)
     uint8_t ODR_mask      = 0x03;
@@ -42,8 +42,6 @@ uint8_t bmp581_init_precise_normal(BMP_t * bmp581){
     if(HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, BMP581_OSR_CONFIG, 1, &OSR_mask, 1, 100) != HAL_OK) check = 1;
     if(HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, 0x31 /* DSP_IIR */, 1, &DSP_IIR_mask, 1, 100) != HAL_OK) check = 1;
     if(HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, BMP581_DSP_CONFIG, 1, &DSP_conf_mask, 1, 100) != HAL_OK) check = 1;
-    if(HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, 0x14 /* INT_CONFIG */, 1, &INT_CONFIG_mask, 1, 100) != HAL_OK) check = 1;
-    if(HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, BMP581_INT_SOURCE, 1, &INT_SOURCE_mask, 1, 100) != HAL_OK) check = 1;
     // =========================================================================
     // 3. LE DÉCLENCHEUR : On réveille le capteur SEULEMENT quand tout est prêt
     // =========================================================================
@@ -89,9 +87,9 @@ uint8_t bmp581_init_precise_normal(BMP_t * bmp581){
 }
 */
 uint8_t bmp581_read_precise_normal(BMP_t * bmp581){
+		// Polling manuel (capteur en continu, pas d'interruption) : on lit directement
+		// les registres de données, pas besoin de passer par INT_STATUS.
 		int check=0;
-		uint8_t int_status = 0;
-		HAL_I2C_Mem_Read(&hi2c1, BMP581_READ_ADDR, BMP581_INT_STATUS, 1, &int_status, 1, 10);
 		uint8_t recarray[6];
 		int32_t intbuffertemp=0;
 		int32_t intbufferpres=0;

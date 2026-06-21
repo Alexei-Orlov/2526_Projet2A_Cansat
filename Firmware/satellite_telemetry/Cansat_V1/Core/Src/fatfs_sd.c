@@ -53,6 +53,10 @@ if(FatFsCnt >= 10)
 
 extern volatile uint8_t Timer1, Timer2;                    /* 10ms Timer decreasing every time */
 
+// Iteration guard for the low-level SPI busy-waits below: a marginal/failing
+// SD card must not be able to freeze TaskSDCard forever.
+#define SPI_BUSY_RETRY 100000UL
+
 static volatile DSTATUS Stat = STA_NOINIT;              /* Disc Status Flag*/
 static uint8_t CardType;                                /* SD type 0:MMC, 1:SDC, 2:Block addressing */
 static uint8_t PowerFlag = 0;                           /* Power condition Flag */
@@ -73,7 +77,9 @@ static void DESELECT(void)
 /* SPI Transmit*/
 static void SPI_TxByte(BYTE data)
 {
-  while (HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
+  // Bounded: a stuck SPI peripheral state must not hang TaskSDCard forever.
+  uint32_t guard = SPI_BUSY_RETRY;
+  while (HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY && --guard);
   HAL_SPI_Transmit(&hspi1, &data, 1, SPI_TIMEOUT);
 }
 
@@ -83,10 +89,12 @@ static uint8_t SPI_RxByte(void)
   uint8_t dummy, data;
   dummy = 0xFF;
   data = 0;
-  
-  while ((HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY));
+
+  // Bounded: a stuck SPI peripheral state must not hang TaskSDCard forever.
+  uint32_t guard = SPI_BUSY_RETRY;
+  while ((HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY) && --guard);
   HAL_SPI_TransmitReceive(&hspi1, &dummy, &data, 1, SPI_TIMEOUT);
-  
+
   return data;
 }
 
@@ -244,7 +252,10 @@ static bool SD_TxDataBlock(const BYTE *buff, BYTE token)
     }
     
     /* SPI 수신 버퍼 Clear */
-    while (SPI_RxByte() == 0);
+    // Bounded to 1s: a card stuck in the post-write busy state must not
+    // hang TaskSDCard forever (this is what froze LIDAR logging in flight).
+    Timer1 = 100;
+    while ((SPI_RxByte() == 0) && Timer1);
   }
   
   if ((resp & 0x1F) == 0x05)

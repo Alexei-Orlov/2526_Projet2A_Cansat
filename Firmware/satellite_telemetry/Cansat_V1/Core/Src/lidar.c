@@ -6,6 +6,7 @@
 #include "cmsis_os.h"
 #include "FreeRTOS.h"
 #include "cansat_core.h"
+#include "gnss_reader.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -66,6 +67,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
         xQueueSendFromISR(qSensorEvents, &ev, &xHigherPriorityTaskWoken);
         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+    // GNSS (USART1) uses single-byte interrupt reception, not DMA — route
+    // each completed byte to its own parser instead of the LIDAR path.
+    else if (huart->Instance == USART1) {
+        GNSS_UART_RxCpltCallback(huart);
     }
 }
 
@@ -139,6 +145,9 @@ void Process_Lidar_Buffer_Chunk(uint8_t* chunk_start, uint16_t chunk_length, uin
                         lidar_pkt.roll       = imu_snap.roll;
                         lidar_pkt.pitch      = imu_snap.pitch;
                         lidar_pkt.yaw        = imu_snap.yaw;
+                        lidar_pkt.accelX     = imu_snap.accelX;
+                        lidar_pkt.accelY     = imu_snap.accelY;
+                        lidar_pkt.accelZ     = imu_snap.accelZ;
                         lidar_pkt.imu_age_ms = current_ms - imu_snap_ms; // age of IMU sample at log time (ms)
                         lidar_pkt.height    = latest_baro.height;
                         lidar_pkt.latitude  = latest_gnss.latitude;

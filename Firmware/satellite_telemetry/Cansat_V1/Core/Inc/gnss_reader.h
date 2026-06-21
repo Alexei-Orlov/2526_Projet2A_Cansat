@@ -15,7 +15,7 @@
 extern UART_HandleTypeDef GNSS_HUART;
 
 // Maximum length of an NMEA sentence
-#define NMEA_MAX_LEN 100
+#define NMEA_MAX_LEN 85
 
 // Internal parsed data structure
 typedef struct {

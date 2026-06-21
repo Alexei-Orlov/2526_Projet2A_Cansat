@@ -35,9 +35,9 @@
 #include "bmp581.h"
 #include "lidar.h"
 #include "cansat_core.h"
+#include "gnss_reader.h"
 #include "imu.h"
 #include "sx1276.h"
-#include "gnss_reader.h"
 #include "hmi.h"
 /* USER CODE END Includes */
 
@@ -101,7 +101,7 @@ const osThreadAttr_t TaskSDCard_attributes = {
 osThreadId_t TaskLoRaHandle;
 const osThreadAttr_t TaskLoRa_attributes = {
   .name = "TaskLoRa",
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityAboveNormal1,
   .stack_size = 512 * 4
 };
 /* Definitions for TaskHMIHandle */
@@ -164,6 +164,13 @@ QueueHandle_t qSDCard;
 QueueHandle_t qLoRa;
 QueueHandle_t qSDCard_LIDAR;  // High-frequency LIDAR-only queue (50 Hz)
 QueueHandle_t qHMI_Events;
+
+// --- TEMPORARY DIAGNOSTIC COUNTERS (telemetry debugging — safe to delete later) ---
+// Pure counters, no effect on sensor/radio behavior. Printed once per second from TaskFSM.
+volatile uint32_t dbg_baro_processed = 0;
+volatile uint32_t dbg_lora_queued = 0;
+volatile uint32_t dbg_lora_dropped_full = 0;
+volatile uint32_t dbg_lora_sent = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -196,7 +203,7 @@ int _write(int file, char *ptr, int len) {
     HAL_UART_Transmit(&huart1, (uint8_t*)ptr, len, HAL_MAX_DELAY);
     return len;
 }
-uint8_t debug = 1;
+uint8_t debug = 0;
 /* USER CODE END 0 */
 
 /**
@@ -392,8 +399,6 @@ int main(void)
 	"\r\n[i] Starting RTOS...\r\n\r\n";
 
 	HAL_UART_Transmit(&huart1, (uint8_t*)vortex_art, strlen(vortex_art), HAL_MAX_DELAY);
-
-
 
 
 	// Initialize background GNSS listening on USART1
@@ -921,7 +926,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 9600;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -1061,12 +1066,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(HMIBTN_EXTI3_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : BARO_EXTI_Pin */
-  GPIO_InitStruct.Pin = BARO_EXTI_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(BARO_EXTI_GPIO_Port, &GPIO_InitStruct);
-
   /*Configure GPIO pin : SD_GPIO_CS_Pin */
   GPIO_InitStruct.Pin = SD_GPIO_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -1093,9 +1092,6 @@ static void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI3_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
-
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
   /* USER CODE END MX_GPIO_Init_2 */
@@ -1109,13 +1105,6 @@ static uint32_t last_button_press = 0;
 #define DEBOUNCE_DELAY_MS 200
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-    if (GPIO_Pin == GPIO_PIN_4) { // PA4 — BMP581 DRDY
-        SensorEvent_t ev = EVENT_BARO_READY;
-        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-        xQueueSendFromISR(qSensorEvents, &ev, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    }
-
     if (GPIO_Pin == GPIO_PIN_3) {
         uint32_t now = HAL_GetTick();
 
@@ -1299,14 +1288,34 @@ void startTaskFSM(void *argument)
               xQueueSend(qSensorEvents, &bat_ticket, 0);
           }
 
-          // Baromètre et IMU demandés à 100 Hz
-
-          // not needed because we got baro EXTI
-          //SensorEvent_t baro_ticket = EVENT_BARO_READY;
-          //xQueueSend(qSensorEvents, &baro_ticket, 0);
-
+          // IMU demandé à 100 Hz. Le baro est demandé plus bas, à 20 Hz seulement
+          // (bloc basse fréquence) : le poller à 100Hz comme l'IMU sature TaskSensors
+          // (lecture I2C bloquante, pas de DMA) et privait TaskLoRa de CPU. L'altitude
+          // barométrique n'a pas besoin de 100Hz comme l'attitude IMU — 20Hz suffit
+          // largement, et c'est la fréquence la plus élevée que le système absorbe
+          // sans affamer les autres tâches.
           SensorEvent_t imu_ticket = EVENT_IMU_READY;
           xQueueSend(qSensorEvents, &imu_ticket, 0);
+      }
+
+      // --- TEMPORARY DIAGNOSTIC PRINT (1x/sec, independent of flight state) ---
+      // Prints counts accumulated over the last ~1s, then resets them, so the
+      // numbers read directly as "events per second". Remove once the
+      // telemetry-silence issue is understood.
+      {
+          static uint32_t last_dbg_print = 0;
+          if (HAL_GetTick() - last_dbg_print > 1000) {
+              last_dbg_print = HAL_GetTick();
+              char dbg_msg[160];
+              sprintf(dbg_msg, "[DBG] baro_ok=%lu/s | lora_queued=%lu lora_queue_full=%lu lora_sent=%lu\r\n",
+                      dbg_baro_processed,
+                      dbg_lora_queued, dbg_lora_dropped_full, dbg_lora_sent);
+              HAL_UART_Transmit(&huart1, (uint8_t*)dbg_msg, strlen(dbg_msg), 100);
+              dbg_baro_processed = 0;
+              dbg_lora_queued = 0;
+              dbg_lora_dropped_full = 0;
+              dbg_lora_sent = 0;
+          }
       }
 
       // ====================================================================
@@ -1314,6 +1323,12 @@ void startTaskFSM(void *argument)
       // ====================================================================
       if (tick_10ms % 5 == 0)
       {
+          // --- BAROMÈTRE (20 Hz, voir le commentaire dans le bloc 100Hz ci-dessus) ---
+          if (currentState >= STATE_READY && currentState < STATE_OFF) {
+              SensorEvent_t baro_ticket = EVENT_BARO_READY;
+              xQueueSend(qSensorEvents, &baro_ticket, 0);
+          }
+
           // --- A. LOGIQUE D'AFFICHAGE DEBUG ---
           if (currentState != last_printed_state) {
               switch(currentState) {
@@ -1358,7 +1373,11 @@ void startTaskFSM(void *argument)
                   telemetry_pkt.gnss.satellites = latest_gnss.satellites;
                   telemetry_pkt.bat.voltage = latest_battery.voltage;
 
-                  xQueueSend(qLoRa, &telemetry_pkt, 0);
+                  if (xQueueSend(qLoRa, &telemetry_pkt, 0) == pdPASS) {
+                      dbg_lora_queued++;
+                  } else {
+                      dbg_lora_dropped_full++;
+                  }
                   xQueueSend(qSDCard, &telemetry_pkt, 0);
               }
           }
@@ -1478,7 +1497,17 @@ void startTaskSensors(void *argument)
                     extern double bmptemp;
                     extern double bmppress;
 
-                    if (bmp581_read_precise_normal(&bmp_sensor) == 0) {
+                    // I2C1 is shared with the BMP581 calibration routines and the SSD1306 HMI screen.
+                    // Periodic polling (100Hz, same cadence as the IMU) — block for the mutex so
+                    // we never race the other owner mid-transaction and corrupt the HAL I2C state.
+                    if (osMutexAcquire(I2C1_MutexHandle, osWaitForever) != osOK) {
+                        break;
+                    }
+                    uint8_t baro_read_ok = (bmp581_read_precise_normal(&bmp_sensor) == 0);
+                    osMutexRelease(I2C1_MutexHandle);
+                    dbg_baro_processed++;
+
+                    if (baro_read_ok) {
 
                         // --- 1. TIME CALCULATION FOR DERIVATIVE ---
                         static uint32_t prev_time = 0;
@@ -1735,6 +1764,7 @@ void startTaskSDCard(void *argument)
 	    Create_File(lidar_filename);
 	    Update_File(lidar_filename,
 	        "tx_timestamp_ms,distance,roll,pitch,yaw,"
+	    	"accel_x,accel_y,accel_z,"
 	        "latitude,longitude,altitude,flags_raw\r\n");
 
 	    char boot_msg[64];
@@ -1847,6 +1877,15 @@ void startTaskSDCard(void *argument)
 		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
 
 		           float_to_str(fast_pkt.yaw, 1, tmp);
+		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+
+		           float_to_str(fast_pkt.accelX, 2, tmp);
+		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+
+		           float_to_str(fast_pkt.accelY, 2, tmp);
+		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+
+		           float_to_str(fast_pkt.accelZ, 2, tmp);
 		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
 
 		           float_to_str(fast_pkt.latitude, 6, tmp);
@@ -2075,6 +2114,7 @@ void startTaskLoRa(void *argument)
 
             // Send the packet over the air
             SX1276_SendPacket((uint8_t*)payload_str, strlen(payload_str));
+            dbg_lora_sent++;
 
             // Give the RTOS some breathing room between heavy RF transmissions
             osDelay(10);
@@ -2143,12 +2183,18 @@ void startTaskHMI(void *argument)
 
     	        for (int i = 0; i < SAMPLES_BAROMETER_CALIBRATION; i++) {
 
+    	        	// Same I2C1 bus as the 100Hz baro polling in TaskSensors — must take the
+    	        	// mutex here too, otherwise that polling read can race this transaction
+    	        	// on the shared hi2c1 handle.
+    	        	if (osMutexAcquire(I2C1_MutexHandle, osWaitForever) == osOK) {
     	        	if (bmp581_read_precise_normal(&bmp_sensor) == 0) {
     	        		extern double bmppress;
     	                extern double bmptemp;
     	                sum_pressure += bmppress;
     	                sum_temp += bmptemp;
     	                valid_reads++;
+    	        	}
+    	        	osMutexRelease(I2C1_MutexHandle);
     	        	}
 
     	        	// Update progress bar every 5 samples
@@ -2212,7 +2258,7 @@ void startTaskHMI(void *argument)
     	                    osDelay(10);
 
     	                    Create_File(lidar_filename);
-    	                    Update_File(lidar_filename, "tx_timestamp_ms,distance,roll,pitch,yaw,latitude,longitude,altitude,flags_raw\r\n");
+    	                    Update_File(lidar_filename, "tx_timestamp_ms,distance,roll,pitch,yaw,accel_x,accel_y,accel_z,latitude,longitude,altitude,flags_raw\r\n");
     	                // Confirm
     	                ssd1306_Fill(Black);
     	                ssd1306_SetCursor(10, 10);

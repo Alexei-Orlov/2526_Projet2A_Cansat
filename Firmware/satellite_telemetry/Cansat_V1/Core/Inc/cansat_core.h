@@ -73,6 +73,9 @@ typedef struct {
     float roll;
     float pitch;
     float yaw;
+    float accelX;
+    float accelY;
+    float accelZ;
     float height;
     float latitude;
     float longitude;

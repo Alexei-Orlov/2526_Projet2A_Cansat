@@ -47,8 +47,9 @@ typedef enum {
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-FATFS USERFatFs;    /* File system object for USER logical drive */
-FIL USERFile;       /* File  object for USER */
+// USERFatFs/USERFile (CubeMX demo boilerplate) removed: never opened/mounted
+// anywhere in this project (the real mount uses fs/fil in
+// File_Handling_RTOS.c) — they only ate ~1.1KB of already-scarce RAM
 char USERPath[4];   /* USER logical drive path */
 /* USER CODE BEGIN PV */
 FS_FileOperationsTypeDef Appli_state = APPLICATION_IDLE;

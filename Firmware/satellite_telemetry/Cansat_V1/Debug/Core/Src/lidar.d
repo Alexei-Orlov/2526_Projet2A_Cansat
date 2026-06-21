@@ -51,7 +51,7 @@ Core/Src/lidar.o: ../Core/Src/lidar.c ../Core/Inc/lidar.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h \
- ../Core/Inc/imu.h
+ ../Core/Inc/imu.h ../Core/Inc/gnss_reader.h ../Core/Inc/main.h
 ../Core/Inc/lidar.h:
 ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal.h:
 ../Core/Inc/stm32g4xx_hal_conf.h:
@@ -106,3 +106,5 @@ Core/Src/lidar.o: ../Core/Src/lidar.c ../Core/Inc/lidar.h \
 ../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h:
 ../Core/Inc/imu.h:
+../Core/Inc/gnss_reader.h:
+../Core/Inc/main.h:
