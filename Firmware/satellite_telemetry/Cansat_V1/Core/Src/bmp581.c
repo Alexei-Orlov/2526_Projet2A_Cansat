@@ -153,12 +153,20 @@ HAL_StatusTypeDef BMP581_CalibrateGroundPressure(double *reference_pressure, dou
     extern double bmppress;
     extern double bmptemp;
 
-    // Take 1000 readings to filter out noise
+    // Run the full sample count (same fixed ~6s duration as before, so this
+    // can never block/hang), but only average the second half. The BMP581's
+    // own die is still warming up from PCB self-heating during the first
+    // half right after power-on, which biases its internal pressure
+    // compensation — discarding those early samples gives a reference
+    // closer to the board's settled thermal state.
+    int discard_count = SAMPLES_BAROMETER_CALIBRATION / 2;
     for(int i = 0; i < SAMPLES_BAROMETER_CALIBRATION; i++) {
         if (bmp581_read_precise_normal(bmp581) == 0) {
-            sum_pressure += bmppress;
-            sum_temp += bmptemp;     // Also sum the temperature
-            valid_reads++;
+            if (i >= discard_count) {
+                sum_pressure += bmppress;
+                sum_temp += bmptemp;     // Also sum the temperature
+                valid_reads++;
+            }
         }
 
         if (i % 100 == 0) {

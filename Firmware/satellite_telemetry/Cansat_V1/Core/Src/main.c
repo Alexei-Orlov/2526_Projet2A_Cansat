@@ -1531,6 +1531,12 @@ void startTaskSensors(void *argument)
                         float Kd = 0.05f;  // Reaction strength to sudden thermal spikes
                         float thermal_correction = (Kp * delta_T) + (Kd * temp_rate_of_change);
 
+                        // Safety clamp: over a ~120m/~12s drop, real atmospheric
+                        // lapse-rate effects are well under 1m — anything larger
+                        // is sensor self-heating noise, not a real correction.
+                        if (thermal_correction > 3.0f) thermal_correction = 3.0f;
+                        if (thermal_correction < -3.0f) thermal_correction = -3.0f;
+
                         // --- 5. THE SUMMING JUNCTION ---
                         float comp_altitude = raw_altitude - thermal_correction;
 
@@ -2181,13 +2187,17 @@ void startTaskHMI(void *argument)
     	        double sum_temp = 0.0;
     	        int valid_reads = 0;
 
+    	        // Same discard-first-half rationale as BMP581_CalibrateGroundPressure:
+    	        // the BMP581's die is still settling thermally during the first half
+    	        // of the run, which biases its internal pressure compensation.
+    	        int discard_count = SAMPLES_BAROMETER_CALIBRATION / 2;
     	        for (int i = 0; i < SAMPLES_BAROMETER_CALIBRATION; i++) {
 
     	        	// Same I2C1 bus as the 100Hz baro polling in TaskSensors — must take the
     	        	// mutex here too, otherwise that polling read can race this transaction
     	        	// on the shared hi2c1 handle.
     	        	if (osMutexAcquire(I2C1_MutexHandle, osWaitForever) == osOK) {
-    	        	if (bmp581_read_precise_normal(&bmp_sensor) == 0) {
+    	        	if (bmp581_read_precise_normal(&bmp_sensor) == 0 && i >= discard_count) {
     	        		extern double bmppress;
     	                extern double bmptemp;
     	                sum_pressure += bmppress;
