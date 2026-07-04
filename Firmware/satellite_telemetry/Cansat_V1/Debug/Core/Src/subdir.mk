@@ -16,7 +16,6 @@ C_SRCS += \
 ../Core/Src/main.c \
 ../Core/Src/ssd1306.c \
 ../Core/Src/ssd1306_fonts.c \
-../Core/Src/ssd1306_test.c \
 ../Core/Src/stm32g4xx_hal_msp.c \
 ../Core/Src/stm32g4xx_hal_timebase_tim.c \
 ../Core/Src/stm32g4xx_it.c \
@@ -37,7 +36,6 @@ OBJS += \
 ./Core/Src/main.o \
 ./Core/Src/ssd1306.o \
 ./Core/Src/ssd1306_fonts.o \
-./Core/Src/ssd1306_test.o \
 ./Core/Src/stm32g4xx_hal_msp.o \
 ./Core/Src/stm32g4xx_hal_timebase_tim.o \
 ./Core/Src/stm32g4xx_it.o \
@@ -58,7 +56,6 @@ C_DEPS += \
 ./Core/Src/main.d \
 ./Core/Src/ssd1306.d \
 ./Core/Src/ssd1306_fonts.d \
-./Core/Src/ssd1306_test.d \
 ./Core/Src/stm32g4xx_hal_msp.d \
 ./Core/Src/stm32g4xx_hal_timebase_tim.d \
 ./Core/Src/stm32g4xx_it.d \
@@ -75,7 +72,7 @@ Core/Src/%.o Core/Src/%.su Core/Src/%.cyclo: ../Core/Src/%.c Core/Src/subdir.mk
 clean: clean-Core-2f-Src
 
 clean-Core-2f-Src:
-	-$(RM) ./Core/Src/File_Handling_RTOS.cyclo ./Core/Src/File_Handling_RTOS.d ./Core/Src/File_Handling_RTOS.o ./Core/Src/File_Handling_RTOS.su ./Core/Src/app_freertos.cyclo ./Core/Src/app_freertos.d ./Core/Src/app_freertos.o ./Core/Src/app_freertos.su ./Core/Src/bmp581.cyclo ./Core/Src/bmp581.d ./Core/Src/bmp581.o ./Core/Src/bmp581.su ./Core/Src/fatfs_sd.cyclo ./Core/Src/fatfs_sd.d ./Core/Src/fatfs_sd.o ./Core/Src/fatfs_sd.su ./Core/Src/gnss_reader.cyclo ./Core/Src/gnss_reader.d ./Core/Src/gnss_reader.o ./Core/Src/gnss_reader.su ./Core/Src/hmi.cyclo ./Core/Src/hmi.d ./Core/Src/hmi.o ./Core/Src/hmi.su ./Core/Src/imu.cyclo ./Core/Src/imu.d ./Core/Src/imu.o ./Core/Src/imu.su ./Core/Src/lidar.cyclo ./Core/Src/lidar.d ./Core/Src/lidar.o ./Core/Src/lidar.su ./Core/Src/main.cyclo ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/ssd1306.cyclo ./Core/Src/ssd1306.d ./Core/Src/ssd1306.o ./Core/Src/ssd1306.su ./Core/Src/ssd1306_fonts.cyclo ./Core/Src/ssd1306_fonts.d ./Core/Src/ssd1306_fonts.o ./Core/Src/ssd1306_fonts.su ./Core/Src/ssd1306_test.cyclo ./Core/Src/ssd1306_test.d ./Core/Src/ssd1306_test.o ./Core/Src/ssd1306_test.su ./Core/Src/stm32g4xx_hal_msp.cyclo ./Core/Src/stm32g4xx_hal_msp.d ./Core/Src/stm32g4xx_hal_msp.o ./Core/Src/stm32g4xx_hal_msp.su ./Core/Src/stm32g4xx_hal_timebase_tim.cyclo ./Core/Src/stm32g4xx_hal_timebase_tim.d ./Core/Src/stm32g4xx_hal_timebase_tim.o ./Core/Src/stm32g4xx_hal_timebase_tim.su ./Core/Src/stm32g4xx_it.cyclo ./Core/Src/stm32g4xx_it.d ./Core/Src/stm32g4xx_it.o ./Core/Src/stm32g4xx_it.su ./Core/Src/sx1276.cyclo ./Core/Src/sx1276.d ./Core/Src/sx1276.o ./Core/Src/sx1276.su ./Core/Src/syscalls.cyclo ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.cyclo ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32g4xx.cyclo ./Core/Src/system_stm32g4xx.d ./Core/Src/system_stm32g4xx.o ./Core/Src/system_stm32g4xx.su
+	-$(RM) ./Core/Src/File_Handling_RTOS.cyclo ./Core/Src/File_Handling_RTOS.d ./Core/Src/File_Handling_RTOS.o ./Core/Src/File_Handling_RTOS.su ./Core/Src/app_freertos.cyclo ./Core/Src/app_freertos.d ./Core/Src/app_freertos.o ./Core/Src/app_freertos.su ./Core/Src/bmp581.cyclo ./Core/Src/bmp581.d ./Core/Src/bmp581.o ./Core/Src/bmp581.su ./Core/Src/fatfs_sd.cyclo ./Core/Src/fatfs_sd.d ./Core/Src/fatfs_sd.o ./Core/Src/fatfs_sd.su ./Core/Src/gnss_reader.cyclo ./Core/Src/gnss_reader.d ./Core/Src/gnss_reader.o ./Core/Src/gnss_reader.su ./Core/Src/hmi.cyclo ./Core/Src/hmi.d ./Core/Src/hmi.o ./Core/Src/hmi.su ./Core/Src/imu.cyclo ./Core/Src/imu.d ./Core/Src/imu.o ./Core/Src/imu.su ./Core/Src/lidar.cyclo ./Core/Src/lidar.d ./Core/Src/lidar.o ./Core/Src/lidar.su ./Core/Src/main.cyclo ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/ssd1306.cyclo ./Core/Src/ssd1306.d ./Core/Src/ssd1306.o ./Core/Src/ssd1306.su ./Core/Src/ssd1306_fonts.cyclo ./Core/Src/ssd1306_fonts.d ./Core/Src/ssd1306_fonts.o ./Core/Src/ssd1306_fonts.su ./Core/Src/stm32g4xx_hal_msp.cyclo ./Core/Src/stm32g4xx_hal_msp.d ./Core/Src/stm32g4xx_hal_msp.o ./Core/Src/stm32g4xx_hal_msp.su ./Core/Src/stm32g4xx_hal_timebase_tim.cyclo ./Core/Src/stm32g4xx_hal_timebase_tim.d ./Core/Src/stm32g4xx_hal_timebase_tim.o ./Core/Src/stm32g4xx_hal_timebase_tim.su ./Core/Src/stm32g4xx_it.cyclo ./Core/Src/stm32g4xx_it.d ./Core/Src/stm32g4xx_it.o ./Core/Src/stm32g4xx_it.su ./Core/Src/sx1276.cyclo ./Core/Src/sx1276.d ./Core/Src/sx1276.o ./Core/Src/sx1276.su ./Core/Src/syscalls.cyclo ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.cyclo ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32g4xx.cyclo ./Core/Src/system_stm32g4xx.d ./Core/Src/system_stm32g4xx.o ./Core/Src/system_stm32g4xx.su
 
 .PHONY: clean-Core-2f-Src
 

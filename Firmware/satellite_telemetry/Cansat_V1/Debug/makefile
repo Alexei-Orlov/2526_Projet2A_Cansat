@@ -71,8 +71,8 @@ all: main-build
 main-build: Cansat_V1.elf secondary-outputs
 
 # Tool invocations
-Cansat_V1.elf Cansat_V1.map: $(OBJS) $(USER_OBJS) /home/alexei/Documents/ENSEA/Semestre_8/Cansat/2526_Projet2A_Cansat/Firmware/satellite_telemetry/Cansat_V1/STM32G431CBUX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Cansat_V1.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/alexei/Documents/ENSEA/Semestre_8/Cansat/2526_Projet2A_Cansat/Firmware/satellite_telemetry/Cansat_V1/STM32G431CBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cansat_V1.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Cansat_V1.elf Cansat_V1.map: $(OBJS) $(USER_OBJS) C:\Users\Ted\Documents\2A_Ensea\2526_Projet_2A\2526_Projet2A_Cansat\Firmware\satellite_telemetry\Cansat_V1\STM32G431CBUX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Cansat_V1.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Ted\Documents\2A_Ensea\2526_Projet_2A\2526_Projet2A_Cansat\Firmware\satellite_telemetry\Cansat_V1\STM32G431CBUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Cansat_V1.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

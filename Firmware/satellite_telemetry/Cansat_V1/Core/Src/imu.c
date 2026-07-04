@@ -9,6 +9,8 @@
 #include <string.h>
 #include <stdio.h>
 
+extern uint8_t debug;
+
 static I2C_HandleTypeDef *imu_i2c;
 
 const uint8_t imu_calib_profile[22] = {
@@ -17,49 +19,46 @@ const uint8_t imu_calib_profile[22] = {
     0x00, 0x00, 0xE8, 0x03, 0x00, 0x00
 };
 
-// Helper to write to a register
-static void BNO_WriteReg(uint8_t reg, uint8_t data) {
+static void BNO_WriteReg(uint8_t reg, uint8_t data)
+{
     HAL_I2C_Mem_Write(imu_i2c, BNO055_I2C_ADDR, reg, I2C_MEMADD_SIZE_8BIT, &data, 1, 10);
 }
 
-// Helper to read from a register
-static void BNO_ReadRegs(uint8_t reg, uint8_t *data, uint16_t len) {
+static void BNO_ReadRegs(uint8_t reg, uint8_t *data, uint16_t len)
+{
     HAL_I2C_Mem_Read(imu_i2c, BNO055_I2C_ADDR, reg, I2C_MEMADD_SIZE_8BIT, data, len, 10);
 }
 
-uint8_t IMU_Init(I2C_HandleTypeDef *hi2c) {
+/* ===========================================================================
+ * INITIALIZATION
+ * =========================================================================*/
+
+uint8_t IMU_Init(I2C_HandleTypeDef *hi2c)
+{
     imu_i2c = hi2c;
     uint8_t id = 0;
 
-    // 1. Check communication and Chip ID
     BNO_ReadRegs(BNO055_CHIP_ID_ADDR, &id, 1);
-    if (id != 0xA0) {
-        return 0; // Error: Device not found
-    }
+    if (id != 0xA0)
+        return 0;  /* device not found */
 
-    // 2. Reset Mode to CONFIG
     BNO_WriteReg(BNO055_OPR_MODE_ADDR, OPR_MODE_CONFIG);
     HAL_Delay(30);
 
-    // 3. Set INTERNAL Crystal
-    BNO_WriteReg(BNO055_SYS_TRIGGER_ADDR, 0x00);
+    BNO_WriteReg(BNO055_SYS_TRIGGER_ADDR, 0x00);  /* use internal oscillator */
     HAL_Delay(50);
 
-    // --- 4. INJECT THE HARDCODED CALIBRATION PROFILE ---
     IMU_SetCalibrationProfile(imu_calib_profile);
     HAL_Delay(30);
 
-    // 5. Set Operation Mode to NDOF
     BNO_WriteReg(BNO055_OPR_MODE_ADDR, OPR_MODE_NDOF);
     HAL_Delay(30);
 
     return 1;
 }
 
-/**
- * @brief Extracts the 22 bytes of calibration data.
- */
-void IMU_GetCalibrationProfile(uint8_t *profile) {
+void IMU_GetCalibrationProfile(uint8_t *profile)
+{
     BNO_WriteReg(BNO055_OPR_MODE_ADDR, OPR_MODE_CONFIG);
     HAL_Delay(25);
     BNO_ReadRegs(BNO055_ACCEL_OFFSET_X_LSB, profile, 22);
@@ -67,22 +66,20 @@ void IMU_GetCalibrationProfile(uint8_t *profile) {
     HAL_Delay(25);
 }
 
-/**
- * @brief Injects the 22 bytes of calibration data.
- */
-void IMU_SetCalibrationProfile(const uint8_t *profile) {
-    for(int i = 0; i < 22; i++) {
+void IMU_SetCalibrationProfile(const uint8_t *profile)
+{
+    for (int i = 0; i < 22; i++) {
         BNO_WriteReg(BNO055_ACCEL_OFFSET_X_LSB + i, profile[i]);
         HAL_Delay(2);
     }
 }
 
-/**
- * @brief Blocking function to calibrate the IMU.
- */
-uint8_t IMU_calibration(UART_HandleTypeDef *huart_debug) {
+/* Blocking calibration routine — intended for one-time sessions only, not flight code.
+   Prints progress to huart_debug and dumps the profile array when done. */
+uint8_t IMU_calibration(UART_HandleTypeDef *huart_debug)
+{
     uint8_t calib = 0;
-    uint8_t sys=0, gyro=0, accel=0, mag=0;
+    uint8_t sys = 0, gyro = 0, accel = 0, mag = 0;
     char msg[128];
 
     sprintf(msg, "\r\n[*] IMU Calibration Started. Follow instructions:\r\n");
@@ -94,10 +91,10 @@ uint8_t IMU_calibration(UART_HandleTypeDef *huart_debug) {
     sprintf(msg, "3. Accel: Place resting on each of its 6 sides for 3 seconds.\r\n\n");
     HAL_UART_Transmit(huart_debug, (uint8_t*)msg, strlen(msg), 100);
 
-    // Loop until Magnetometer, Gyroscope, and System reach level 3
-    while( gyro < 3 || mag < 3 || accel < 3) {
+    while (gyro < 3 || mag < 3 || accel < 3) {
 
-        if (HAL_I2C_Mem_Read(imu_i2c, BNO055_I2C_ADDR, BNO055_CALIB_STAT_ADDR, I2C_MEMADD_SIZE_8BIT, &calib, 1, 10) != HAL_OK) {
+        if (HAL_I2C_Mem_Read(imu_i2c, BNO055_I2C_ADDR, BNO055_CALIB_STAT_ADDR,
+                              I2C_MEMADD_SIZE_8BIT, &calib, 1, 10) != HAL_OK) {
             sprintf(msg, "\r\n[-] I2C Error: IMU Disconnected!\r\n");
             HAL_UART_Transmit(huart_debug, (uint8_t*)msg, strlen(msg), 100);
             return 0;
@@ -106,7 +103,7 @@ uint8_t IMU_calibration(UART_HandleTypeDef *huart_debug) {
         sys   = (calib >> 6) & 0x03;
         gyro  = (calib >> 4) & 0x03;
         accel = (calib >> 2) & 0x03;
-        mag   = (calib) & 0x03;
+        mag   = (calib)      & 0x03;
 
         sprintf(msg, "Status -> Sys:%d | Gyro:%d | Accel:%d | Mag:%d \r", sys, gyro, accel, mag);
         HAL_UART_Transmit(huart_debug, (uint8_t*)msg, strlen(msg), 100);
@@ -117,25 +114,23 @@ uint8_t IMU_calibration(UART_HandleTypeDef *huart_debug) {
     sprintf(msg, "\r\n[+] IMU Calibration Complete!\r\n");
     HAL_UART_Transmit(huart_debug, (uint8_t*)msg, strlen(msg), 100);
 
-    // --- EXTRACT AND PRINT THE PROFILE ONCE CALIBRATION IS FINISHED ---
+    /* Extract and print the profile so it can be hardcoded into imu_calib_profile[] */
     uint8_t profile[22];
     IMU_GetCalibrationProfile(profile);
 
     sprintf(msg, "\r\n/* --- COPY THIS ARRAY INTO YOUR CODE --- */\r\n");
     HAL_UART_Transmit(huart_debug, (uint8_t*)msg, strlen(msg), 100);
-
     sprintf(msg, "const uint8_t imu_calib_profile[22] = {\r\n    ");
     HAL_UART_Transmit(huart_debug, (uint8_t*)msg, strlen(msg), 100);
 
-    for(int i = 0; i < 22; i++) {
+    for (int i = 0; i < 22; i++) {
         sprintf(msg, "0x%02X", profile[i]);
         HAL_UART_Transmit(huart_debug, (uint8_t*)msg, strlen(msg), 100);
-
         if (i < 21) {
             sprintf(msg, ", ");
             HAL_UART_Transmit(huart_debug, (uint8_t*)msg, strlen(msg), 100);
         }
-        if ((i + 1) % 8 == 0) { // Newline every 8 bytes for readability
+        if ((i + 1) % 8 == 0) {
             sprintf(msg, "\r\n    ");
             HAL_UART_Transmit(huart_debug, (uint8_t*)msg, strlen(msg), 100);
         }
@@ -148,24 +143,28 @@ uint8_t IMU_calibration(UART_HandleTypeDef *huart_debug) {
     return 1;
 }
 
-/**
- * @brief Reads Euler angles and Linear Acceleration safely
- */
-uint8_t getOrientationIMU(IMU_Data_t *data) {
+/* ===========================================================================
+ * POLLING READ  (used only during calibration; flight code uses DMA path)
+ * =========================================================================*/
+
+uint8_t getOrientationIMU(IMU_Data_t *data)
+{
     uint8_t euler_buf[6];
     uint8_t accel_buf[6];
 
-    if (HAL_I2C_Mem_Read(imu_i2c, BNO055_I2C_ADDR, BNO055_EUL_HEADING_LSB, I2C_MEMADD_SIZE_8BIT, euler_buf, 6, 10) != HAL_OK) return 0;
+    if (HAL_I2C_Mem_Read(imu_i2c, BNO055_I2C_ADDR, BNO055_EUL_HEADING_LSB,
+                         I2C_MEMADD_SIZE_8BIT, euler_buf, 6, 10) != HAL_OK) return 0;
 
     int16_t h = (int16_t)((euler_buf[1] << 8) | euler_buf[0]);
     int16_t r = (int16_t)((euler_buf[3] << 8) | euler_buf[2]);
     int16_t p = (int16_t)((euler_buf[5] << 8) | euler_buf[4]);
 
-    data->yaw  = (float)h / 16.0f;
+    data->yaw   = (float)h / 16.0f;
     data->roll  = (float)r / 16.0f;
     data->pitch = (float)p / 16.0f;
 
-    if (HAL_I2C_Mem_Read(imu_i2c, BNO055_I2C_ADDR, BNO055_LIA_DATA_X_LSB, I2C_MEMADD_SIZE_8BIT, accel_buf, 6, 10) != HAL_OK) return 0;
+    if (HAL_I2C_Mem_Read(imu_i2c, BNO055_I2C_ADDR, BNO055_LIA_DATA_X_LSB,
+                         I2C_MEMADD_SIZE_8BIT, accel_buf, 6, 10) != HAL_OK) return 0;
 
     int16_t ax = (int16_t)((accel_buf[1] << 8) | accel_buf[0]);
     int16_t ay = (int16_t)((accel_buf[3] << 8) | accel_buf[2]);
@@ -175,69 +174,63 @@ uint8_t getOrientationIMU(IMU_Data_t *data) {
     data->accelY = (float)ay / 100.0f;
     data->accelZ = (float)az / 100.0f;
 
-    // --- READ GYROSCOPE ---
     uint8_t gyro_buffer[6];
-    // FIXED: Changed hi2c to imu_i2c and added the missing semicolon
-    if (HAL_I2C_Mem_Read(imu_i2c, BNO055_I2C_ADDR, BNO055_GYRO_DATA_X_LSB, I2C_MEMADD_SIZE_8BIT, gyro_buffer, 6, 10) != HAL_OK) return 0;
+    if (HAL_I2C_Mem_Read(imu_i2c, BNO055_I2C_ADDR, BNO055_GYRO_DATA_X_LSB,
+                         I2C_MEMADD_SIZE_8BIT, gyro_buffer, 6, 10) != HAL_OK) return 0;
 
     int16_t gx = (int16_t)((gyro_buffer[1] << 8) | gyro_buffer[0]);
     int16_t gy = (int16_t)((gyro_buffer[3] << 8) | gyro_buffer[2]);
     int16_t gz = (int16_t)((gyro_buffer[5] << 8) | gyro_buffer[4]);
 
-    // Convert to Degrees Per Second (dps). Default BNO055 scale is 16 LSB = 1 dps
+    /* BNO055 default gyroscope scale: 16 LSB = 1 dps */
     data->gyroX = (float)gx / 16.0f;
     data->gyroY = (float)gy / 16.0f;
     data->gyroZ = (float)gz / 16.0f;
 
-    uint8_t calib = 0;
-    HAL_I2C_Mem_Read(imu_i2c, BNO055_I2C_ADDR, BNO055_CALIB_STAT_ADDR, I2C_MEMADD_SIZE_8BIT, &calib, 1, 10);
+    uint8_t calib_reg = 0;
+    HAL_I2C_Mem_Read(imu_i2c, BNO055_I2C_ADDR, BNO055_CALIB_STAT_ADDR,
+                     I2C_MEMADD_SIZE_8BIT, &calib_reg, 1, 10);
 
-    data->sys_calib   = (calib >> 6) & 0x03;
-    data->gyro_calib  = (calib >> 4) & 0x03;
-    data->accel_calib = (calib >> 2) & 0x03;
-    data->mag_calib   = (calib) & 0x03;
+    data->sys_calib   = (calib_reg >> 6) & 0x03;
+    data->gyro_calib  = (calib_reg >> 4) & 0x03;
+    data->accel_calib = (calib_reg >> 2) & 0x03;
+    data->mag_calib   = (calib_reg)      & 0x03;
 
     return 1;
 }
 
+/* ===========================================================================
+ * DMA PATH  (flight mode: triggered at 100 Hz from TaskFSM)
+ * =========================================================================*/
 
-// =========================================================================
-// VARIABLES PRIVÉES POUR LE DMA
-// =========================================================================
-// Tableau de 34 octets pour lire de 0x14 (Gyro X) à 0x35 (Calib) en une fois
+/* 34-byte burst: covers 0x14 (GyroX) through 0x35 (CalibStat) in one transfer */
 static uint8_t imu_dma_rx_buf[34];
 
-// =========================================================================
-// 1. LE DÉCLENCHEUR (Appelé par la FSM à 100 Hz)
-// =========================================================================
-uint8_t IMU_RequestData_DMA(void) {
-    HAL_StatusTypeDef status = HAL_I2C_Mem_Read_DMA(imu_i2c, BNO055_I2C_ADDR, BNO055_GYRO_DATA_X_LSB, I2C_MEMADD_SIZE_8BIT, imu_dma_rx_buf, 34);
+/* Trigger a non-blocking DMA read of the full sensor burst. */
+uint8_t IMU_RequestData_DMA(void)
+{
+    HAL_StatusTypeDef status = HAL_I2C_Mem_Read_DMA(
+        imu_i2c, BNO055_I2C_ADDR, BNO055_GYRO_DATA_X_LSB,
+        I2C_MEMADD_SIZE_8BIT, imu_dma_rx_buf, 34);
 
     if (status != HAL_OK) {
-        extern UART_HandleTypeDef huart1;
-        char msg[128];
-        // On affiche : Le statut, l'état de la machine I2C, le code d'erreur, et l'adresse du pointeur DMA
-        sprintf(msg, "[-] DMA Fail! Stat:%d | Etat:0x%02X | Err:0x%02lX | LienDMA:%p\r\n",
-                status, imu_i2c->State, imu_i2c->ErrorCode, (void*)imu_i2c->hdmarx);
-        HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
-
-
-
-
-
-
-
-        return 0; // Erreur
+        if (debug) {
+            extern UART_HandleTypeDef huart1;
+            char msg[128];
+            sprintf(msg, "[-] DMA Fail! Stat:%d | State:0x%02X | Err:0x%02lX | DMA:%p\r\n",
+                    status, imu_i2c->State, imu_i2c->ErrorCode, (void*)imu_i2c->hdmarx);
+            HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+        }
+        return 0;
     }
-    return 1; // Succès
+    return 1;
 }
 
-// =========================================================================
-// 2. LE RÉCOLTEUR (Appelé par l'interruption quand le DMA a terminé)
-// =========================================================================
-void IMU_ProcessData_DMA(IMU_Data_t *data) {
-
-    // --- 1. GYROSCOPE (Index 0 à 5, correspondant à 0x14 - 0x19) ---
+/* Unpack the DMA buffer into IMU_Data_t.
+   Called from HAL_I2C_MemRxCpltCallback once the transfer completes. */
+void IMU_ProcessData_DMA(IMU_Data_t *data)
+{
+    /* Gyroscope: bytes 0-5 -> registers 0x14-0x19 */
     int16_t gx = (int16_t)((imu_dma_rx_buf[1] << 8) | imu_dma_rx_buf[0]);
     int16_t gy = (int16_t)((imu_dma_rx_buf[3] << 8) | imu_dma_rx_buf[2]);
     int16_t gz = (int16_t)((imu_dma_rx_buf[5] << 8) | imu_dma_rx_buf[4]);
@@ -246,30 +239,29 @@ void IMU_ProcessData_DMA(IMU_Data_t *data) {
     data->gyroY = (float)gy / 16.0f;
     data->gyroZ = (float)gz / 16.0f;
 
-    // --- 2. EULER ANGLES (Index 6 à 11, correspondant à 0x1A - 0x1F) ---
-    int16_t h = (int16_t)((imu_dma_rx_buf[7] << 8) | imu_dma_rx_buf[6]);
-    int16_t r = (int16_t)((imu_dma_rx_buf[9] << 8) | imu_dma_rx_buf[8]);
+    /* Euler angles: bytes 6-11 -> registers 0x1A-0x1F */
+    int16_t h = (int16_t)((imu_dma_rx_buf[7]  << 8) | imu_dma_rx_buf[6]);
+    int16_t r = (int16_t)((imu_dma_rx_buf[9]  << 8) | imu_dma_rx_buf[8]);
     int16_t p = (int16_t)((imu_dma_rx_buf[11] << 8) | imu_dma_rx_buf[10]);
 
     data->yaw   = (float)h / 16.0f;
     data->roll  = (float)r / 16.0f;
     data->pitch = (float)p / 16.0f;
 
-    // --- QUATERNION (Index 12 à 19, correspondant à 0x20 - 0x27) ---
-    // Sans ambiguïté de signe ni blocage de cardan, contrairement aux angles
-    // d'Euler (pitch atteint déjà ±139° en vol, hors de la plage fiable).
+    /* Quaternion: bytes 12-19 -> registers 0x20-0x27.
+       No gimbal lock; source of truth for 3D reconstruction (pitch reaches +-139 deg in flight). */
     int16_t qw = (int16_t)((imu_dma_rx_buf[13] << 8) | imu_dma_rx_buf[12]);
     int16_t qx = (int16_t)((imu_dma_rx_buf[15] << 8) | imu_dma_rx_buf[14]);
     int16_t qy = (int16_t)((imu_dma_rx_buf[17] << 8) | imu_dma_rx_buf[16]);
     int16_t qz = (int16_t)((imu_dma_rx_buf[19] << 8) | imu_dma_rx_buf[18]);
 
-    // 1 Quaternion (unitless) = 2^14 LSB (datasheet BNO055, Table 3-31)
+    /* BNO055 quaternion scale: 1 unit = 2^14 LSB (datasheet Table 3-31) */
     data->quat_w = (float)qw / 16384.0f;
     data->quat_x = (float)qx / 16384.0f;
     data->quat_y = (float)qy / 16384.0f;
     data->quat_z = (float)qz / 16384.0f;
 
-    // --- 3. ACCÉLÉRATION LINÉAIRE (Index 20 à 25, correspondant à 0x28 - 0x2D) ---
+    /* Linear acceleration: bytes 20-25 -> registers 0x28-0x2D */
     int16_t ax = (int16_t)((imu_dma_rx_buf[21] << 8) | imu_dma_rx_buf[20]);
     int16_t ay = (int16_t)((imu_dma_rx_buf[23] << 8) | imu_dma_rx_buf[22]);
     int16_t az = (int16_t)((imu_dma_rx_buf[25] << 8) | imu_dma_rx_buf[24]);
@@ -278,12 +270,12 @@ void IMU_ProcessData_DMA(IMU_Data_t *data) {
     data->accelY = (float)ay / 100.0f;
     data->accelZ = (float)az / 100.0f;
 
-    // (Index 26 à 32 ignorés : ce sont les Gravité et Température)
+    /* Bytes 26-32 (gravity vector + temperature) are not used */
 
-    // --- 4. STATUT DE CALIBRATION (Index 33, correspondant à 0x35) ---
+    /* Calibration status: byte 33 -> register 0x35 */
     uint8_t calib = imu_dma_rx_buf[33];
     data->sys_calib   = (calib >> 6) & 0x03;
     data->gyro_calib  = (calib >> 4) & 0x03;
     data->accel_calib = (calib >> 2) & 0x03;
-    data->mag_calib   = (calib) & 0x03;
+    data->mag_calib   = (calib)      & 0x03;
 }
