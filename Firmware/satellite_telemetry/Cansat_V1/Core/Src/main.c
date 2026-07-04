@@ -437,7 +437,13 @@ int main(void)
     qSensorEvents = xQueueCreate(20, sizeof(SensorEvent_t));
     qSDCard       = xQueueCreate(5, sizeof(TelemetryPacket_t));
     qLoRa         = xQueueCreate(5,  sizeof(TelemetryPacket_t));
-    qSDCard_LIDAR = xQueueCreate(100, sizeof(LidarPacket_t));  // Larger buffer for 50Hz
+    // Depth trimmed further (100->90->65) to recover runtime FreeRTOS-heap
+    // room after adding accelX/Y/Z then quat_w/x/y/z to LidarPacket_t.
+    // Each slot is now 76 bytes; 65 slots still gives ~1.3-3s of burst
+    // buffering, comfortably more than the now-bounded (1s max) SD write
+    // stall can eat. Without this trim, TaskHMI (created last) silently
+    // failed osThreadNew because the heap ran out by the time its turn came.
+    qSDCard_LIDAR = xQueueCreate(65, sizeof(LidarPacket_t));  // Larger buffer for 50Hz
     qHMI_Events = xQueueCreate(10, sizeof(uint8_t));
   /* USER CODE END RTOS_QUEUES */
 
@@ -458,7 +464,19 @@ int main(void)
   TaskHMIHandleHandle = osThreadNew(startTaskHMI, NULL, &TaskHMIHandle_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  // osThreadNew() returns NULL on failure (most likely: FreeRTOS heap
+  // exhausted) without raising any error on its own — a task can silently
+  // never start (e.g. TaskHMI, created last, so it's the first victim of a
+  // too-small heap) with no symptom beyond "that task's hardware never
+  // does anything". Surface it loudly instead of guessing from symptoms.
+  if (TaskFSMHandle == NULL || TaskSensorsHandle == NULL || TaskSDCardHandle == NULL ||
+      TaskLoRaHandle == NULL || TaskHMIHandleHandle == NULL) {
+      char fail_msg[96];
+      sprintf(fail_msg, "[-] TASK CREATE FAILED (heap exhausted?) FSM:%d Sensors:%d SDCard:%d LoRa:%d HMI:%d\r\n",
+              TaskFSMHandle == NULL, TaskSensorsHandle == NULL, TaskSDCardHandle == NULL,
+              TaskLoRaHandle == NULL, TaskHMIHandleHandle == NULL);
+      HAL_UART_Transmit(&huart1, (uint8_t*)fail_msg, strlen(fail_msg), 100);
+  }
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -1390,16 +1408,19 @@ void startTaskFSM(void *argument)
 
               case STATE_CONFIG:
               {
-
-                  if (!is_calibrated) {
+                  if (configFlag == 0) {
+                      // Calibrate right as we LEAVE config, not on entry: by exit time
+                      // the board has been running (menu, LiDAR, IMU) for however long
+                      // the operator stayed in config — closer to the PCB's actual
+                      // pre-flight thermal state than a calibration taken the instant
+                      // config starts, when everything is still cold.
                       char config_msg[128];
                       char press_str[16], temp_str[16];
                       sprintf(config_msg, "\r\n[*] Calibrating Barometer (Do not move)...\r\n");
                       HAL_UART_Transmit(&huart1, (uint8_t*)config_msg, strlen(config_msg), 100);
 
                       uint32_t start_time = HAL_GetTick();
-                      if (osMutexAcquire(I2C1_MutexHandle, osWaitForever) == osOK) {
-                      if (BMP581_CalibrateGroundPressure(&reference_pressure_Pa, &reference_temp_C, &bmp_sensor) == HAL_OK) {
+                      if (BMP581_CalibrateGroundPressure(&reference_pressure_Pa, &reference_temp_C, &bmp_sensor, NULL) == HAL_OK) {
                           calibration_duration_ms = HAL_GetTick() - start_time;
                           float_to_str((float)reference_pressure_Pa, 2, press_str);
                           float_to_str((float)reference_temp_C, 2, temp_str);
@@ -1410,14 +1431,8 @@ void startTaskFSM(void *argument)
                           reference_temp_C = 25.0;
                           calibration_duration_ms = 0;
                       }
-                      osMutexRelease(I2C1_MutexHandle);
-                      }
-
                       HAL_UART_Transmit(&huart1, (uint8_t*)config_msg, strlen(config_msg), 100);
-                      is_calibrated = 1;
-                  }
 
-                  if (configFlag == 0) {
                       is_calibrated = 0;  // Reset pour le prochain cycle si on revient en CONFIG
                       currentState = STATE_READY;
                   }
@@ -1510,7 +1525,18 @@ void startTaskSensors(void *argument)
                     if (baro_read_ok) {
 
                         // --- 1. TIME CALCULATION FOR DERIVATIVE ---
+                        // EVENT_BARO_READY is only queued once currentState >= STATE_READY,
+                        // i.e. this whole case runs for the first time right as we leave
+                        // config mode — often tens of seconds after boot (calibration alone
+                        // takes ~6s, plus menu/recalibration time). prev_time/prev_temp used
+                        // to start at 0, so that first call computed dt_sec against absolute
+                        // boot time and temp_rate_of_change against a fictitious 0°C previous
+                        // reading — a bogus derivative kick landing on exactly the first
+                        // recorded points, which is what produced the initial altitude dip.
+                        // first_sample primes both statics from the real first reading
+                        // instead, so the kick can't happen.
                         static uint32_t prev_time = 0;
+                        static uint8_t first_sample = 1;
                         float dt_sec = (current_ms - prev_time) / 1000.0f;
                         if (dt_sec <= 0.0f) dt_sec = 0.05f; // Prevent divide by zero on first loop
                         prev_time = current_ms;
@@ -1520,15 +1546,23 @@ void startTaskSensors(void *argument)
                         latest_baro.temperature = (float)bmptemp;
 
                         float delta_T = latest_baro.temperature - (float)reference_temp_C;
-                        float temp_rate_of_change = (latest_baro.temperature - prev_temp) / dt_sec;
+                        float temp_rate_of_change = first_sample ? 0.0f : (latest_baro.temperature - prev_temp) / dt_sec;
                         prev_temp = latest_baro.temperature;
+                        first_sample = 0;
 
                         // --- 3. RAW ALTITUDE ---
                         float raw_altitude = 44330.0f * (1.0f - pow((float)(bmppress / reference_pressure_Pa), (1.0f / 5.255f)));
 
                         // --- 4. THE FEED-FORWARD CONTROLLER ---
-                        float Kp = 0.07f;  // Meters of drift per 1°C difference
-                        float Kd = 0.05f;  // Reaction strength to sudden thermal spikes
+                        // TEMPORARILY DISABLED (Kp=Kd=0) for diagnostics: the BMP581 datasheet
+                        // rates its worst-case post-compensation temperature-induced offset at
+                        // ±0.5 Pa/K (~0.04 m/K) — even across a 20K self-heating swing that's
+                        // under 1m, an order of magnitude below the -4/-8m dips we're chasing.
+                        // Kp=0.07 was already bigger than that physical residual, so this
+                        // correction may have been adding error rather than removing it. Zero
+                        // it out to see the sensor's raw signal before retuning.
+                        float Kp = 0.0f;  // Meters of drift per 1°C difference
+                        float Kd = 0.0f;  // Reaction strength to sudden thermal spikes
                         float thermal_correction = (Kp * delta_T) + (Kd * temp_rate_of_change);
 
                         // Safety clamp: over a ~120m/~12s drop, real atmospheric
@@ -1770,6 +1804,7 @@ void startTaskSDCard(void *argument)
 	    Create_File(lidar_filename);
 	    Update_File(lidar_filename,
 	        "tx_timestamp_ms,distance,roll,pitch,yaw,"
+	        "quat_w,quat_x,quat_y,quat_z,"
 	    	"accel_x,accel_y,accel_z,"
 	        "latitude,longitude,altitude,flags_raw\r\n");
 
@@ -1807,7 +1842,7 @@ void startTaskSDCard(void *argument)
     TelemetryPacket_t pkt;
     LidarPacket_t fast_pkt;
     char csv_buffer[256];
-    char lidar_buffer[128];
+    char lidar_buffer[192]; // grown from 128: quat_w/x/y/z (4 decimals each) pushed the line past 128 bytes
     /* Infinite loop */
    for(;;)
     {
@@ -1883,6 +1918,18 @@ void startTaskSDCard(void *argument)
 		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
 
 		           float_to_str(fast_pkt.yaw, 1, tmp);
+		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+
+		           float_to_str(fast_pkt.quat_w, 4, tmp);
+		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+
+		           float_to_str(fast_pkt.quat_x, 4, tmp);
+		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+
+		           float_to_str(fast_pkt.quat_y, 4, tmp);
+		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
+
+		           float_to_str(fast_pkt.quat_z, 4, tmp);
 		           offset += sprintf(lidar_buffer + offset, "%s,", tmp);
 
 		           float_to_str(fast_pkt.accelX, 2, tmp);
@@ -2182,44 +2229,11 @@ void startTaskHMI(void *argument)
     	        // Show initial calibration screen
     	        HMI_display_recalib(&hmi_state);
 
-    	        // Run calibration with progress updates
-    	        double sum_pressure = 0.0;
-    	        double sum_temp = 0.0;
-    	        int valid_reads = 0;
-
-    	        // Same discard-first-half rationale as BMP581_CalibrateGroundPressure:
-    	        // the BMP581's die is still settling thermally during the first half
-    	        // of the run, which biases its internal pressure compensation.
-    	        int discard_count = SAMPLES_BAROMETER_CALIBRATION / 2;
-    	        for (int i = 0; i < SAMPLES_BAROMETER_CALIBRATION; i++) {
-
-    	        	// Same I2C1 bus as the 100Hz baro polling in TaskSensors — must take the
-    	        	// mutex here too, otherwise that polling read can race this transaction
-    	        	// on the shared hi2c1 handle.
-    	        	if (osMutexAcquire(I2C1_MutexHandle, osWaitForever) == osOK) {
-    	        	if (bmp581_read_precise_normal(&bmp_sensor) == 0 && i >= discard_count) {
-    	        		extern double bmppress;
-    	                extern double bmptemp;
-    	                sum_pressure += bmppress;
-    	                sum_temp += bmptemp;
-    	                valid_reads++;
-    	        	}
-    	        	osMutexRelease(I2C1_MutexHandle);
-    	        	}
-
-    	        	// Update progress bar every 5 samples
-    	            if (i % 5 == 0) {
-    	            	uint8_t percent = (i * 100) / SAMPLES_BAROMETER_CALIBRATION;
-    	                HMI_display_recalib_progress(percent);
-    	            }
-
-    	            osDelay(60);
-    	        }
-
-    	        // Store results
-    	        if (valid_reads > 0) {
-    	        	reference_pressure_Pa = sum_pressure / valid_reads;
-    	            reference_temp_C = sum_temp / valid_reads;
+    	        // Shared with the STATE_CONFIG auto-calibration: waits for the BMP581
+    	        // die to reach thermal steady-state instead of averaging a fixed
+    	        // window, and manages I2C1_MutexHandle itself per-sample.
+    	        if (BMP581_CalibrateGroundPressure(&reference_pressure_Pa, &reference_temp_C, &bmp_sensor,
+    	                                            HMI_display_recalib_progress) == HAL_OK) {
     	            is_calibrated = 1;  // Prevent STATE_CONFIG from re-running calibration
     	        }
 
@@ -2268,7 +2282,7 @@ void startTaskHMI(void *argument)
     	                    osDelay(10);
 
     	                    Create_File(lidar_filename);
-    	                    Update_File(lidar_filename, "tx_timestamp_ms,distance,roll,pitch,yaw,accel_x,accel_y,accel_z,latitude,longitude,altitude,flags_raw\r\n");
+    	                    Update_File(lidar_filename, "tx_timestamp_ms,distance,roll,pitch,yaw,quat_w,quat_x,quat_y,quat_z,accel_x,accel_y,accel_z,latitude,longitude,altitude,flags_raw\r\n");
     	                // Confirm
     	                ssd1306_Fill(Black);
     	                ssd1306_SetCursor(10, 10);

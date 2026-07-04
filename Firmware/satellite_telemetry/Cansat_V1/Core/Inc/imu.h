@@ -53,6 +53,12 @@ typedef struct {
     float gyroX;
     float gyroY;
     float gyroZ;
+    // Quaternion: unambiguous orientation, no gimbal lock at high pitch
+    // (pitch reaches ±139° in flight) — source of truth for 3D reconstruction.
+    float quat_w;
+    float quat_x;
+    float quat_y;
+    float quat_z;
     uint8_t sys_calib;
     uint8_t gyro_calib;
     uint8_t accel_calib;

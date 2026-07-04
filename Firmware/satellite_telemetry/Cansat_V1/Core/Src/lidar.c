@@ -145,6 +145,10 @@ void Process_Lidar_Buffer_Chunk(uint8_t* chunk_start, uint16_t chunk_length, uin
                         lidar_pkt.roll       = imu_snap.roll;
                         lidar_pkt.pitch      = imu_snap.pitch;
                         lidar_pkt.yaw        = imu_snap.yaw;
+                        lidar_pkt.quat_w     = imu_snap.quat_w;
+                        lidar_pkt.quat_x     = imu_snap.quat_x;
+                        lidar_pkt.quat_y     = imu_snap.quat_y;
+                        lidar_pkt.quat_z     = imu_snap.quat_z;
                         lidar_pkt.accelX     = imu_snap.accelX;
                         lidar_pkt.accelY     = imu_snap.accelY;
                         lidar_pkt.accelZ     = imu_snap.accelZ;

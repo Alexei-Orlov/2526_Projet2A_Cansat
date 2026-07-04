@@ -30,8 +30,20 @@ uint8_t bmp581_init_precise_normal(BMP_t * bmp581){
     // (table 9 datasheet), ce qui garantit un échantillon frais à chaque poll
     // 100Hz, au prix d'un bruit légèrement supérieur (0.30 Pa RMS vs 0.21 Pa en x16).
     uint8_t OSR_mask      = 0x58; // Pression ON, OSR_P = x8, OSR_T = x1
-    uint8_t DSP_IIR_mask  = 0x01; // Filtre IIR activé (coeff 1) pour lisser le bruit
-    uint8_t DSP_conf_mask = 0x23; // Lecture après filtre IIR + Compensation ON
+    // Reg 0x31 DSP_IIR : set_iir_p occupe les bits[5:3], set_iir_t les bits[2:0].
+    // Valeur 0x4 = coefficient 15 sur chaque voie (table 10 datasheet) : avec
+    // l'ODR interne ~155Hz (OSR_P=x8), constante de temps ≈ 100ms, soit ≈1.5m
+    // de décalage spatial à 15m/s (vitesse de chute visée). Compromis choisi
+    // pour couper un éventuel parasite de pression dynamique lié à la
+    // rotation de la canette (effet Venturi au niveau de l'évent) sans trop
+    // lisser le profil réel de descente sur les ~8s de vol. bits[5:3]=100
+    // (0x20) pour set_iir_p, bits[2:0]=100 (0x04) pour set_iir_t.
+    uint8_t DSP_IIR_mask  = 0x24; // Filtre IIR (coeff 15) sur pression ET température
+    // Reg 0x30 DSP_CONFIG : bit5=shdw_sel_iir_p (déjà à 1 : registre pression
+    // = valeur filtrée), bit3=shdw_sel_iir_t (était à 0 : le registre
+    // température restait brut même avec le filtre activé). 0x2B ajoute
+    // bit3=1 pour que la température lue soit elle aussi la valeur filtrée.
+    uint8_t DSP_conf_mask = 0x2B; // Lecture après filtre IIR (P+T) + Compensation ON
 
     // Mode CONTINU (Le capteur tourne tout seul en boucle)
     uint8_t ODR_mask      = 0x03;
@@ -137,50 +149,69 @@ uint8_t bmp581_read_precise_normal(BMP_t * bmp581){
 // -----------------------------------------------------------------------------
 // Calibration Function
 // -----------------------------------------------------------------------------
+// Back to a short fixed duration: the adaptive thermal-stability wait (kept
+// running until the die stopped drifting, up to 90s) could leave the HMI
+// screen looking frozen for a very long time when run right after config
+// entry, since the board is mostly idle there and may drift very slowly
+// without ever crossing the stability threshold. Triggering this at CONFIG
+// EXIT instead (see startTaskFSM) — after the operator has been sitting in
+// config for a while — is the cheaper fix to try first.
+#define BARO_CALIB_SAMPLE_DELAY_MS   60
+#define BARO_CALIB_DURATION_MS       8000
+#define BARO_CALIB_TOTAL_SAMPLES     (BARO_CALIB_DURATION_MS / BARO_CALIB_SAMPLE_DELAY_MS)
+
 /**
  * @brief  Takes multiple readings to establish the baseline ground pressure.
- * @param  reference_pressure: Pointer to float where the average pressure will be stored.
- * @retval HAL_OK if successful, HAL_ERROR if the sensor fails to read.
+ *         Fixed ~8s duration; only the second half is averaged to let any
+ *         short transient from waking the sensor settle.
+ * @param  reference_pressure: Pointer to double where the average pressure (Pa) will be stored.
+ * @param  reference_temp: Pointer to double where the average temperature (°C) will be stored.
+ * @param  progress_cb: Optional callback invoked periodically with 0-100 (percent of
+ *         the fixed duration elapsed). May be NULL.
+ * @retval HAL_OK if successful, HAL_ERROR if the sensor never produced a valid read.
  */
-HAL_StatusTypeDef BMP581_CalibrateGroundPressure(double *reference_pressure, double *reference_temp, BMP_t * bmp581) {
-    double sum_pressure = 0.0;
-    double sum_temp = 0.0;
-    int valid_reads = 0;
-
+HAL_StatusTypeDef BMP581_CalibrateGroundPressure(double *reference_pressure, double *reference_temp, BMP_t * bmp581,
+                                                  void (*progress_cb)(uint8_t percent)) {
     extern UART_HandleTypeDef huart1;
+    extern osMutexId_t I2C1_MutexHandle;
     char msg[64];
 
     extern double bmppress;
     extern double bmptemp;
 
-    // Run the full sample count (same fixed ~6s duration as before, so this
-    // can never block/hang), but only average the second half. The BMP581's
-    // own die is still warming up from PCB self-heating during the first
-    // half right after power-on, which biases its internal pressure
-    // compensation — discarding those early samples gives a reference
-    // closer to the board's settled thermal state.
-    int discard_count = SAMPLES_BAROMETER_CALIBRATION / 2;
-    for(int i = 0; i < SAMPLES_BAROMETER_CALIBRATION; i++) {
-        if (bmp581_read_precise_normal(bmp581) == 0) {
-            if (i >= discard_count) {
+    double sum_pressure = 0.0;
+    double sum_temp = 0.0;
+    int valid_reads = 0;
+
+    int discard_count = BARO_CALIB_TOTAL_SAMPLES / 2;
+    for (int i = 0; i < BARO_CALIB_TOTAL_SAMPLES; i++) {
+        // Mutex taken per-sample (not held for the whole call) so the HMI
+        // task can still get at the SSD1306 on I2C1 between reads.
+        if (osMutexAcquire(I2C1_MutexHandle, osWaitForever) == osOK) {
+            uint8_t read_ok = (bmp581_read_precise_normal(bmp581) == 0);
+            osMutexRelease(I2C1_MutexHandle);
+
+            if (read_ok && i >= discard_count) {
                 sum_pressure += bmppress;
-                sum_temp += bmptemp;     // Also sum the temperature
+                sum_temp += bmptemp;
                 valid_reads++;
             }
         }
 
-        if (i % 100 == 0) {
-            sprintf(msg, "[*] Calibrating... %d%%\r\n", (i/10));
+        if (i % 20 == 0) {
+            uint8_t percent = (uint8_t)((i * 100) / BARO_CALIB_TOTAL_SAMPLES);
+            sprintf(msg, "[*] Calibrating... %d%%\r\n", percent);
             HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 10);
+            if (progress_cb) progress_cb(percent);
         }
-        osDelay(60);
+        osDelay(BARO_CALIB_SAMPLE_DELAY_MS);
     }
 
     if (valid_reads > 0) {
-        *reference_pressure = (sum_pressure / (double)valid_reads);
-        *reference_temp = (sum_temp / (double)valid_reads);
+        *reference_pressure = sum_pressure / (double)valid_reads;
+        *reference_temp = sum_temp / (double)valid_reads;
+        if (progress_cb) progress_cb(100);
         return HAL_OK;
-    } else {
-        return HAL_ERROR;
     }
+    return HAL_ERROR;
 }

@@ -255,7 +255,19 @@ void IMU_ProcessData_DMA(IMU_Data_t *data) {
     data->roll  = (float)r / 16.0f;
     data->pitch = (float)p / 16.0f;
 
-    // (Index 12 à 19 ignorés : ce sont les Quaternions)
+    // --- QUATERNION (Index 12 à 19, correspondant à 0x20 - 0x27) ---
+    // Sans ambiguïté de signe ni blocage de cardan, contrairement aux angles
+    // d'Euler (pitch atteint déjà ±139° en vol, hors de la plage fiable).
+    int16_t qw = (int16_t)((imu_dma_rx_buf[13] << 8) | imu_dma_rx_buf[12]);
+    int16_t qx = (int16_t)((imu_dma_rx_buf[15] << 8) | imu_dma_rx_buf[14]);
+    int16_t qy = (int16_t)((imu_dma_rx_buf[17] << 8) | imu_dma_rx_buf[16]);
+    int16_t qz = (int16_t)((imu_dma_rx_buf[19] << 8) | imu_dma_rx_buf[18]);
+
+    // 1 Quaternion (unitless) = 2^14 LSB (datasheet BNO055, Table 3-31)
+    data->quat_w = (float)qw / 16384.0f;
+    data->quat_x = (float)qx / 16384.0f;
+    data->quat_y = (float)qy / 16384.0f;
+    data->quat_z = (float)qz / 16384.0f;
 
     // --- 3. ACCÉLÉRATION LINÉAIRE (Index 20 à 25, correspondant à 0x28 - 0x2D) ---
     int16_t ax = (int16_t)((imu_dma_rx_buf[21] << 8) | imu_dma_rx_buf[20]);

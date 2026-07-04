@@ -21,7 +21,6 @@
 #define THRESH_LIDAR_DEPLOYED_M    		1.0f  	// Min distance to confirm deployment out of the box
 #define THRESH_ALTITUDE_LAUNCH_M   		0.3f  	// Min altitude to trigger ASCENSION state
 #define THRESH_ALTITUDE_LANDING_M  		5.0f  	// Max altitude to trigger RECOVERY state (buzzer on)
-#define SAMPLES_BAROMETER_CALIBRATION  	100  	// Samples in order to determine the calibration state of the barometer
 #define TIME_BETWEEN_PACKET_LORA_mS 	100 	// Time between each packet sent through the lora
 #define HMI_MENU_ITEM_COUNT 6
 
@@ -73,6 +72,10 @@ typedef struct {
     float roll;
     float pitch;
     float yaw;
+    float quat_w;
+    float quat_x;
+    float quat_y;
+    float quat_z;
     float accelX;
     float accelY;
     float accelZ;

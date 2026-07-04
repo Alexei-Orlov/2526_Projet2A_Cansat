@@ -31,7 +31,8 @@ typedef struct bmp_t{
 
 uint8_t bmp581_init_precise_normal(BMP_t * bmp581);
 uint8_t bmp581_read_precise_normal(BMP_t * bmp581);
-HAL_StatusTypeDef BMP581_CalibrateGroundPressure(double *reference_pressure, double *reference_temp, BMP_t *bmp581);
+HAL_StatusTypeDef BMP581_CalibrateGroundPressure(double *reference_pressure, double *reference_temp, BMP_t *bmp581,
+                                                  void (*progress_cb)(uint8_t percent));
 #define BMP581_I2C_ADDR 0x47
 #define BMP581_WRITE_ADDR (0X47<<1)+0
 #define BMP581_READ_ADDR (0X47<<1)+1
