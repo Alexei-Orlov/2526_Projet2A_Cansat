@@ -37,6 +37,7 @@
 #include "imu.h"
 #include "sx1276.h"
 #include "hmi.h"
+#include "vortex_logo.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -79,7 +80,9 @@ osThreadId_t TaskFSMHandle;
 const osThreadAttr_t TaskFSM_attributes = {
   .name = "TaskFSM",
   .priority = (osPriority_t) osPriorityHigh,
-  .stack_size = 256 * 4
+  /* The LW20 wake-up sequence (STATE_CONFIG case) needs more headroom than
+     1024B left (funded by shrinking TaskHMI's stack below). */
+  .stack_size = 512 * 4
 };
 /* Definitions for TaskSensors */
 osThreadId_t TaskSensorsHandle;
@@ -107,7 +110,8 @@ osThreadId_t TaskHMIHandleHandle;
 const osThreadAttr_t TaskHMIHandle_attributes = {
   .name = "TaskHMIHandle",
   .priority = (osPriority_t) osPriorityHigh,
-  .stack_size = 1024 * 4
+  /* Shrunk to fund TaskFSM's stack above; still comfortably above actual usage. */
+  .stack_size = 512 * 4
 };
 /* Definitions for I2C1_Mutex */
 osMutexId_t I2C1_MutexHandle;
@@ -137,6 +141,20 @@ CanSatState_t currentState = STATE_STANDBY;
 float current_height = 0.0f;
 uint8_t imu_is_connected = 0;
 uint32_t calibration_duration_ms = 0;
+/* Gates the one-shot LW20 wake-up sequence in startTaskFSM's STATE_CONFIG case.
+   Must run after the main loop begins (not before) so STANDBY -> CONFIG
+   already happened by the time startTaskHMI's splash-screen deadline checks
+   currentState. */
+uint8_t lidar_boot_done = 0;
+
+/* Stack headroom per task, in bytes (uxTaskGetStackHighWaterMark), updated at
+   1Hz from startTaskFSM. Watch in the debugger — attach without reset so as
+   not to disturb real boot timing. */
+uint32_t stack_free_fsm     = 0;
+uint32_t stack_free_sensors = 0;
+uint32_t stack_free_sdcard  = 0;
+uint32_t stack_free_lora    = 0;
+uint32_t stack_free_hmi     = 0;
 
 GNSS_Data_t latest_gnss;
 Barometer_Data_t latest_baro;
@@ -158,7 +176,6 @@ uint8_t imu_dma_rx_buf[34];
 /* --- Barometer calibration references --------------------------------------*/
 double reference_pressure_Pa = 101325.0;
 double reference_temp_C = 25.0;
-double PRESS_TEMP_COEF = -8.5;  /* Datasheet: temperature-induced pressure offset ±0.5 Pa/K */
 
 /* --- FreeRTOS queue handles ------------------------------------------------*/
 QueueHandle_t qSensorEvents;
@@ -408,7 +425,10 @@ int main(void)
      Each LidarPacket_t is 76 bytes; 65 slots give ~1.3 s of burst buffering
      at 50 Hz. Without this trim, TaskHMI (created last) silently failed
      osThreadNew() because the heap was exhausted by the time it was created. */
-  qSDCard_LIDAR = xQueueCreate(65, sizeof(LidarPacket_t));
+  /* 65 slots (4940B) was the single largest RAM consumer in .bss — trimmed to
+     recover margin for RAM overflows on new pin/peripheral configs. 50 slots
+     at 76B each = 3800B, still ~1s of burst buffering at 50Hz. */
+  qSDCard_LIDAR = xQueueCreate(50, sizeof(LidarPacket_t));
   qHMI_Events   = xQueueCreate(10, sizeof(uint8_t));
   /* USER CODE END RTOS_QUEUES */
 
@@ -1113,6 +1133,22 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
     }
 }
 
+/* --- I2C bus error recovery ------------------------------------------------
+   Without this, a single bus glitch (NACK, arbitration loss) leaves the HAL
+   I2C state stuck, and every subsequent read on that bus fails forever —
+   no recovery short of a full power cycle. Re-init the affected peripheral
+   so the next scheduled read can succeed again. */
+void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
+{
+    if (hi2c->Instance == I2C3) {
+        HAL_I2C_DeInit(&hi2c3);
+        MX_I2C3_Init();
+    } else if (hi2c->Instance == I2C1) {
+        HAL_I2C_DeInit(&hi2c1);
+        MX_I2C1_Init();
+    }
+}
+
 /* --- float_to_str ---------------------------------------------------------*/
 /**
  * @brief Converts a float to a decimal string without using sprintf.
@@ -1194,51 +1230,6 @@ void startTaskFSM(void *argument)
     char debug_msg[128];
 
     /* =========================================================================
-     * LIDAR BOOT SEQUENCE
-     * Reinitialize USART3, trigger LW20-C auto-detection, force stream mode,
-     * clear hardware errors, then arm the DMA circular receiver.
-     * ========================================================================= */
-    if (debug) {
-        sprintf(debug_msg, "\r\n[*] Executing LW20-C Advanced Boot Sequence...\r\n");
-        HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), 100);
-    }
-
-    /* 1. Hardware re-initialization: start from a clean UART state */
-    HAL_UART_DeInit(&huart3);
-    extern void MX_USART3_UART_Init(void);
-    MX_USART3_UART_Init();
-
-    /* 2. LiDAR baud-rate auto-detection: send spaces/CR to satisfy the LW20
-          auto-detect sequence described in the datasheet (p.7). */
-    osDelay(1000);
-    uint8_t dummy_cmd[] = {' ', ' ', '\r', '\n'};
-    HAL_UART_Transmit(&huart3, dummy_cmd, 4, 100);
-    osDelay(100);
-
-    /* 3. Force streaming mode: ESC closes any open menu, Down Arrow starts the
-          data stream. */
-    uint8_t stream_cmd[] = {0x1B, 0x1B, 0x5B, 0x42};
-    HAL_UART_Transmit(&huart3, stream_cmd, 4, 100);
-    osDelay(100);
-
-    /* 4. Clear hardware errors: the LW20 started streaming before we were
-          listening, so the STM32 UART accumulated an Overrun error (ORE).
-          Purge everything before arming DMA. */
-    HAL_UART_AbortReceive(&huart3);
-    __HAL_UART_CLEAR_OREFLAG(&huart3);
-    __HAL_UART_CLEAR_NEFLAG(&huart3);
-    __HAL_UART_CLEAR_FEFLAG(&huart3);
-    __HAL_UART_FLUSH_DRREGISTER(&huart3);
-
-    /* 5. Arm DMA receiver */
-    Lidar_Init(&huart3);
-
-    if (debug) {
-        sprintf(debug_msg, "[+] LiDAR Stream Locked & DMA Armed\r\n");
-        HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), 100);
-    }
-
-    /* =========================================================================
      * MAIN FSM LOOP  —  10 ms master tick
      * ========================================================================= */
     CanSatState_t last_printed_state = (CanSatState_t)-1;
@@ -1247,19 +1238,41 @@ void startTaskFSM(void *argument)
   /* Infinite loop */
   for(;;)
   {
+      /* Battery + GNSS: 1 Hz, independent of flight state — the HMI pages
+         showing them are only visible during STATE_CONFIG (see startTaskHMI),
+         not STATE_READY+. GNSS reception itself (USART1 RX IRQ -> parsed_gnss)
+         already runs regardless of state; only the copy into latest_gnss was
+         gated.
+
+         SENSOR_BOOT_GRACE_MS delays the first tick: TaskSensors is the
+         highest-priority task in the app, and firing it immediately would let
+         it preempt TaskFSM's one-shot LiDAR UART/DMA arming and TaskHMI's
+         one-shot SSD1306 readiness check, both early in the boot sequence. */
+      #define SENSOR_BOOT_GRACE_MS 3000
+      static uint32_t task_start_tick = 0;
+      static uint8_t task_start_tick_set = 0;
+      if (!task_start_tick_set) { task_start_tick = HAL_GetTick(); task_start_tick_set = 1; }
+
+      static uint32_t last_bat_gnss_fetch = 0;
+      if (HAL_GetTick() - task_start_tick > SENSOR_BOOT_GRACE_MS &&
+          HAL_GetTick() - last_bat_gnss_fetch > 1000) {
+          last_bat_gnss_fetch = HAL_GetTick();
+
+          /* Stack headroom per task (see globals above) — cheap TCB read. */
+          stack_free_fsm     = uxTaskGetStackHighWaterMark(TaskFSMHandle)       * sizeof(StackType_t);
+          stack_free_sensors = uxTaskGetStackHighWaterMark(TaskSensorsHandle)   * sizeof(StackType_t);
+          stack_free_sdcard  = uxTaskGetStackHighWaterMark(TaskSDCardHandle)    * sizeof(StackType_t);
+          stack_free_lora    = uxTaskGetStackHighWaterMark(TaskLoRaHandle)      * sizeof(StackType_t);
+          stack_free_hmi     = uxTaskGetStackHighWaterMark(TaskHMIHandleHandle) * sizeof(StackType_t);
+
+          SensorEvent_t bat_ticket = EVENT_BATTERY_READY;
+          xQueueSend(qSensorEvents, &bat_ticket, 0);
+          SensorEvent_t gnss_ticket = EVENT_GNSS_READY;
+          xQueueSend(qSensorEvents, &gnss_ticket, 0);
+      }
+
       /* --- 100 Hz block: sensor event dispatch ----------------------------*/
       if (currentState >= STATE_READY && currentState < STATE_OFF) {
-
-          /* GNSS and battery at 1 Hz, gated by their own timer */
-          static uint32_t last_gnss_fetch = 0;
-          if (HAL_GetTick() - last_gnss_fetch > 1000) {
-              last_gnss_fetch = HAL_GetTick();
-              SensorEvent_t gnss_ticket = EVENT_GNSS_READY;
-              xQueueSend(qSensorEvents, &gnss_ticket, 0);
-
-              SensorEvent_t bat_ticket = EVENT_BATTERY_READY;
-              xQueueSend(qSensorEvents, &bat_ticket, 0);
-          }
 
           /* IMU at 100 Hz via DMA (non-blocking).
              Barometer is polled at 20 Hz in the low-frequency block below:
@@ -1337,39 +1350,68 @@ void startTaskFSM(void *argument)
 
               case STATE_CONFIG:
               {
-                  if (configFlag == 0) {
-                      /* Calibrate on CONFIG exit, not entry: by this point the board has
-                         been running (menu, LiDAR, IMU) for however long the operator
-                         spent in config — a closer match to actual pre-flight thermal state. */
+                  if (!lidar_boot_done) {
+                      /* Must run after STANDBY -> CONFIG (case STATE_STANDBY, above),
+                         not before this loop starts — startTaskHMI's splash screen
+                         checks currentState on a timer and permanently suspends itself
+                         if it still sees STANDBY. */
                       if (debug) {
-                          char m[] = "\r\n[*] Calibrating Barometer (Do not move)...\r\n";
-                          HAL_UART_Transmit(&huart1, (uint8_t*)m, strlen(m), 100);
+                          sprintf(debug_msg, "\r\n[*] Executing LW20-C Advanced Boot Sequence...\r\n");
+                          HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), 100);
                       }
 
-                      uint32_t start_time = HAL_GetTick();
-                      if (BMP581_CalibrateGroundPressure(&reference_pressure_Pa,
-                                                          &reference_temp_C,
-                                                          &bmp_sensor, NULL) == HAL_OK) {
-                          calibration_duration_ms = HAL_GetTick() - start_time;
-                          if (debug) {
-                              char press_str[16], temp_str[16], config_msg[64];
-                              float_to_str((float)reference_pressure_Pa, 2, press_str);
-                              float_to_str((float)reference_temp_C, 2, temp_str);
-                              sprintf(config_msg, "[+] Calibration OK: %s Pa | %s C\r\n",
-                                      press_str, temp_str);
-                              HAL_UART_Transmit(&huart1, (uint8_t*)config_msg, strlen(config_msg), 100);
-                          }
-                      } else {
-                          reference_pressure_Pa = 101325.0;
-                          reference_temp_C = 25.0;
-                          calibration_duration_ms = 0;
-                          if (debug) {
-                              char m[] = "[-] Calibration Failed! Using defaults.\r\n";
-                              HAL_UART_Transmit(&huart1, (uint8_t*)m, strlen(m), 100);
-                          }
+                      /* 1. Hardware re-initialization: start from a clean UART state */
+                      HAL_UART_DeInit(&huart3);
+                      extern void MX_USART3_UART_Init(void);
+                      MX_USART3_UART_Init();
+
+                      /* 2. LiDAR baud-rate auto-detection: send spaces/CR to satisfy the
+                            LW20 auto-detect sequence described in the datasheet (p.7). */
+                      osDelay(1000);
+                      uint8_t dummy_cmd[] = {' ', ' ', '\r', '\n'};
+                      HAL_UART_Transmit(&huart3, dummy_cmd, 4, 100);
+                      osDelay(100);
+
+                      /* 3. Force streaming mode: ESC closes any open menu, Down Arrow
+                            starts the data stream. */
+                      uint8_t stream_cmd[] = {0x1B, 0x1B, 0x5B, 0x42};
+                      HAL_UART_Transmit(&huart3, stream_cmd, 4, 100);
+                      osDelay(100);
+
+                      /* 4. Clear hardware errors: the LW20 started streaming before we
+                            were listening, so the STM32 UART accumulated an Overrun
+                            error (ORE). Purge everything before arming DMA. */
+                      HAL_UART_AbortReceive(&huart3);
+                      __HAL_UART_CLEAR_OREFLAG(&huart3);
+                      __HAL_UART_CLEAR_NEFLAG(&huart3);
+                      __HAL_UART_CLEAR_FEFLAG(&huart3);
+                      __HAL_UART_FLUSH_DRREGISTER(&huart3);
+
+                      /* 5. Arm DMA receiver */
+                      Lidar_Init(&huart3);
+
+                      /* Deliberately not re-confirming streaming mode here: with
+                         EVENT_IMU_READY gated to STATE_READY+, LiDAR DMA events would be
+                         the only steady traffic on qSensorEvents during CONFIG. If
+                         Process_Lidar_Buffer_Chunk can't drain them as fast as they
+                         arrive, TaskSensors (highest priority in the app) never blocks
+                         and starves every lower-priority task. Streaming is confirmed at
+                         the STATE_READY transition instead. */
+
+                      if (debug) {
+                          sprintf(debug_msg, "[+] LiDAR Stream Locked & DMA Armed\r\n");
+                          HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), 100);
                       }
 
-                      is_calibrated = 0;  /* Reset so CONFIG can re-run calibration on next entry */
+                      lidar_boot_done = 1;
+                  }
+
+                  /* Auto-calibration on CONFIG entry runs from startTaskHMI instead of
+                     here, since it draws to the SSD1306 (HMI_display_recalib/_progress/
+                     _done) — the framebuffer isn't mutex-protected, so only the task
+                     that owns the display should touch it. Just wait for it to finish. */
+                  if (configFlag == 0 && is_calibrated) {
+                      is_calibrated = 0;  /* Reset so a future CONFIG re-entry (READY -> CONFIG) recalibrates */
                       currentState = STATE_READY;
                   }
                   break;
@@ -1478,11 +1520,10 @@ void startTaskSensors(void *argument)
                         float raw_altitude = 44330.0f * (1.0f - pow(
                                 (float)(bmppress / reference_pressure_Pa), (1.0f / 5.255f)));
 
-                        /* Feed-forward thermal correction (currently zeroed for diagnostics).
-                           The BMP581 worst-case temperature offset is ±0.5 Pa/K (~0.04 m/K),
-                           so even a 20K self-heating swing is under 1 m. Kp was previously
-                           set to 0.07, which exceeded the physical residual and added error.
-                           Kp/Kd are left at 0 until a bench dataset justifies re-tuning. */
+                        /* Feed-forward thermal correction, left at 0: the BMP581's
+                           worst-case post-compensation temperature offset is ±0.5 Pa/K
+                           (~0.04 m/K), well under what's worth correcting for without
+                           real bench data to tune Kp/Kd against. */
                         float Kp = 0.0f;
                         float Kd = 0.0f;
                         float thermal_correction = (Kp * delta_T) + (Kd * temp_rate_of_change);
@@ -1912,7 +1953,20 @@ void startTaskHMI(void *argument)
     /* =========================================================================
      * HMI INITIALIZATION
      * ========================================================================= */
-    if (HAL_I2C_IsDeviceReady(&hi2c1, SSD1306_I2C_ADDR, 3, 100) != HAL_OK) {
+    /* SSD1306 and the MCU start their own power-up sequencing at the same
+       instant on a cold boot; the display's internal regulator/reset can
+       need a moment before it will ACK on I2C. Retry instead of one shot
+       + permanent suspend. */
+    osDelay(50);
+    uint8_t ssd1306_ready = 0;
+    for (uint8_t attempt = 0; attempt < 5 && !ssd1306_ready; attempt++) {
+        if (HAL_I2C_IsDeviceReady(&hi2c1, SSD1306_I2C_ADDR, 3, 100) == HAL_OK) {
+            ssd1306_ready = 1;
+        } else {
+            osDelay(50);
+        }
+    }
+    if (!ssd1306_ready) {
         vTaskSuspend(NULL);
     }
 
@@ -1925,6 +1979,13 @@ void startTaskHMI(void *argument)
     };
 
     ssd1306_Init();
+
+    /* Boot logo, centered (64x64 logo on a 128x64 screen -> x=32, y=0),
+       shown briefly before the existing text splash. */
+    ssd1306_Fill(Black);
+    ssd1306_DrawBitmap(32, 0, vortex_logo_bitmap, VORTEX_LOGO_WIDTH, VORTEX_LOGO_HEIGHT, White);
+    HMI_safe_update_screen();
+    osDelay(1500);
 
     ssd1306_Fill(Black);
     ssd1306_SetCursor(0, 0);
@@ -1946,6 +2007,64 @@ void startTaskHMI(void *argument)
         extern CanSatState_t currentState;
 
         if (currentState == STATE_CONFIG) {
+
+            /* ========== AUTO-CALIBRATION ON CONFIG ENTRY ========== */
+            if (!is_calibrated) {
+                /* Runs once on entering config, sharing the same display calls
+                   and calibration routine as the manual recalib menu below.
+                   Kept in TaskHMI, not TaskFSM: the SSD1306 framebuffer isn't
+                   mutex-protected (only the I2C1 transmit step is), so only
+                   the task that owns the display should draw to it during
+                   this ~8s blocking call. */
+                extern BMP_t   bmp_sensor;
+                extern double  reference_pressure_Pa;
+                extern double  reference_temp_C;
+                extern UART_HandleTypeDef huart1;
+
+                HMI_display_recalib(&hmi_state);
+
+                if (debug) {
+                    char m[] = "\r\n[*] Calibrating Barometer (Do not move)...\r\n";
+                    HAL_UART_Transmit(&huart1, (uint8_t*)m, strlen(m), 100);
+                }
+
+                uint32_t start_time = HAL_GetTick();
+                if (BMP581_CalibrateGroundPressure(&reference_pressure_Pa, &reference_temp_C,
+                                                    &bmp_sensor, HMI_display_recalib_progress) == HAL_OK) {
+                    calibration_duration_ms = HAL_GetTick() - start_time;
+                } else {
+                    reference_pressure_Pa = 101325.0;
+                    reference_temp_C = 25.0;
+                    calibration_duration_ms = 0;
+                }
+
+                HMI_display_recalib_progress(100);
+                osDelay(300);
+                HMI_display_recalib_done((float)reference_pressure_Pa, (float)reference_temp_C);
+                osDelay(3000);  /* let the operator read the result before falling back to overview */
+
+                is_calibrated = 1;
+                hmi_state.current_page = HMI_PAGE_OVERVIEW;
+            }
+
+            /* Refresh HMI_display_data from the live globals every iteration.
+               baro/imu/lidar "ready" reuse existing globals (no new sensor
+               activity); GNSS updates during CONFIG too via the 1Hz tick in
+               startTaskFSM. */
+            extern Battery_Data_t latest_battery;
+            extern GNSS_Data_t    latest_gnss;
+            extern LIDAR_Data_t   latest_lidar;
+            extern uint8_t        is_calibrated;
+            extern uint8_t        imu_is_connected;
+
+            HMI_display_data.battery_voltage = latest_battery.voltage;
+            HMI_display_data.battery_percent = calculate_battery_percent(latest_battery.voltage);
+            HMI_display_data.baro_ready      = is_calibrated;
+            HMI_display_data.imu_ready       = imu_is_connected;
+            HMI_display_data.gnss_ready      = (latest_gnss.satellites > 0);
+            HMI_display_data.gnss_satellites = latest_gnss.satellites;
+            HMI_display_data.lidar_ready     = lidar_is_connected;
+            HMI_display_data.lidar_distance  = latest_lidar.distance;
 
             /* ========== HANDLE RECALIBRATION REQUEST ========== */
             if (hmi_state.current_page == HMI_PAGE_RECALIB) {
@@ -2042,7 +2161,12 @@ void startTaskHMI(void *argument)
             }
 
         } else {
-            /* HMI is only active in CONFIG mode — suspend to free CPU */
+            /* HMI is only active in CONFIG mode. Show a "screen is off on
+               purpose" handoff page before suspending, so a frozen menu isn't
+               mistaken for a crash. vTaskSuspend(NULL) never returns (nothing
+               calls vTaskResume() on this task), so this only ever runs once,
+               on the CONFIG -> READY transition. */
+            HMI_display_flight_mode();
             vTaskSuspend(NULL);
             osDelay(100);
         }

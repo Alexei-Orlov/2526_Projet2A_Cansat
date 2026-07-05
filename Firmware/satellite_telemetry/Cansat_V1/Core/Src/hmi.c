@@ -75,14 +75,34 @@ void HMI_display_overview(HMI_State_t *state)
 {
     ssd1306_Fill(Black);
 
+    /* SD card warning takes over the title line (flashing, like the LoRa OFF
+       indicator below) — the screen is already full at 6 lines on a 64px
+       display, so there's no room for a dedicated line, and a missing SD
+       card is important enough to warrant bumping the title rather than
+       being tucked away somewhere less visible. is_sd_inserted() reads the
+       detect GPIO live, no cached flag needed. */
+    extern uint8_t is_sd_inserted(void);
+    /* Asymmetric blink: visible most of the cycle, dark only briefly. */
+    #define BLINK_PERIOD_MS 200
+    #define BLINK_DARK_MS   50
+    uint8_t blink_visible = (HAL_GetTick() % BLINK_PERIOD_MS) < (BLINK_PERIOD_MS - BLINK_DARK_MS);
+
     ssd1306_SetCursor(0, 0);
-    ssd1306_WriteString("-- CONFIG MODE --", Font_7x10, White);
+    if (!is_sd_inserted()) {
+        if (blink_visible) {
+            ssd1306_WriteString("!! NO SD CARD !!", Font_7x10, White);
+        } else {
+            ssd1306_WriteString("                ", Font_7x10, White);
+        }
+    } else {
+        ssd1306_WriteString("-- CONFIG MODE --", Font_7x10, White);
+    }
 
     ssd1306_SetCursor(0, 14);
     if (state->lora_enabled) {
         ssd1306_WriteString("LoRa: ON  868MHz", Font_7x10, White);
     } else {
-        if ((HAL_GetTick() / 500) % 2 == 0) {
+        if (blink_visible) {
             ssd1306_WriteString("LoRa: OFF 868MHz", Font_7x10, White);
         } else {
             ssd1306_WriteString("                ", Font_7x10, White);
@@ -111,6 +131,50 @@ void HMI_display_overview(HMI_State_t *state)
     int volt_dec = (int)((HMI_display_data.battery_voltage - volt_int) * 10);
     sprintf(bat_buf, "Bat:%d.%dV %d%%", volt_int, volt_dec, HMI_display_data.battery_percent);
     ssd1306_WriteString(bat_buf, Font_6x8, White);
+}
+
+/* Shown once, right before TaskHMI suspends itself on leaving STATE_CONFIG
+   (see startTaskHMI in main.c) — a clear "screen is off on purpose" message
+   plus a last status snapshot, instead of leaving a stale config page frozen
+   on screen for the rest of the flight. */
+void HMI_display_flight_mode(void)
+{
+    ssd1306_Fill(Black);
+
+    ssd1306_SetCursor(0, 0);
+    ssd1306_WriteString("-- FLIGHT MODE --", Font_7x10, White);
+    ssd1306_SetCursor(0, 14);
+    ssd1306_WriteString("Screen off now", Font_7x10, White);
+
+    char buf[20];
+    ssd1306_SetCursor(0, 26);
+    sprintf(buf, "Baro:%s IMU:%s",
+            HMI_display_data.baro_ready ? "OK" : "??",
+            HMI_display_data.imu_ready  ? "OK" : "??");
+    ssd1306_WriteString(buf, Font_7x10, White);
+
+    ssd1306_SetCursor(0, 36);
+    if (HMI_display_data.gnss_ready) {
+        sprintf(buf, "GPS : %d sats", HMI_display_data.gnss_satellites);
+    } else {
+        sprintf(buf, "GPS : none");
+    }
+    ssd1306_WriteString(buf, Font_7x10, White);
+
+    /* Voltage split into int + decimal to avoid float in sprintf */
+    ssd1306_SetCursor(0, 46);
+    int volt_int = (int)HMI_display_data.battery_voltage;
+    int volt_dec = (int)((HMI_display_data.battery_voltage - volt_int) * 10);
+    sprintf(buf, "Bat:%d.%dV %d%%", volt_int, volt_dec, HMI_display_data.battery_percent);
+    ssd1306_WriteString(buf, Font_7x10, White);
+
+    ssd1306_SetCursor(0, 58);
+    ssd1306_WriteString("Good luck!", Font_6x8, White);
+
+    if (osMutexAcquire(I2C1_MutexHandle, osWaitForever) == osOK) {
+        HMI_safe_update_screen();
+        osMutexRelease(I2C1_MutexHandle);
+    }
 }
 
 void HMI_display_menu(HMI_State_t *state)
@@ -168,7 +232,7 @@ void HMI_display_lora(HMI_State_t *state)
     ssd1306_WriteString((state->cursor_position == 0) ? "> ON/OFF Toggle" : "  ON/OFF Toggle", Font_6x8, White);
 
     ssd1306_SetCursor(0, 60);
-    ssd1306_WriteString((state->cursor_position == 1) ? "> < Retour" : "  < Retour", Font_6x8, White);
+    ssd1306_WriteString((state->cursor_position == 1) ? "> < Back" : "  < Back", Font_6x8, White);
 }
 
 void HMI_display_sensors(HMI_State_t *state)
@@ -176,13 +240,13 @@ void HMI_display_sensors(HMI_State_t *state)
     ssd1306_Fill(Black);
 
     ssd1306_SetCursor(0, 0);
-    ssd1306_WriteString("-- Capteurs --", Font_7x10, White);
+    ssd1306_WriteString("-- Sensors --", Font_7x10, White);
 
     ssd1306_SetCursor(0, 16);
     ssd1306_WriteString(HMI_display_data.baro_ready ? "BMP581  : OK" : "BMP581  : FAIL", Font_7x10, White);
 
     ssd1306_SetCursor(0, 26);
-    ssd1306_WriteString(HMI_display_data.imu_ready  ? "ICM20948: OK" : "ICM20948: FAIL", Font_7x10, White);
+    ssd1306_WriteString(HMI_display_data.imu_ready  ? "BNO055  : OK" : "BNO055  : FAIL", Font_7x10, White);
 
     ssd1306_SetCursor(0, 36);
     char gnss_buf[20];
@@ -206,7 +270,7 @@ void HMI_display_sensors(HMI_State_t *state)
     ssd1306_WriteString(lidar_buf, Font_7x10, White);
 
     ssd1306_SetCursor(0, 58);
-    ssd1306_WriteString("< Retour", Font_6x8, White);
+    ssd1306_WriteString("< Back", Font_6x8, White);
 }
 
 void HMI_display_battery(HMI_State_t *state)
@@ -214,19 +278,19 @@ void HMI_display_battery(HMI_State_t *state)
     ssd1306_Fill(Black);
 
     ssd1306_SetCursor(0, 0);
-    ssd1306_WriteString("-- Batterie --", Font_7x10, White);
+    ssd1306_WriteString("-- Battery --", Font_7x10, White);
 
     /* Voltage split into int + decimal to avoid float in sprintf */
     ssd1306_SetCursor(0, 18);
     char volt_buf[20];
     int volt_int = (int)HMI_display_data.battery_voltage;
     int volt_dec = (int)((HMI_display_data.battery_voltage - volt_int) * 100);
-    sprintf(volt_buf, "Tension: %d.%02dV", volt_int, volt_dec);
+    sprintf(volt_buf, "Voltage: %d.%02dV", volt_int, volt_dec);
     ssd1306_WriteString(volt_buf, Font_7x10, White);
 
     ssd1306_SetCursor(0, 30);
     char percent_buf[20];
-    sprintf(percent_buf, "Niveau : %d%%", HMI_display_data.battery_percent);
+    sprintf(percent_buf, "Level : %d%%", HMI_display_data.battery_percent);
     ssd1306_WriteString(percent_buf, Font_7x10, White);
 
     ssd1306_SetCursor(0, 42);
@@ -250,7 +314,7 @@ void HMI_display_battery(HMI_State_t *state)
     ssd1306_WriteString("]", Font_7x10, White);
 
     ssd1306_SetCursor(0, 56);
-    ssd1306_WriteString("< Retour", Font_6x8, White);
+    ssd1306_WriteString("< Back", Font_6x8, White);
 }
 
 /* ===========================================================================
@@ -296,11 +360,11 @@ void HMI_exit_config_mode(void)
 
     ssd1306_Fill(Black);
     ssd1306_SetCursor(0, 0);
-    ssd1306_WriteString("DEBRANCHER", Font_11x18, White);
+    ssd1306_WriteString("Please Unplug", Font_7x10, White);
     ssd1306_SetCursor(0, 24);
-    ssd1306_WriteString("l'ecran HMI", Font_11x18, White);
+    ssd1306_WriteString("HMI from Vortex", Font_7x10, White);
     ssd1306_SetCursor(0, 48);
-    ssd1306_WriteString("avant vol !", Font_11x18, White);
+    ssd1306_WriteString("Before flight", Font_7x10, White);
     HMI_safe_update_screen();
     osDelay(3000);
 
@@ -412,6 +476,19 @@ void HMI_handle_button(HMI_State_t *state)
  * RECALIBRATION PAGE
  * =========================================================================*/
 
+/* Every other page relies on one shared flush at the end of the normal
+   TaskHMI loop iteration. Both recalibration call sites (auto-calibration on
+   CONFIG entry, and the manual recalib menu) use `continue;` right after
+   calling these, skipping that shared flush — so each of these three
+   functions pushes the screen itself instead. */
+static void HMI_recalib_flush(void)
+{
+    if (osMutexAcquire(I2C1_MutexHandle, osWaitForever) == osOK) {
+        HMI_safe_update_screen();
+        osMutexRelease(I2C1_MutexHandle);
+    }
+}
+
 void HMI_display_recalib(HMI_State_t *state)
 {
     ssd1306_Fill(Black);
@@ -421,6 +498,7 @@ void HMI_display_recalib(HMI_State_t *state)
     ssd1306_WriteString("Calibrating...", Font_7x10, White);
     ssd1306_SetCursor(0, 32);
     ssd1306_WriteString("Do not move!", Font_7x10, White);
+    HMI_recalib_flush();
 }
 
 void HMI_display_recalib_progress(uint8_t percent)
@@ -444,6 +522,7 @@ void HMI_display_recalib_progress(uint8_t percent)
     sprintf(pct_buf, " %d%%", percent);
     ssd1306_SetCursor(90, 44);
     ssd1306_WriteString(pct_buf, Font_7x10, White);
+    HMI_recalib_flush();
 }
 
 void HMI_display_recalib_done(float pressure_pa, float temp_c)
@@ -471,6 +550,7 @@ void HMI_display_recalib_done(float pressure_pa, float temp_c)
 
     ssd1306_SetCursor(0, 56);
     ssd1306_WriteString("[BTN] -> Menu", Font_6x8, White);
+    HMI_recalib_flush();
 }
 
 /* ===========================================================================
