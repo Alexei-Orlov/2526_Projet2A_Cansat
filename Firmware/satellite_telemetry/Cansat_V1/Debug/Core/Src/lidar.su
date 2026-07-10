@@ -1,8 +1,9 @@
-../Core/Src/lidar.c:33:6:Lidar_Init	8	static
-../Core/Src/lidar.c:39:6:Lidar_RequestMenu	16	static
-../Core/Src/lidar.c:46:6:Lidar_RequestStream	16	static
-../Core/Src/lidar.c:54:6:HAL_UART_RxHalfCpltCallback	16	static,ignoring_inline_asm
-../Core/Src/lidar.c:67:6:HAL_UART_RxCpltCallback	16	static,ignoring_inline_asm
-../Core/Src/lidar.c:86:6:Process_Lidar_Buffer_Chunk	240	static
-../Core/Src/lidar.c:192:6:Lidar_UART_Error_Handler	8	static
-../Core/Src/lidar.c:205:6:Lidar_DirectDebug	248	static
+../Core/Src/lidar.c:38:6:Lidar_Init	8	static
+../Core/Src/lidar.c:44:6:Lidar_RequestMenu	16	static
+../Core/Src/lidar.c:51:6:Lidar_RequestStream	16	static
+../Core/Src/lidar.c:63:6:Lidar_ForceStream	16	static
+../Core/Src/lidar.c:72:6:HAL_UART_RxHalfCpltCallback	16	static,ignoring_inline_asm
+../Core/Src/lidar.c:85:6:HAL_UART_RxCpltCallback	16	static,ignoring_inline_asm
+../Core/Src/lidar.c:104:6:Process_Lidar_Buffer_Chunk	240	static
+../Core/Src/lidar.c:224:6:Lidar_UART_Error_Handler	8	static
+../Core/Src/lidar.c:237:6:Lidar_DirectDebug	248	static

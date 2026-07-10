@@ -54,15 +54,15 @@ uint8_t bmp581_init_precise_normal(BMP_t *bmp581)
     uint8_t ODR_mask = 0x03;
 
     /* --- Write configuration registers (sensor must be in standby) --------- */
-    if (HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, BMP581_OSR_CONFIG, 1, &OSR_mask,      1, 100) != HAL_OK) check = 1;
-    if (HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, 0x31 /* DSP_IIR */,  1, &DSP_IIR_mask, 1, 100) != HAL_OK) check = 1;
-    if (HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, BMP581_DSP_CONFIG,   1, &DSP_conf_mask,1, 100) != HAL_OK) check = 1;
+    if (HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, BMP581_OSR_CONFIG, 1, &OSR_mask,      1, 10) != HAL_OK) check = 1;
+    if (HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, 0x31 /* DSP_IIR */,  1, &DSP_IIR_mask, 1, 10) != HAL_OK) check = 1;
+    if (HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, BMP581_DSP_CONFIG,   1, &DSP_conf_mask,1, 10) != HAL_OK) check = 1;
 
     /* --- Wake the sensor only after all registers are set ------------------- */
-    if (HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, BMP581_ODR_CONFIG, 1, &ODR_mask, 1, 100) != HAL_OK) check = 1;
+    if (HAL_I2C_Mem_Write(&hi2c1, BMP581_WRITE_ADDR, BMP581_ODR_CONFIG, 1, &ODR_mask, 1, 10) != HAL_OK) check = 1;
 
     /* --- Readback OSR_EFF to confirm the sensor is alive ------------------- */
-    if (HAL_I2C_Mem_Read(&hi2c1, BMP581_READ_ADDR, BMP581_OSR_EFF, 1, &odrcheck, 1, 100) != HAL_OK) check = 1;
+    if (HAL_I2C_Mem_Read(&hi2c1, BMP581_READ_ADDR, BMP581_OSR_EFF, 1, &odrcheck, 1, 10) != HAL_OK) check = 1;
 
     return check;
 }
@@ -82,8 +82,11 @@ uint8_t bmp581_read_precise_normal(BMP_t *bmp581)
     double tmoy = 0;
 
     /* Burst read: 6 bytes starting at TEMP_DATA_XLSB covers temp (3 bytes)
-       then pressure (3 bytes) in one transaction. */
-    if (HAL_I2C_Mem_Read(&hi2c1, BMP581_READ_ADDR, BMP581_TEMP_DATA_XLSB, 1, recarray, 6, 100) != HAL_OK) {
+       then pressure (3 bytes) in one transaction.
+       10 ms timeout: this transfer takes <1 ms at 100 kHz. The old 100 ms
+       turned a wedged bus into 100 ms busy-wait spins at 20 Hz inside
+       TaskSensors (highest priority), starving SD/LoRa/FSM of all CPU. */
+    if (HAL_I2C_Mem_Read(&hi2c1, BMP581_READ_ADDR, BMP581_TEMP_DATA_XLSB, 1, recarray, 6, 10) != HAL_OK) {
         check = 1;
     }
 

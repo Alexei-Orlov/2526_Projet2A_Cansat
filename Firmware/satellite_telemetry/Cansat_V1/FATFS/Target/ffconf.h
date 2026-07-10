@@ -227,7 +227,7 @@
 /  _NORTC_MDAY and _NORTC_YEAR have no effect.
 /  These options have no effect at read-only configuration (_FS_READONLY = 1). */
 
-#define _FS_LOCK    2     /* 0:Disable or >=1:Enable */
+#define _FS_LOCK    3     /* 0:Disable or >=1:Enable — 3 FILs coexist: fil (Update_File), fil_lidar, fil_data. NOTE: CubeMX regeneration resets this (set FS_LOCK=3 in CubeMX FATFS settings, like _FS_TINY) */
 /* The option _FS_LOCK switches file lock function to control duplicated file open
 /  and illegal operation to open objects. This option must be 0 when _FS_READONLY
 /  is 1.

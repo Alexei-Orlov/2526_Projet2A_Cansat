@@ -17,10 +17,22 @@
 // ====================================================================
 // --- MISSION LOGIC THRESHOLDS
 // ====================================================================
-#define THRESH_LIDAR_IN_BOX_M      		0.3f  	// Max distance to be considered "inside the deployment box"
 #define THRESH_LIDAR_DEPLOYED_M    		1.0f  	// Min distance to confirm deployment out of the box
-#define THRESH_ALTITUDE_LAUNCH_M   		0.3f  	// Min altitude to trigger ASCENSION state
+#define THRESH_ALTITUDE_DEPLOY_MIN_M	30.0f 	// Min altitude for the deployment (DROP) detection — release is nominally at 120 m
+#define THRESH_ALTITUDE_ASCENSION_M		10.0f 	// Min altitude to trigger ASCENSION state
+#define THRESH_ASCENSION_HOLD_MS   		2000  	// Ascension condition must hold this long before READY -> ASCENSION
+#define THRESH_DROP_HOLD_MS        		1000  	// Deployment condition must hold this long before ASCENSION -> DROP
 #define THRESH_ALTITUDE_LANDING_M  		5.0f  	// Max altitude to trigger RECOVERY state (buzzer on)
+#define THRESH_GYRO_STILL_DPS      		30.0f 	// Max |gyro| on every axis to consider the CanSat motionless (landing confirmation)
+#define THRESH_LANDING_HOLD_MS     		3000  	// Landing condition must hold this long before DROP -> RECOVERY
+/* Outlier tolerance per hold window: samples violating the condition are
+   counted instead of resetting the window; one above the cap aborts it.
+   The FSM samples at 20 Hz, so the windows above hold 40 / 20 / 60 samples
+   and the caps below allow ~10% of noisy samples (baro glitch, gyro gust). */
+#define THRESH_ASCENSION_MAX_OUTLIERS	4   	// of 40 samples (20 Hz x 2 s)
+#define THRESH_DROP_MAX_OUTLIERS   		2   	// of 20 samples (20 Hz x 1 s)
+#define THRESH_LANDING_MAX_OUTLIERS		6   	// of 60 samples (20 Hz x 3 s)
+#define LOG_CLOSE_AFTER_RECOVERY_MS		500000	// SD log files are closed this long after entering RECOVERY (card then safe to pull)
 #define TIME_BETWEEN_PACKET_LORA_mS 	100 	// Time between each packet sent through the lora
 #define HMI_MENU_ITEM_COUNT 6
 

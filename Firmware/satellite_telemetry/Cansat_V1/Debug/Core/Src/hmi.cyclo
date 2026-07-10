@@ -1,4 +1,4 @@
-../Core/Src/hmi.c:484:13:HMI_recalib_flush	2
+../Core/Src/hmi.c:486:13:HMI_recalib_flush	2
 ../Core/Src/hmi.c:41:9:calculate_battery_percent	6
 ../Core/Src/hmi.c:64:9:HMI_safe_update_screen	1
 ../Core/Src/hmi.c:74:6:HMI_display_overview	8
@@ -9,8 +9,8 @@
 ../Core/Src/hmi.c:276:6:HMI_display_battery	4
 ../Core/Src/hmi.c:324:6:HMI_toggle_lora	2
 ../Core/Src/hmi.c:349:6:HMI_exit_config_mode	1
-../Core/Src/hmi.c:384:6:HMI_handle_button	23
-../Core/Src/hmi.c:492:6:HMI_display_recalib	1
-../Core/Src/hmi.c:504:6:HMI_display_recalib_progress	2
-../Core/Src/hmi.c:528:6:HMI_display_recalib_done	1
-../Core/Src/hmi.c:560:6:HMI_display_format_sd	1
+../Core/Src/hmi.c:384:6:HMI_handle_button	24
+../Core/Src/hmi.c:494:6:HMI_display_recalib	1
+../Core/Src/hmi.c:506:6:HMI_display_recalib_progress	2
+../Core/Src/hmi.c:530:6:HMI_display_recalib_done	1
+../Core/Src/hmi.c:562:6:HMI_display_format_sd	1

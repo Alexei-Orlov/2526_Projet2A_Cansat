@@ -25,6 +25,7 @@ FRESULT Scan_SD (char* pat);
 
 /* Only supports removing files from home directory. Directory remover to be added soon */
 FRESULT Format_SD (void);
+FRESULT Quick_Erase_SD (void);
 
 /* write the data to the file
  * @ name : is the path to the file*/

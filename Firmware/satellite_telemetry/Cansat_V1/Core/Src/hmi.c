@@ -410,7 +410,7 @@ void HMI_handle_button(HMI_State_t *state)
                 state->cursor_position = (state->cursor_position + 1) % 2;
                 break;
             case HMI_PAGE_FORMAT_SD:
-                state->cursor_position = (state->cursor_position + 1) % 2;
+                state->cursor_position = (state->cursor_position + 1) % 3;
                 break;
             case HMI_PAGE_RECALIB:
                 break;  /* no navigation on this page */
@@ -435,7 +435,7 @@ void HMI_handle_button(HMI_State_t *state)
                     case 1: state->current_page = HMI_PAGE_SENSORS; break;
                     case 2: state->current_page = HMI_PAGE_BATTERY; break;
                     case 3: state->current_page = HMI_PAGE_RECALIB; state->cursor_position = 0; break;
-                    case 4: state->current_page = HMI_PAGE_FORMAT_SD; state->cursor_position = 1; break;  /* default to NO */
+                    case 4: state->current_page = HMI_PAGE_FORMAT_SD; state->cursor_position = 2; break;  /* default to Quit */
                     case 5: HMI_exit_config_mode(); break;
                 }
                 break;
@@ -451,7 +451,9 @@ void HMI_handle_button(HMI_State_t *state)
 
             case HMI_PAGE_FORMAT_SD:
                 if (state->cursor_position == 0) {
-                    state->format_sd_requested = 1;
+                    state->format_sd_requested = 1;      /* full format (f_mkfs) */
+                } else if (state->cursor_position == 1) {
+                    state->format_sd_requested = 2;      /* quick erase (files only) */
                 } else {
                     state->current_page = HMI_PAGE_MENU;
                     state->cursor_position = 0;
@@ -563,14 +565,16 @@ void HMI_display_format_sd(HMI_State_t *state)
     ssd1306_SetCursor(0, 0);
     ssd1306_WriteString("-- Format SD? --", Font_7x10, White);
 
-    ssd1306_SetCursor(0, 14);
-    ssd1306_WriteString("WARNING: All data", Font_6x8, White);
+    ssd1306_SetCursor(0, 12);
+    ssd1306_WriteString("Erases all data!", Font_6x8, White);
+
+    /* Full = f_mkfs (rebuilds a corrupted FAT), Quick = delete files only */
     ssd1306_SetCursor(0, 24);
-    ssd1306_WriteString("will be erased!", Font_6x8, White);
+    ssd1306_WriteString((state->cursor_position == 0) ? "> Full format" : "  Full format", Font_7x10, White);
 
-    ssd1306_SetCursor(0, 38);
-    ssd1306_WriteString((state->cursor_position == 0) ? "> YES - Erase all" : "  YES - Erase all", Font_7x10, White);
+    ssd1306_SetCursor(0, 37);
+    ssd1306_WriteString((state->cursor_position == 1) ? "> Quick erase" : "  Quick erase", Font_7x10, White);
 
-    ssd1306_SetCursor(0, 52);
-    ssd1306_WriteString((state->cursor_position == 1) ? "> NO  - Cancel" : "  NO  - Cancel", Font_7x10, White);
+    ssd1306_SetCursor(0, 50);
+    ssd1306_WriteString((state->cursor_position == 2) ? "> Quit" : "  Quit", Font_7x10, White);
 }

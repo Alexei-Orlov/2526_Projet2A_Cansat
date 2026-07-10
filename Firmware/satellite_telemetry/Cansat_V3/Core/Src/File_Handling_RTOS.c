@@ -91,8 +91,12 @@ FRESULT Scan_SD (char* pat)
     return fresult;
 }
 
-/* Only supports removing files from home directory */
-FRESULT Format_SD (void)
+/* Quick erase: f_unlink every root entry. Fast, but can only clean a HEALTHY
+   filesystem — it cannot repair a corrupted FAT, and f_unlink on a ghost
+   entry left by a torn directory write (power cut mid-update: garbage name,
+   size 0xFFFFFFFF) walks its bogus cluster chain and corrupts the FAT
+   further. If this returns an error, run Format_SD instead. */
+FRESULT Quick_Erase_SD (void)
 {
     DIR dir;
     char *path = pvPortMalloc(20*sizeof (char));
@@ -119,6 +123,25 @@ FRESULT Format_SD (void)
         f_closedir(&dir);
     }
     vPortFree(path);
+    return fresult;
+}
+
+/* True format: rebuilds the FAT volume with f_mkfs instead of f_unlink-ing
+   every root entry. The only way to recover a corrupted filesystem in the
+   field. Observed on a real card 2026-07-10: headers still written, then
+   every subsequent f_write failed for the whole session. */
+FRESULT Format_SD (void)
+{
+    BYTE *work = pvPortMalloc(_MAX_SS);
+    if (work == NULL) return FR_NOT_ENOUGH_CORE;
+
+    f_mount(NULL, "/", 0);                    /* unregister the stale volume */
+    fresult = f_mkfs("/", FM_ANY, 0, work, _MAX_SS);
+    vPortFree(work);
+
+    if (fresult == FR_OK) {
+        fresult = f_mount(&fs, "/", 1);       /* remount the fresh volume */
+    }
     return fresult;
 }
 

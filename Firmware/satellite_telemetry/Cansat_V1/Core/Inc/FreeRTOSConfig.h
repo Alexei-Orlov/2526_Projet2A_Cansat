@@ -72,7 +72,10 @@
 #define configTICK_RATE_HZ                       ((TickType_t)1000)
 #define configMAX_PRIORITIES                     ( 56 )
 #define configMINIMAL_STACK_SIZE                 ((uint16_t)64)
-#define configTOTAL_HEAP_SIZE                    ((size_t)22700)
+/* Trimmed from 22700 to fix a 408B RAM overflow at link time (32K part).
+   Static budget of the heap (5 task stacks + idle/timer + queues + mutex)
+   is ~20.2K, so ~1.9K of runtime margin remains at 22188. */
+#define configTOTAL_HEAP_SIZE                    ((size_t)22188)
 #define configMAX_TASK_NAME_LEN                  ( 16 )
 #define configGENERATE_RUN_TIME_STATS            1
 #define configUSE_TRACE_FACILITY                 1

@@ -32,6 +32,7 @@ extern GNSS_Parsed_t parsed_gnss;
 
 // --- API Functions ---
 void GNSS_Init(void);
+void GNSS_ConfigureM10(void);   /* SAM-M10Q: 10 Hz + airborne <2g, resend at every boot */
 void GNSS_UART_RxCpltCallback(UART_HandleTypeDef *huart);
 void GNSS_Process_Data(void);
 void GNSS_UART_Error_Handler(UART_HandleTypeDef *huart);

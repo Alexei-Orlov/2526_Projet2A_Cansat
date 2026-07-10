@@ -30,7 +30,8 @@ typedef struct {
     HMI_Page_t current_page;
     uint8_t    cursor_position;
     uint8_t    lora_enabled;
-    uint8_t    format_sd_requested;  /* 1 = user confirmed SD format */
+    uint8_t    format_sd_requested;  /* 0 = none, 1 = full format (f_mkfs),
+                                        2 = quick erase (delete files only) */
     uint8_t    recalib_requested;    /* 1 = user requested recalibration */
 } HMI_State_t;
 

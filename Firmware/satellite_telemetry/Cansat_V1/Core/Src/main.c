@@ -134,6 +134,14 @@ extern volatile uint8_t FatFsCnt;
 extern void SDTimer_Handler(void);
 FIL fil_lidar;
 uint8_t lidar_file_open = 0;
+/* DATA_xxx.CSV kept open for the whole flight, same as fil_lidar: going
+   through Update_File (f_stat + f_open + f_write + f_close per line) while
+   the LiDAR stream monopolizes the SD bus throttled DATA to ~1 line/s and
+   backed up qSDCard by several seconds — rows then carried an enqueue-time
+   timestamp but write-time flags, which is why DATA_002.CSV showed
+   RECOVERY flags ~6 s before the FSM actually transitioned. */
+FIL fil_data;
+uint8_t data_file_open = 0;
 
 /* --- Global state and sensor data (shared across all tasks) ----------------*/
 volatile uint8_t configFlag = 1;  /* Driven by HMI button; triggers CONFIG/READY transitions */
@@ -155,6 +163,15 @@ uint32_t stack_free_sensors = 0;
 uint32_t stack_free_sdcard  = 0;
 uint32_t stack_free_lora    = 0;
 uint32_t stack_free_hmi     = 0;
+/* Failed f_write/f_sync count on the SD log files — watch in the debugger.
+   Write errors used to be ignored, letting a corrupted FAT (torn directory
+   write on a power cut) kill logging silently after the first rows. */
+volatile uint32_t sd_write_errors = 0;
+/* Failed f_open count on the SD log files. Separate from sd_write_errors
+   because the causes differ: FR_TOO_MANY_OPEN_FILES points at the _FS_LOCK
+   table (3 FILs exist: fil, fil_lidar, fil_data), FR_NO_FILE/FR_DISK_ERR at
+   the volume itself. */
+volatile uint32_t sd_open_errors = 0;
 
 GNSS_Data_t latest_gnss;
 Barometer_Data_t latest_baro;
@@ -1294,7 +1311,14 @@ void startTaskFSM(void *argument)
           /* A. Log state transitions over UART */
           if (currentState != last_printed_state) {
               if (currentState == STATE_READY) {
-                  Lidar_RequestStream();
+                  /* Only nudge the LiDAR if no distance line arrived recently:
+                     a keystroke sent to an LW20 that is already streaming is
+                     interpreted as menu navigation and silently switches the
+                     streamed variable, which kills the LIDA_xxx.CSV log after
+                     its first lines. */
+                  if (HAL_GetTick() - lidar_last_data_ms > 2000) {
+                      Lidar_ForceStream();
+                  }
               }
               if (debug) {
                   switch(currentState) {
@@ -1390,20 +1414,34 @@ void startTaskFSM(void *argument)
                       /* 5. Arm DMA receiver */
                       Lidar_Init(&huart3);
 
-                      /* Deliberately not re-confirming streaming mode here: with
-                         EVENT_IMU_READY gated to STATE_READY+, LiDAR DMA events would be
-                         the only steady traffic on qSensorEvents during CONFIG. If
-                         Process_Lidar_Buffer_Chunk can't drain them as fast as they
-                         arrive, TaskSensors (highest priority in the app) never blocks
-                         and starves every lower-priority task. Streaming is confirmed at
-                         the STATE_READY transition instead. */
-
                       if (debug) {
                           sprintf(debug_msg, "[+] LiDAR Stream Locked & DMA Armed\r\n");
                           HAL_UART_Transmit(&huart1, (uint8_t*)debug_msg, strlen(debug_msg), 100);
                       }
 
                       lidar_boot_done = 1;
+                  }
+                  /* --- LiDAR stream watchdog (CONFIG only) ----------------
+                     The LW20 keeps its internal state across an MCU-only
+                     reset (reflash / NRST), so the one-shot boot sequence
+                     above assumes a cold device and can leave a warm one
+                     silent (or stuck in its menu). Re-send the stream
+                     request every 2 s until distance lines actually flow,
+                     making CONFIG deterministic for both reset types and
+                     feeding the HMI sensors page a live distance.
+                     Streaming during CONFIG is safe for the event queue:
+                     at 115200 baud the DMA half/full events arrive at
+                     ~115 Hz and each 100-byte chunk parse is microseconds,
+                     so TaskSensors still blocks between events. (The
+                     starvation previously blamed on CONFIG streaming
+                     traced to the local_line stack overflow fixed in
+                     Process_Lidar_Buffer_Chunk.) */
+                  else if (HAL_GetTick() - lidar_last_data_ms > 2000) {
+                      static uint32_t last_stream_retry = 0;
+                      if (HAL_GetTick() - last_stream_retry > 2000) {
+                          last_stream_retry = HAL_GetTick();
+                          Lidar_ForceStream();
+                      }
                   }
 
                   /* Auto-calibration on CONFIG entry runs from startTaskHMI instead of
@@ -1417,27 +1455,89 @@ void startTaskFSM(void *argument)
                   break;
               }
 
+              /* Every flight transition below requires its condition to hold
+                 for a THRESH_*_HOLD_MS window. Single-sample tests let ground
+                 handling walk the FSM READY -> RECOVERY in 2 s during the
+                 DATA_002 test run. Inside a window, up to
+                 THRESH_*_MAX_OUTLIERS samples may violate the condition
+                 without consequence (baro noise, gyro gust) — one more aborts
+                 the window, which restarts on the next passing sample. */
+
               case STATE_READY:
+              {
+                  /* Launch detection on barometric altitude alone: > 10 m
+                     rules out any ground handling, which the old
+                     "lidar-in-box + 0.3 m" single-sample test did not. */
+                  static uint32_t ascension_cond_since_ms = 0;
+                  static uint8_t  ascension_outliers = 0;
                   if (configFlag == 1) {
                       currentState = STATE_CONFIG;
-                  } else if (latest_lidar.distance < THRESH_LIDAR_IN_BOX_M
-                             && current_height > THRESH_ALTITUDE_LAUNCH_M) {
-                      currentState = STATE_ASCENSION;
+                      ascension_cond_since_ms = 0;
+                      ascension_outliers = 0;
+                  } else if (current_height > THRESH_ALTITUDE_ASCENSION_M) {
+                      if (ascension_cond_since_ms == 0) {
+                          ascension_cond_since_ms = HAL_GetTick();
+                          ascension_outliers = 0;
+                      } else if (HAL_GetTick() - ascension_cond_since_ms >= THRESH_ASCENSION_HOLD_MS) {
+                          currentState = STATE_ASCENSION;
+                          ascension_cond_since_ms = 0;
+                      }
+                  } else if (ascension_cond_since_ms != 0
+                             && ++ascension_outliers > THRESH_ASCENSION_MAX_OUTLIERS) {
+                      ascension_cond_since_ms = 0;
+                      ascension_outliers = 0;
                   }
                   break;
+              }
 
               case STATE_ASCENSION:
+              {
+                  static uint32_t drop_cond_since_ms = 0;
+                  static uint8_t  drop_outliers = 0;
                   if (latest_lidar.distance > THRESH_LIDAR_DEPLOYED_M
-                      && current_height > THRESH_ALTITUDE_LAUNCH_M) {
-                      currentState = STATE_DROP;
+                      && current_height > THRESH_ALTITUDE_DEPLOY_MIN_M) {
+                      if (drop_cond_since_ms == 0) {
+                          drop_cond_since_ms = HAL_GetTick();
+                          drop_outliers = 0;
+                      } else if (HAL_GetTick() - drop_cond_since_ms >= THRESH_DROP_HOLD_MS) {
+                          currentState = STATE_DROP;
+                          drop_cond_since_ms = 0;
+                      }
+                  } else if (drop_cond_since_ms != 0
+                             && ++drop_outliers > THRESH_DROP_MAX_OUTLIERS) {
+                      drop_cond_since_ms = 0;
+                      drop_outliers = 0;
                   }
                   break;
+              }
 
               case STATE_DROP:
-                  if (current_height < THRESH_ALTITUDE_LANDING_M) {
-                      currentState = STATE_RECOVERY;
+              {
+                  /* Landing needs two independent sensors to agree: barometer
+                     low AND IMU motionless. In descent the CanSat swings and
+                     spins under its parachute (tens of deg/s), on the ground
+                     the gyro sits near zero — so a baro glitch below 5 m
+                     cannot end the flight on its own. */
+                  static uint32_t landing_cond_since_ms = 0;
+                  static uint8_t  landing_outliers = 0;
+                  uint8_t is_still = fabsf(latest_imu.gyroX) < THRESH_GYRO_STILL_DPS
+                                  && fabsf(latest_imu.gyroY) < THRESH_GYRO_STILL_DPS
+                                  && fabsf(latest_imu.gyroZ) < THRESH_GYRO_STILL_DPS;
+                  if (current_height < THRESH_ALTITUDE_LANDING_M && is_still) {
+                      if (landing_cond_since_ms == 0) {
+                          landing_cond_since_ms = HAL_GetTick();
+                          landing_outliers = 0;
+                      } else if (HAL_GetTick() - landing_cond_since_ms >= THRESH_LANDING_HOLD_MS) {
+                          currentState = STATE_RECOVERY;
+                          landing_cond_since_ms = 0;
+                      }
+                  } else if (landing_cond_since_ms != 0
+                             && ++landing_outliers > THRESH_LANDING_MAX_OUTLIERS) {
+                      landing_cond_since_ms = 0;
+                      landing_outliers = 0;
                   }
                   break;
+              }
 
               case STATE_RECOVERY:
                   break;
@@ -1688,12 +1788,17 @@ void startTaskSDCard(void *argument)
     {
        static uint8_t sd_was_inserted = 0;
 
-       /* Detect SD card removal and close the LIDAR file cleanly */
+       /* Detect SD card removal and close the log files cleanly */
        if (sd_was_inserted && !is_sd_inserted()) {
            if (lidar_file_open) {
                f_sync(&fil_lidar);
                f_close(&fil_lidar);
                lidar_file_open = 0;
+           }
+           if (data_file_open) {
+               f_sync(&fil_data);
+               f_close(&fil_data);
+               data_file_open = 0;
            }
            f_mount(NULL, "/", 0);
            sd_was_inserted = 0;
@@ -1703,23 +1808,56 @@ void startTaskSDCard(void *argument)
            sd_was_inserted = 1;
        }
 
+       /* --- Deferred end-of-flight close ----------------------------------
+          LOG_CLOSE_AFTER_RECOVERY_MS after entering RECOVERY, sync and close
+          both log files and latch logging_stopped so neither write path
+          reopens them (packets keep flowing in RECOVERY). From that point the
+          card can be pulled or the power cut with no risk of a torn FAT /
+          directory write corrupting the flight data. */
+       static uint32_t recovery_entry_ms = 0;
+       static uint8_t  logging_stopped   = 0;
+       if (!logging_stopped) {
+           if (currentState == STATE_RECOVERY) {
+               if (recovery_entry_ms == 0) {
+                   recovery_entry_ms = HAL_GetTick();
+               } else if (HAL_GetTick() - recovery_entry_ms >= LOG_CLOSE_AFTER_RECOVERY_MS) {
+                   if (lidar_file_open) {
+                       f_sync(&fil_lidar);
+                       f_close(&fil_lidar);
+                       lidar_file_open = 0;
+                   }
+                   if (data_file_open) {
+                       f_sync(&fil_data);
+                       f_close(&fil_data);
+                       data_file_open = 0;
+                   }
+                   logging_stopped = 1;
+               }
+           } else {
+               recovery_entry_ms = 0;
+           }
+       }
+
        /* --- High-frequency LIDAR logging (up to 50 Hz) --------------------*/
        if (uxQueueMessagesWaiting(qSDCard_LIDAR) > 0 && is_sd_inserted()) {
 
            /* Keep the LIDAR file open for the entire flight to avoid the cost
               of f_open/f_close on every burst at 50 Hz. */
-           if (currentState >= STATE_READY && !lidar_file_open && is_sd_inserted()) {
+           if (currentState >= STATE_READY && !lidar_file_open && !logging_stopped && is_sd_inserted()) {
                if (f_open(&fil_lidar, lidar_filename, FA_OPEN_ALWAYS | FA_WRITE) == FR_OK) {
                    f_lseek(&fil_lidar, f_size(&fil_lidar));
                    lidar_file_open = 1;
+               } else {
+                   sd_open_errors++;
                }
            }
 
-           if (currentState == STATE_RECOVERY && lidar_file_open) {
-               f_close(&fil_lidar);
-               lidar_file_open = 0;
-           }
-
+           /* Logging deliberately continues through STATE_RECOVERY: the LW20
+              keeps streaming and the parser keeps enqueuing regardless, so
+              stopping the writes saves almost nothing (the old close-here
+              logic even re-opened/re-closed the file every loop iteration,
+              keeping the SD just as busy). f_sync after each burst already
+              makes the file safe against power loss. */
            if (lidar_file_open && uxQueueMessagesWaiting(qSDCard_LIDAR) > 0) {
 
                UINT bytes_written;
@@ -1781,10 +1919,22 @@ void startTaskSDCard(void *argument)
 
                    sprintf(lidar_buffer + offset, "%d\r\n", lidar_flags);
 
-                   f_write(&fil_lidar, lidar_buffer, strlen(lidar_buffer), &bytes_written);
+                   if (f_write(&fil_lidar, lidar_buffer, strlen(lidar_buffer), &bytes_written) != FR_OK
+                       || bytes_written < strlen(lidar_buffer)) {
+                       /* Close so the next burst re-opens through the directory
+                          (FA_OPEN_ALWAYS) instead of pushing into a dead handle. */
+                       sd_write_errors++;
+                       f_close(&fil_lidar);
+                       lidar_file_open = 0;
+                       break;
+                   }
                }
 
-               f_sync(&fil_lidar);
+               if (lidar_file_open && f_sync(&fil_lidar) != FR_OK) {
+                   sd_write_errors++;
+                   f_close(&fil_lidar);
+                   lidar_file_open = 0;
+               }
            }
        }
 
@@ -1841,7 +1991,28 @@ void startTaskSDCard(void *argument)
                float_to_str(pkt.bat.voltage, 2, tmp);
                sprintf(csv_buffer + offset, "%s\r\n", tmp);
 
-               Update_File(data_filename, csv_buffer);
+               /* Keep the DATA file open for the entire flight, like the
+                  LIDAR file: Update_File's f_open/f_close per line was slow
+                  enough (with the LiDAR sharing the SD bus) to back up
+                  qSDCard by seconds and desync timestamps from flags. */
+               if (!data_file_open && !logging_stopped) {
+                   if (f_open(&fil_data, data_filename, FA_OPEN_ALWAYS | FA_WRITE) == FR_OK) {
+                       f_lseek(&fil_data, f_size(&fil_data));
+                       data_file_open = 1;
+                   } else {
+                       sd_open_errors++;
+                   }
+               }
+               if (data_file_open) {
+                   UINT data_bytes_written;
+                   if (f_write(&fil_data, csv_buffer, strlen(csv_buffer), &data_bytes_written) != FR_OK
+                       || data_bytes_written < strlen(csv_buffer)
+                       || f_sync(&fil_data) != FR_OK) {
+                       sd_write_errors++;
+                       f_close(&fil_data);
+                       data_file_open = 0;
+                   }
+               }
                if (debug) HAL_UART_Transmit(&huart1, (uint8_t*)SD_carriage, strlen(SD_carriage), 100);
            }
        }
@@ -2063,7 +2234,12 @@ void startTaskHMI(void *argument)
             HMI_display_data.imu_ready       = imu_is_connected;
             HMI_display_data.gnss_ready      = (latest_gnss.satellites > 0);
             HMI_display_data.gnss_satellites = latest_gnss.satellites;
-            HMI_display_data.lidar_ready     = lidar_is_connected;
+            /* "Ready" means distance lines are flowing right now (the CONFIG
+               stream watchdog in startTaskFSM keeps retrying), not just "seen
+               once since boot" — a dead stream falls back to N/A instead of
+               freezing the last distance on screen. */
+            HMI_display_data.lidar_ready     = (lidar_last_data_ms != 0) &&
+                                               (HAL_GetTick() - lidar_last_data_ms < 2000);
             HMI_display_data.lidar_distance  = latest_lidar.distance;
 
             /* ========== HANDLE RECALIBRATION REQUEST ========== */
@@ -2094,43 +2270,68 @@ void startTaskHMI(void *argument)
 
             /* ========== HANDLE FORMAT SD REQUEST ========== */
             if (hmi_state.format_sd_requested) {
+                uint8_t full_format = (hmi_state.format_sd_requested == 1);
                 hmi_state.format_sd_requested = 0;
 
                 ssd1306_Fill(Black);
                 ssd1306_SetCursor(0, 10);
-                ssd1306_WriteString("Formatting...", Font_11x18, White);
+                ssd1306_WriteString(full_format ? "Formatting..." : "Erasing...", Font_11x18, White);
                 ssd1306_SetCursor(0, 36);
                 ssd1306_WriteString("Do not remove SD", Font_6x8, White);
                 HMI_safe_update_screen();
 
-                Format_SD();
+                /* Close any open log file first: after Format_SD wipes the
+                   FAT, a write through a stale FIL handle would corrupt the
+                   fresh filesystem. Files can be open here after a READY ->
+                   CONFIG re-entry; by the time the user has navigated the
+                   menu and confirmed, TaskSDCard has long drained its queues
+                   (no new packets are enqueued during CONFIG) so it is not
+                   mid-write. */
+                extern FIL fil_lidar, fil_data;
+                extern uint8_t lidar_file_open, data_file_open;
+                if (lidar_file_open) { f_close(&fil_lidar); lidar_file_open = 0; }
+                if (data_file_open)  { f_close(&fil_data);  data_file_open  = 0; }
 
-                /* Reset to session 1 and recreate empty CSV files */
-                extern uint8_t flight_session;
-                extern char data_filename[];
-                extern char lidar_filename[];
-                flight_session = 1;
+                FRESULT format_res = full_format ? Format_SD() : Quick_Erase_SD();
 
-                sprintf(data_filename,  "DATA_%03d.CSV", flight_session);
-                sprintf(lidar_filename, "LIDA_%03d.CSV", flight_session);
+                if (format_res == FR_OK) {
+                    /* Reset to session 1 and recreate empty CSV files */
+                    extern uint8_t flight_session;
+                    extern char data_filename[];
+                    extern char lidar_filename[];
+                    flight_session = 1;
 
-                Create_File(data_filename);
-                Update_File(data_filename,
-                    "tx_timestamp_ms,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,"
-                    "roll,pitch,yaw,temperature,altitude,latitude,longitude,"
-                    "satellites,flags_raw,battery_voltage\r\n");
-                osDelay(10);
-                Create_File(lidar_filename);
-                Update_File(lidar_filename,
-                    "tx_timestamp_ms,distance,roll,pitch,yaw,"
-                    "quat_w,quat_x,quat_y,quat_z,accel_x,accel_y,accel_z,"
-                    "latitude,longitude,altitude,flags_raw\r\n");
+                    sprintf(data_filename,  "DATA_%03d.CSV", flight_session);
+                    sprintf(lidar_filename, "LIDA_%03d.CSV", flight_session);
 
-                ssd1306_Fill(Black);
-                ssd1306_SetCursor(10, 10);
-                ssd1306_WriteString("Format OK!", Font_11x18, White);
-                ssd1306_SetCursor(0, 36);
-                ssd1306_WriteString("Files recreated", Font_6x8, White);
+                    Create_File(data_filename);
+                    Update_File(data_filename,
+                        "tx_timestamp_ms,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,"
+                        "roll,pitch,yaw,temperature,altitude,latitude,longitude,"
+                        "satellites,flags_raw,battery_voltage\r\n");
+                    osDelay(10);
+                    Create_File(lidar_filename);
+                    Update_File(lidar_filename,
+                        "tx_timestamp_ms,distance,roll,pitch,yaw,"
+                        "quat_w,quat_x,quat_y,quat_z,accel_x,accel_y,accel_z,"
+                        "latitude,longitude,altitude,flags_raw\r\n");
+
+                    ssd1306_Fill(Black);
+                    ssd1306_SetCursor(10, 10);
+                    ssd1306_WriteString(full_format ? "Format OK!" : "Erase OK!", Font_11x18, White);
+                    ssd1306_SetCursor(0, 36);
+                    ssd1306_WriteString("Files recreated", Font_6x8, White);
+                } else {
+                    /* A failed operation was previously reported as "Format
+                       OK!", hiding an unusable card until the flight data
+                       came back empty. A failed QUICK erase usually means a
+                       corrupted FAT: retry with the full format. */
+                    ssd1306_Fill(Black);
+                    ssd1306_SetCursor(10, 10);
+                    ssd1306_WriteString(full_format ? "Format FAIL" : "Erase FAIL", Font_11x18, White);
+                    ssd1306_SetCursor(0, 36);
+                    ssd1306_WriteString(full_format ? "Check/replace SD" : "Try full format", Font_6x8, White);
+                }
                 HMI_safe_update_screen();
                 osDelay(2000);
 

@@ -24,6 +24,11 @@ volatile uint8_t lidar_stream_mode = 1;
 
 uint8_t lidar_is_connected = 0;
 
+/* Tick of the last successfully parsed distance line (0 = none yet).
+   Used by startTaskFSM's stream watchdog and by the HMI sensors page to
+   distinguish "lines flowing right now" from "seen once since boot". */
+volatile uint32_t lidar_last_data_ms = 0;
+
 extern QueueHandle_t qSensorEvents;
 
 /* ===========================================================================
@@ -48,6 +53,19 @@ void Lidar_RequestStream(void)
     lidar_stream_mode = 1;
     uint8_t cmd[] = {0x1B, 0x5B, 0x42};  /* VT100 Down Arrow triggers the data stream */
     HAL_UART_Transmit(lidar_huart, cmd, 3, 100);
+}
+
+/* Close any menu the LW20 might be sitting in, then start the stream.
+   The LW20 keeps its internal state across an MCU-only reset (reflash /
+   NRST), so unlike Lidar_RequestStream this cannot assume the device is
+   at the top level: ESC ESC backs out of a possibly-open menu first.
+   Harmless if the menu is already closed. */
+void Lidar_ForceStream(void)
+{
+    if (lidar_huart == NULL) return;  /* not armed yet (boot sequence pending) */
+    lidar_stream_mode = 1;
+    uint8_t cmd[] = {0x1B, 0x1B, 0x5B, 0x42};  /* ESC, ESC, VT100 Down Arrow */
+    HAL_UART_Transmit(lidar_huart, cmd, 4, 100);
 }
 
 /* DMA half-transfer: first 512 bytes ready */
@@ -112,12 +130,25 @@ void Process_Lidar_Buffer_Chunk(uint8_t *chunk_start, uint16_t chunk_length, uin
         if (c == '\r') continue;
 
         if (c == '\n') {
-            /* Assemble a full line from any leftover fragment + new characters */
+            /* Assemble a full line from any leftover fragment + new characters.
+               A line that cannot fit local_line is never a distance line
+               (those are ~10 bytes) — it is LW20 menu output or framing
+               garbage, so drop it entirely. Without this combined check the
+               separate caps on the fragment (32) and local_idx (63) still
+               allowed 32 + 63 + NUL = 96 bytes into this 64-byte stack
+               buffer, corrupting the TaskSensors stack with symptoms that
+               shifted on every recompile / power cycle. */
+            uint8_t frag_len = cut_char_len;
+            cut_char_len = 0;
+            if ((uint16_t)frag_len + local_idx > sizeof(local_line) - 1) {
+                local_idx = 0;
+                continue;
+            }
+
             uint8_t total_len = 0;
-            if (cut_char_len > 0) {
-                memcpy(local_line, lidar_cut_char, cut_char_len);
-                total_len += cut_char_len;
-                cut_char_len = 0;
+            if (frag_len > 0) {
+                memcpy(local_line, lidar_cut_char, frag_len);
+                total_len += frag_len;
             }
             if (local_idx > 0) {
                 memcpy(local_line + total_len, chunk_start + (i - local_idx), local_idx);
@@ -136,6 +167,7 @@ void Process_Lidar_Buffer_Chunk(uint8_t *chunk_start, uint16_t chunk_length, uin
                     latest_lidar.distance = dist_val;
                     sprintf(latest_lidar.timestamp, "%lu", current_ms);
                     lidar_is_connected = 1;
+                    lidar_last_data_ms = current_ms;
 
                     if (currentState >= STATE_READY) {
                         LidarPacket_t lidar_pkt;
