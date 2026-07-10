@@ -26,6 +26,34 @@ void GNSS_Init(void)
     HAL_UART_Receive_IT(&GNSS_HUART, (uint8_t*)RxBuffer, 1);
 }
 
+/* SAM-M10Q boot configuration (UBX-CFG-VALSET, RAM layer only — the module
+   has no config flash, so this must be re-sent at every power-up):
+     - CFG-RATE-MEAS        = 100 ms  -> 10 Hz navigation
+     - CFG-NAVSPG-DYNMODEL  = 7       -> airborne <2g (default "portable"
+       assumes pedestrian dynamics and lags a 15 m/s fall)
+     - GGA every epoch (10 Hz: altitude + sats), RMC every 10th (1 Hz:
+       fix status + date), GLL/GSA/GSV/VTG off — keeps the UART load at
+       ~800 B/s, under the 960 B/s ceiling of the 9600-baud link.
+   Frame generated offline with its Fletcher checksum. */
+void GNSS_ConfigureM10(void)
+{
+    static const uint8_t cfg_valset[] = {
+        0xB5, 0x62, 0x06, 0x8A, 0x2D, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01, 0x00,
+        0x21, 0x30, 0x64, 0x00, 0x21, 0x00, 0x11, 0x20, 0x07, 0xBB, 0x00, 0x91,
+        0x20, 0x01, 0xAC, 0x00, 0x91, 0x20, 0x0A, 0xCA, 0x00, 0x91, 0x20, 0x00,
+        0xC0, 0x00, 0x91, 0x20, 0x00, 0xC5, 0x00, 0x91, 0x20, 0x00, 0xB1, 0x00,
+        0x91, 0x20, 0x00, 0x65, 0x24,
+    };
+
+    /* The module needs ~100 ms after power-up before accepting commands.
+       Sent twice: a frame arriving mid-boot is silently dropped, and a
+       VALSET on the RAM layer is idempotent. */
+    HAL_Delay(150);
+    HAL_UART_Transmit(&GNSS_HUART, (uint8_t*)cfg_valset, sizeof(cfg_valset), 100);
+    HAL_Delay(150);
+    HAL_UART_Transmit(&GNSS_HUART, (uint8_t*)cfg_valset, sizeof(cfg_valset), 100);
+}
+
 void GNSS_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance != GNSS_HUART.Instance)

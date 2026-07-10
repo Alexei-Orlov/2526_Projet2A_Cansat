@@ -1,6 +1,7 @@
-../Core/Src/gnss_reader.c:67:13:GNSS_Get_Field	24	static
+../Core/Src/gnss_reader.c:95:13:GNSS_Get_Field	24	static
 ../Core/Src/gnss_reader.c:24:6:GNSS_Init	8	static
-../Core/Src/gnss_reader.c:52:6:GNSS_UART_Error_Handler	8	static
-../Core/Src/gnss_reader.c:89:6:GNSS_Process_Data	128	static
-../Core/Src/gnss_reader.c:29:6:GNSS_UART_RxCpltCallback	8	static
-../Core/Src/gnss_reader.c:149:6:GNSS_CalibrateSatellite	16	static
+../Core/Src/gnss_reader.c:38:6:GNSS_ConfigureM10	16	static
+../Core/Src/gnss_reader.c:80:6:GNSS_UART_Error_Handler	8	static
+../Core/Src/gnss_reader.c:117:6:GNSS_Process_Data	128	static
+../Core/Src/gnss_reader.c:57:6:GNSS_UART_RxCpltCallback	8	static
+../Core/Src/gnss_reader.c:177:6:GNSS_CalibrateSatellite	16	static

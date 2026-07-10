@@ -414,6 +414,8 @@ int main(void)
       char gnss_init_msg[] = "[*] Arming GNSS Interrupt... SKIPPED (debug=1)\r\n";
       HAL_UART_Transmit(&huart1, (uint8_t*)gnss_init_msg, strlen(gnss_init_msg), 100);
   } else {
+      GNSS_ConfigureM10();  /* SAM-M10Q has no config flash: 10 Hz + airborne
+                               <2g must be re-sent at every power-up */
       GNSS_Init();
   }
 
@@ -1359,6 +1361,11 @@ void startTaskFSM(void *argument)
                   telemetry_pkt.gnss.latitude    = latest_gnss.latitude;
                   telemetry_pkt.gnss.longitude   = latest_gnss.longitude;
                   telemetry_pkt.gnss.satellites  = latest_gnss.satellites;
+                  /* Altitude read straight from the parser rather than from
+                     latest_gnss: the GGA now arrives at 10 Hz (SAM-M10Q
+                     configured at boot) while the EVENT_GNSS_READY copy only
+                     runs at 1 Hz. 32-bit float read is atomic on Cortex-M4. */
+                  telemetry_pkt.gnss.altitude    = parsed_gnss.altitude;
                   telemetry_pkt.bat.voltage      = latest_battery.voltage;
 
                   xQueueSend(qLoRa, &telemetry_pkt, 0);
@@ -1676,6 +1683,7 @@ void startTaskSensors(void *argument)
                     latest_gnss.latitude   = parsed_gnss.latitude;
                     latest_gnss.longitude  = parsed_gnss.longitude;
                     latest_gnss.satellites = parsed_gnss.satellites;
+                    latest_gnss.altitude   = parsed_gnss.altitude;
                     break;
                 }
 
@@ -1751,7 +1759,7 @@ void startTaskSDCard(void *argument)
             "tx_timestamp_ms,accel_x,accel_y,accel_z,"
             "gyro_x,gyro_y,gyro_z,roll,pitch,yaw,"
             "temperature,altitude,latitude,longitude,"
-            "satellites,flags_raw,battery_voltage\r\n");
+            "satellites,flags_raw,battery_voltage,gnss_alt\r\n");
         osDelay(10);
 
         Create_File(lidar_filename);
@@ -1989,6 +1997,11 @@ void startTaskSDCard(void *argument)
                offset += sprintf(csv_buffer + offset, "%d,%d,", pkt.gnss.satellites, flags);
 
                float_to_str(pkt.bat.voltage, 2, tmp);
+               offset += sprintf(csv_buffer + offset, "%s,", tmp);
+
+               /* GNSS altitude (MSL, metres) appended last so existing column
+                  indices in the analysis tools keep working. */
+               float_to_str(pkt.gnss.altitude, 2, tmp);
                sprintf(csv_buffer + offset, "%s\r\n", tmp);
 
                /* Keep the DATA file open for the entire flight, like the
@@ -2308,7 +2321,7 @@ void startTaskHMI(void *argument)
                     Update_File(data_filename,
                         "tx_timestamp_ms,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,"
                         "roll,pitch,yaw,temperature,altitude,latitude,longitude,"
-                        "satellites,flags_raw,battery_voltage\r\n");
+                        "satellites,flags_raw,battery_voltage,gnss_alt\r\n");
                     osDelay(10);
                     Create_File(lidar_filename);
                     Update_File(lidar_filename,
