@@ -186,6 +186,11 @@ void Process_Lidar_Buffer_Chunk(uint8_t *chunk_start, uint16_t chunk_length, uin
                         lidar_pkt.height     = latest_baro.height;
                         lidar_pkt.latitude   = latest_gnss.latitude;
                         lidar_pkt.longitude  = latest_gnss.longitude;
+                        /* Straight from the parser (not latest_gnss, copied at
+                           1 Hz): GGA arrives at 10 Hz, so every GNSS altitude
+                           point ends up in LIDA.csv. Snapshotted at enqueue
+                           time so an SD backlog cannot skew it. */
+                        lidar_pkt.gnss_altitude = parsed_gnss.altitude;
                         xQueueSend(qSDCard_LIDAR, &lidar_pkt, 0);
                     }
                 }

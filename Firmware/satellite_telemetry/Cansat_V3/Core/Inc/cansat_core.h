@@ -94,6 +94,7 @@ typedef struct {
     float height;
     float latitude;
     float longitude;
+    float gnss_altitude; // MSL altitude from the SAM-M10Q (10 Hz GGA), for georeferencing the point cloud
     uint16_t imu_age_ms; // diagnostic: age of the IMU sample when the LIDAR packet was built (ms)
 } LidarPacket_t;
 

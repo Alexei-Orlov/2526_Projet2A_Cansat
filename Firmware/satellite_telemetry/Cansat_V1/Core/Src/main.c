@@ -147,6 +147,11 @@ uint8_t data_file_open = 0;
 volatile uint8_t configFlag = 1;  /* Driven by HMI button; triggers CONFIG/READY transitions */
 CanSatState_t currentState = STATE_STANDBY;
 float current_height = 0.0f;
+/* Tick of the last BMP581 sample whose pressure actually changed (0 = none
+   yet). A healthy sensor at 20 Hz never returns bit-identical pressure twice
+   in a row for long (0.3 Pa RMS noise), so staleness here means the sensor or
+   the I2C1 bus is stuck — see the freeze watchdog in EVENT_BARO_READY. */
+volatile uint32_t baro_last_data_ms = 0;
 uint8_t imu_is_connected = 0;
 uint32_t calibration_duration_ms = 0;
 /* Gates the one-shot LW20 wake-up sequence in startTaskFSM's STATE_CONFIG case.
@@ -1168,6 +1173,50 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
     }
 }
 
+/* --- I2C1 stuck-bus recovery -----------------------------------------------
+   The BMP581 and SSD1306 use blocking HAL calls, which never reach
+   HAL_I2C_ErrorCallback above. A slave left holding SDA low mid-byte (power
+   glitch, bus noise) cannot be cleared by re-initialising the peripheral:
+   the remaining bits must be clocked out manually (up to 9 SCL pulses) until
+   the slave releases SDA, followed by a STOP condition.
+   Task context only (uses osDelay) — call with I2C1_Mutex held. */
+static void I2C1_Bus_Recover(void)
+{
+    GPIO_InitTypeDef g = {0};
+
+    HAL_I2C_DeInit(&hi2c1);
+
+    /* Both lines as open-drain GPIO, released (external pull-ups hold high) */
+    g.Mode  = GPIO_MODE_OUTPUT_OD;
+    g.Pull  = GPIO_NOPULL;
+    g.Speed = GPIO_SPEED_FREQ_LOW;
+    g.Pin = BARO_I2C1_SCL_Pin;
+    HAL_GPIO_WritePin(BARO_I2C1_SCL_GPIO_Port, BARO_I2C1_SCL_Pin, GPIO_PIN_SET);
+    HAL_GPIO_Init(BARO_I2C1_SCL_GPIO_Port, &g);
+    g.Pin = BARO_I2C1_SDA_Pin;
+    HAL_GPIO_WritePin(BARO_I2C1_SDA_GPIO_Port, BARO_I2C1_SDA_Pin, GPIO_PIN_SET);
+    HAL_GPIO_Init(BARO_I2C1_SDA_GPIO_Port, &g);
+
+    /* Clock until the slave releases SDA (9 pulses = one full byte + ACK) */
+    for (int i = 0; i < 9; i++) {
+        if (HAL_GPIO_ReadPin(BARO_I2C1_SDA_GPIO_Port, BARO_I2C1_SDA_Pin) == GPIO_PIN_SET) {
+            break;
+        }
+        HAL_GPIO_WritePin(BARO_I2C1_SCL_GPIO_Port, BARO_I2C1_SCL_Pin, GPIO_PIN_RESET);
+        osDelay(1);
+        HAL_GPIO_WritePin(BARO_I2C1_SCL_GPIO_Port, BARO_I2C1_SCL_Pin, GPIO_PIN_SET);
+        osDelay(1);
+    }
+
+    /* STOP condition: SDA low -> high while SCL is high */
+    HAL_GPIO_WritePin(BARO_I2C1_SDA_GPIO_Port, BARO_I2C1_SDA_Pin, GPIO_PIN_RESET);
+    osDelay(1);
+    HAL_GPIO_WritePin(BARO_I2C1_SDA_GPIO_Port, BARO_I2C1_SDA_Pin, GPIO_PIN_SET);
+    osDelay(1);
+
+    MX_I2C1_Init();  /* restores both pins to their I2C alternate function */
+}
+
 /* --- float_to_str ---------------------------------------------------------*/
 /**
  * @brief Converts a float to a decimal string without using sprintf.
@@ -1601,6 +1650,30 @@ void startTaskSensors(void *argument)
                     uint8_t baro_read_ok = (bmp581_read_precise_normal(&bmp_sensor) == 0);
                     osMutexRelease(I2C1_MutexHandle);
 
+                    /* --- Freeze watchdog -------------------------------------
+                       Seen on the V3 board (BARO_ISSUE.csv): pressure AND
+                       temperature frozen for 244 s while everything else kept
+                       running. Failed reads leave bmppress untouched, and a
+                       healthy sensor never returns bit-identical pressure for
+                       3 s (0.3 Pa RMS noise even through the IIR filter) —
+                       either way, 60 stuck samples at 20 Hz mean the sensor or
+                       the bus is wedged: unlock the bus and re-init the BMP581
+                       (a brown-out also silently drops its continuous mode). */
+                    static double   watchdog_prev_press = 0.0;
+                    static uint16_t baro_stuck_samples  = 0;
+                    if (baro_read_ok && bmppress != watchdog_prev_press) {
+                        watchdog_prev_press = bmppress;
+                        baro_stuck_samples  = 0;
+                        baro_last_data_ms   = current_ms;
+                    } else if (++baro_stuck_samples >= 60) {
+                        baro_stuck_samples = 0;  /* retry every 3 s while stuck */
+                        if (osMutexAcquire(I2C1_MutexHandle, osWaitForever) == osOK) {
+                            I2C1_Bus_Recover();
+                            bmp581_init_precise_normal(&bmp_sensor);
+                            osMutexRelease(I2C1_MutexHandle);
+                        }
+                    }
+
                     if (baro_read_ok) {
 
                         /* Prime the derivative statics from the first real reading so
@@ -1767,7 +1840,7 @@ void startTaskSDCard(void *argument)
             "tx_timestamp_ms,distance,roll,pitch,yaw,"
             "quat_w,quat_x,quat_y,quat_z,"
             "accel_x,accel_y,accel_z,"
-            "latitude,longitude,altitude,flags_raw\r\n");
+            "latitude,longitude,altitude,flags_raw,gnss_alt\r\n");
 
         if (debug) {
             char boot_msg[64];
@@ -1925,7 +1998,12 @@ void startTaskSDCard(void *argument)
                    float_to_str(fast_pkt.height, 2, tmp);
                    offset += sprintf(lidar_buffer + offset, "%s,", tmp);
 
-                   sprintf(lidar_buffer + offset, "%d\r\n", lidar_flags);
+                   offset += sprintf(lidar_buffer + offset, "%d,", lidar_flags);
+
+                   /* GNSS altitude (MSL, 10 Hz) appended last so existing
+                      column indices in the analysis tools keep working. */
+                   float_to_str(fast_pkt.gnss_altitude, 2, tmp);
+                   sprintf(lidar_buffer + offset, "%s\r\n", tmp);
 
                    if (f_write(&fil_lidar, lidar_buffer, strlen(lidar_buffer), &bytes_written) != FR_OK
                        || bytes_written < strlen(lidar_buffer)) {
@@ -2327,7 +2405,7 @@ void startTaskHMI(void *argument)
                     Update_File(lidar_filename,
                         "tx_timestamp_ms,distance,roll,pitch,yaw,"
                         "quat_w,quat_x,quat_y,quat_z,accel_x,accel_y,accel_z,"
-                        "latitude,longitude,altitude,flags_raw\r\n");
+                        "latitude,longitude,altitude,flags_raw,gnss_alt\r\n");
 
                     ssd1306_Fill(Black);
                     ssd1306_SetCursor(10, 10);

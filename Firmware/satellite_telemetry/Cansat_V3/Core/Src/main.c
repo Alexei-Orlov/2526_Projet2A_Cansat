@@ -1844,7 +1844,7 @@ void startTaskSDCard(void *argument)
             "tx_timestamp_ms,distance,roll,pitch,yaw,"
             "quat_w,quat_x,quat_y,quat_z,"
             "accel_x,accel_y,accel_z,"
-            "latitude,longitude,altitude,flags_raw\r\n");
+            "latitude,longitude,altitude,flags_raw,gnss_alt\r\n");
 
         if (debug) {
             char boot_msg[64];
@@ -2002,7 +2002,12 @@ void startTaskSDCard(void *argument)
                    float_to_str(fast_pkt.height, 2, tmp);
                    offset += sprintf(lidar_buffer + offset, "%s,", tmp);
 
-                   sprintf(lidar_buffer + offset, "%d\r\n", lidar_flags);
+                   offset += sprintf(lidar_buffer + offset, "%d,", lidar_flags);
+
+                   /* GNSS altitude (MSL, 10 Hz) appended last so existing
+                      column indices in the analysis tools keep working. */
+                   float_to_str(fast_pkt.gnss_altitude, 2, tmp);
+                   sprintf(lidar_buffer + offset, "%s\r\n", tmp);
 
                    if (f_write(&fil_lidar, lidar_buffer, strlen(lidar_buffer), &bytes_written) != FR_OK
                        || bytes_written < strlen(lidar_buffer)) {
@@ -2404,7 +2409,7 @@ void startTaskHMI(void *argument)
                     Update_File(lidar_filename,
                         "tx_timestamp_ms,distance,roll,pitch,yaw,"
                         "quat_w,quat_x,quat_y,quat_z,accel_x,accel_y,accel_z,"
-                        "latitude,longitude,altitude,flags_raw\r\n");
+                        "latitude,longitude,altitude,flags_raw,gnss_alt\r\n");
 
                     ssd1306_Fill(Black);
                     ssd1306_SetCursor(10, 10);

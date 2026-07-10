@@ -5,5 +5,5 @@
 ../Core/Src/lidar.c:72:6:HAL_UART_RxHalfCpltCallback	3
 ../Core/Src/lidar.c:85:6:HAL_UART_RxCpltCallback	4
 ../Core/Src/lidar.c:104:6:Process_Lidar_Buffer_Chunk	15
-../Core/Src/lidar.c:224:6:Lidar_UART_Error_Handler	1
-../Core/Src/lidar.c:237:6:Lidar_DirectDebug	6
+../Core/Src/lidar.c:229:6:Lidar_UART_Error_Handler	1
+../Core/Src/lidar.c:242:6:Lidar_DirectDebug	6
