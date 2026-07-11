@@ -136,7 +136,17 @@ void SX1276_SendPacket(uint8_t *payload, uint8_t size)
 
 /* The SX1276 temperature monitor requires FSRx mode (not LoRa).
    This function temporarily switches the radio context, reads the sensor,
-   then restores LoRa+Standby for subsequent transmissions. */
+   then restores LoRa+Standby for subsequent transmissions.
+   Sequence per datasheet section 3.5.7 (Rev. 7): Standby -> FSRx ->
+   TempMonitorOff=0 -> wait >=140 us -> TempMonitorOff=1 -> Sleep/Standby ->
+   read RegTemp. */
+
+/* Uncalibrated absolute accuracy is +/-10 degC (datasheet 3.5.7). For a
+   better reading, measure once against a known reference (e.g. the BMP581
+   at ambient) and set this to (T_reference_degC - value returned with
+   offset 0). */
+#define SX1276_TEMP_CAL_OFFSET_C   0
+
 int8_t SX1276_GetTemperature(void)
 {
     int8_t rawTemp = 0;
@@ -168,6 +178,9 @@ int8_t SX1276_GetTemperature(void)
 
     rawTemp = SX1276_ReadRegister(REG_TEMP);
 
+    /* RegTemp slope is -1 degC/LSB (datasheet register table, 0x3C): the
+       register decreases as the die heats up, so the sign must be flipped.
+       Same decoding as the Semtech reference driver / RadioLib. */
     if ((rawTemp & 0x80) == 0x80) {
         temp = 255 - rawTemp;
     } else {
@@ -179,7 +192,9 @@ int8_t SX1276_GetTemperature(void)
     SX1276_WriteRegister(REG_OP_MODE, 0x80 | 0x00);  /* LoRa + Sleep */
     SX1276_WriteRegister(REG_OP_MODE, 0x80 | 0x01);  /* LoRa + Standby */
 
-    return (int8_t)((25 - temp) + temp);
+    /* The old return here was ((25 - temp) + temp), which is identically 25
+       whatever the sensor reads. */
+    return (int8_t)(temp + SX1276_TEMP_CAL_OFFSET_C);
 }
 
 /* ===========================================================================

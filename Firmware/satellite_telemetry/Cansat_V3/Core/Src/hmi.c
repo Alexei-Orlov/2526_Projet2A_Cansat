@@ -219,19 +219,19 @@ void HMI_display_lora(HMI_State_t *state)
     ssd1306_SetCursor(0, 0);
     ssd1306_WriteString("-- LoRa Setup --", Font_7x10, White);
 
-    ssd1306_SetCursor(0, 16);
+    ssd1306_SetCursor(0, 14);
     ssd1306_WriteString(state->lora_enabled ? "Etat : ON" : "Etat : OFF", Font_7x10, White);
 
-    ssd1306_SetCursor(0, 28);
+    ssd1306_SetCursor(0, 24);
     ssd1306_WriteString("Freq : 868.53MHz", Font_7x10, White);
 
-    ssd1306_SetCursor(0, 40);
-    ssd1306_WriteString("SF10 BW125 CR4/8", Font_7x10, White);
+    ssd1306_SetCursor(0, 34);
+    ssd1306_WriteString("SF7 BW125 CR4/8", Font_7x10, White);
 
-    ssd1306_SetCursor(0, 52);
+    ssd1306_SetCursor(0, 46);
     ssd1306_WriteString((state->cursor_position == 0) ? "> ON/OFF Toggle" : "  ON/OFF Toggle", Font_6x8, White);
 
-    ssd1306_SetCursor(0, 60);
+    ssd1306_SetCursor(0, 56);
     ssd1306_WriteString((state->cursor_position == 1) ? "> < Back" : "  < Back", Font_6x8, White);
 }
 
