@@ -26,32 +26,50 @@ void GNSS_Init(void)
     HAL_UART_Receive_IT(&GNSS_HUART, (uint8_t*)RxBuffer, 1);
 }
 
-/* SAM-M10Q boot configuration (UBX-CFG-VALSET, RAM layer only — the module
-   has no config flash, so this must be re-sent at every power-up):
-     - CFG-RATE-MEAS        = 100 ms  -> 10 Hz navigation
-     - CFG-NAVSPG-DYNMODEL  = 7       -> airborne <2g (default "portable"
-       assumes pedestrian dynamics and lags a 15 m/s fall)
-     - GGA every epoch (10 Hz: altitude + sats), RMC every 10th (1 Hz:
-       fix status + date), GLL/GSA/GSV/VTG off — keeps the UART load at
-       ~800 B/s, under the 960 B/s ceiling of the 9600-baud link.
-   Frame generated offline with its Fletcher checksum. */
-void GNSS_ConfigureM10(void)
+/* SAM-M10Q two-stage configuration (UBX-CFG-VALSET, RAM layer only — the
+   module has no config flash, so everything is re-sent at every power-up).
+
+   Stage 1 (boot, below): OUTPUT trimming only — GGA + RMC at each epoch,
+   GLL/GSA/GSV/VTG off. The receiver engine itself stays at its factory
+   settings (1 Hz, standard dynamics), which u-blox recommends for
+   acquisition: at 10 Hz the engine loses integration time while searching,
+   which noticeably slows the first fix when the antenna is poorly oriented
+   (as it can be inside the can).
+
+   Stage 2 (GNSS_ConfigureM10_Flight, called from EVENT_GNSS_READY once the
+   fix has been stable for 10 s): 10 Hz + airborne <2g for the flight. */
+void GNSS_ConfigureM10_Boot(void)
 {
-    static const uint8_t cfg_valset[] = {
-        0xB5, 0x62, 0x06, 0x8A, 0x2D, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01, 0x00,
-        0x21, 0x30, 0x64, 0x00, 0x21, 0x00, 0x11, 0x20, 0x07, 0xBB, 0x00, 0x91,
-        0x20, 0x01, 0xAC, 0x00, 0x91, 0x20, 0x0A, 0xCA, 0x00, 0x91, 0x20, 0x00,
-        0xC0, 0x00, 0x91, 0x20, 0x00, 0xC5, 0x00, 0x91, 0x20, 0x00, 0xB1, 0x00,
-        0x91, 0x20, 0x00, 0x65, 0x24,
+    static const uint8_t cfg_boot[] = {
+        0xB5, 0x62, 0x06, 0x8A, 0x22, 0x00, 0x00, 0x01, 0x00, 0x00, 0xBB, 0x00,
+        0x91, 0x20, 0x01, 0xAC, 0x00, 0x91, 0x20, 0x01, 0xCA, 0x00, 0x91, 0x20,
+        0x00, 0xC0, 0x00, 0x91, 0x20, 0x00, 0xC5, 0x00, 0x91, 0x20, 0x00, 0xB1,
+        0x00, 0x91, 0x20, 0x00, 0x42, 0x60,
     };
 
     /* The module needs ~100 ms after power-up before accepting commands.
        Sent twice: a frame arriving mid-boot is silently dropped, and a
        VALSET on the RAM layer is idempotent. */
     HAL_Delay(150);
-    HAL_UART_Transmit(&GNSS_HUART, (uint8_t*)cfg_valset, sizeof(cfg_valset), 100);
+    HAL_UART_Transmit(&GNSS_HUART, (uint8_t*)cfg_boot, sizeof(cfg_boot), 100);
     HAL_Delay(150);
-    HAL_UART_Transmit(&GNSS_HUART, (uint8_t*)cfg_valset, sizeof(cfg_valset), 100);
+    HAL_UART_Transmit(&GNSS_HUART, (uint8_t*)cfg_boot, sizeof(cfg_boot), 100);
+}
+
+/* Stage 2: 10 Hz navigation (CFG-RATE-MEAS = 100 ms), airborne <2g dynamic
+   model (the factory "portable" model lags a 15 m/s fall), GGA every epoch
+   (10 Hz: altitude + sats), RMC every 10th (back to 1 Hz: fix status).
+   UART load ~800 B/s, under the 960 B/s ceiling of the 9600-baud link.
+   ~35 ms blocking send — call it from task context, pre-flight only. */
+void GNSS_ConfigureM10_Flight(void)
+{
+    static const uint8_t cfg_flight[] = {
+        0xB5, 0x62, 0x06, 0x8A, 0x19, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01, 0x00,
+        0x21, 0x30, 0x64, 0x00, 0x21, 0x00, 0x11, 0x20, 0x07, 0xBB, 0x00, 0x91,
+        0x20, 0x01, 0xAC, 0x00, 0x91, 0x20, 0x0A, 0x8D, 0xBB,
+    };
+
+    HAL_UART_Transmit(&GNSS_HUART, (uint8_t*)cfg_flight, sizeof(cfg_flight), 100);
 }
 
 void GNSS_UART_RxCpltCallback(UART_HandleTypeDef *huart)

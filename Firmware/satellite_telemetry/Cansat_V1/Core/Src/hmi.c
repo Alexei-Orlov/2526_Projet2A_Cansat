@@ -232,7 +232,7 @@ void HMI_display_lora(HMI_State_t *state)
     ssd1306_WriteString((state->cursor_position == 0) ? "> ON/OFF Toggle" : "  ON/OFF Toggle", Font_6x8, White);
 
     ssd1306_SetCursor(0, 56);
-    ssd1306_WriteString((state->cursor_position == 1) ? "> < Back" : "  < Back", Font_6x8, White);
+    ssd1306_WriteString((state->cursor_position == 1) ? "> Quit" : "  Quit", Font_6x8, White);
 }
 
 void HMI_display_sensors(HMI_State_t *state)

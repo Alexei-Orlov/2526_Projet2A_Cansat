@@ -415,8 +415,14 @@ int main(void)
       char gnss_init_msg[] = "[*] Arming GNSS Interrupt... SKIPPED (debug=1)\r\n";
       HAL_UART_Transmit(&huart1, (uint8_t*)gnss_init_msg, strlen(gnss_init_msg), 100);
   } else {
-      GNSS_ConfigureM10();  /* SAM-M10Q has no config flash: 10 Hz + airborne
-                               <2g must be re-sent at every power-up */
+      GNSS_AutodetectBaud();     /* the two SAM-M10Q units talk at different
+                                    persistent rates (flight: 9600, spare:
+                                    115200) — probe for live NMEA first */
+      GNSS_ConfigureM10_Boot();  /* stage 1: NMEA trimming only — the engine
+                                    stays at factory 1 Hz / standard dynamics
+                                    for best acquisition; the flight config
+                                    (10 Hz + airborne) is sent from
+                                    EVENT_GNSS_READY once the fix is stable */
       GNSS_Init();
   }
 
@@ -944,7 +950,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 9600;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -1761,6 +1767,30 @@ void startTaskSensors(void *argument)
                     latest_gnss.longitude  = parsed_gnss.longitude;
                     latest_gnss.satellites = parsed_gnss.satellites;
                     latest_gnss.altitude   = parsed_gnss.altitude;
+
+                    /* --- Two-stage GNSS config (this event ticks at 1 Hz) ---
+                       The module boots at its factory 1 Hz / standard
+                       dynamics (GNSS_ConfigureM10_Boot only trims NMEA
+                       output): best acquisition sensitivity for a possibly
+                       badly oriented antenna. Only once the fix has been
+                       solid for 10 consecutive seconds is it switched to
+                       10 Hz + airborne <2g. Sent twice (at 10 s and 12 s of
+                       stability) because this link has no ACK parsing; the
+                       VALSET is idempotent. One-shot per power cycle. */
+                    static uint8_t gnss_fix_stable_s = 0;
+                    static uint8_t gnss_flight_cfg_done = 0;
+                    if (!gnss_flight_cfg_done) {
+                        if (parsed_gnss.fixed && parsed_gnss.satellites >= 5) {
+                            if (gnss_fix_stable_s < 12) gnss_fix_stable_s++;
+                            if (gnss_fix_stable_s == 10 || gnss_fix_stable_s == 12) {
+                                GNSS_ConfigureM10_Flight();
+                                if (gnss_fix_stable_s == 12) gnss_flight_cfg_done = 1;
+                            }
+                        } else if (gnss_fix_stable_s < 10) {
+                            /* fix lost before the switch: restart the window */
+                            gnss_fix_stable_s = 0;
+                        }
+                    }
                     break;
                 }
 

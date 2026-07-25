@@ -33,7 +33,7 @@
 #define THRESH_DROP_MAX_OUTLIERS   		2   	// of 20 samples (20 Hz x 1 s)
 #define THRESH_LANDING_MAX_OUTLIERS		6   	// of 60 samples (20 Hz x 3 s)
 #define LOG_CLOSE_AFTER_RECOVERY_MS		500000	// SD log files are closed this long after entering RECOVERY (card then safe to pull)
-#define TIME_BETWEEN_PACKET_LORA_mS 	100 	// Time between each packet sent through the lora
+#define TIME_BETWEEN_PACKET_LORA_mS 	300 	// Time between each packet sent through the lora
 #define HMI_MENU_ITEM_COUNT 6
 
 // ====================================================================
