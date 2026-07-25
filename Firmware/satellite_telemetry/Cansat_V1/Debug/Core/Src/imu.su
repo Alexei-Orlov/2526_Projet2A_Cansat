@@ -1,8 +1,0 @@
-../Core/Src/imu.c:22:13:BNO_WriteReg	32	static
-../Core/Src/imu.c:73:6:IMU_GetCalibrationProfile	24	static
-../Core/Src/imu.c:82:6:IMU_SetCalibrationProfile	24	static
-../Core/Src/imu.c:36:9:IMU_Init	48	static
-../Core/Src/imu.c:92:9:IMU_calibration	208	static
-../Core/Src/imu.c:163:9:getOrientationIMU	64	static
-../Core/Src/imu.c:223:9:IMU_RequestData_DMA	144	static
-../Core/Src/imu.c:244:6:IMU_ProcessData_DMA	0	static

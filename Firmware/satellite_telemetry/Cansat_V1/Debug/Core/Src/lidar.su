@@ -1,9 +1,0 @@
-../Core/Src/lidar.c:38:6:Lidar_Init	8	static
-../Core/Src/lidar.c:44:6:Lidar_RequestMenu	16	static
-../Core/Src/lidar.c:51:6:Lidar_RequestStream	16	static
-../Core/Src/lidar.c:63:6:Lidar_ForceStream	16	static
-../Core/Src/lidar.c:72:6:HAL_UART_RxHalfCpltCallback	16	static,ignoring_inline_asm
-../Core/Src/lidar.c:85:6:HAL_UART_RxCpltCallback	16	static,ignoring_inline_asm
-../Core/Src/lidar.c:104:6:Process_Lidar_Buffer_Chunk	240	static
-../Core/Src/lidar.c:229:6:Lidar_UART_Error_Handler	8	static
-../Core/Src/lidar.c:242:6:Lidar_DirectDebug	248	static

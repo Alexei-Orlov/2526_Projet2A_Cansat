@@ -1,0 +1,17 @@
+# Build output (STM32CubeIDE)
+**/Debug/
+**/Release/
+
+# Test data / field recordings (too large for git, keep on drive/NAS instead)
+backup data cansat/
+**/*.mp4
+**/*.mov
+**/*.avi
+**/*.mkv
+
+# Python virtual environments
+venv/
+**/venv/
+.venv/
+__pycache__/
+*.pyc

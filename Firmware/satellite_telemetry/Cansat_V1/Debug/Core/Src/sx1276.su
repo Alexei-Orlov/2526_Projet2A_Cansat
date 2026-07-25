@@ -1,6 +1,0 @@
-../Core/Src/sx1276.c:23:6:SX1276_WriteRegister	16	static
-../Core/Src/sx1276.c:31:9:SX1276_ReadRegister	24	static
-../Core/Src/sx1276.c:46:6:SX1276_Init	8	static
-../Core/Src/sx1276.c:104:6:SX1276_SendPacket	16	static
-../Core/Src/sx1276.c:140:8:SX1276_GetTemperature	8	static
-../Core/Src/sx1276.c:189:6:SX1276_SendCalibrationPacket	208	static
