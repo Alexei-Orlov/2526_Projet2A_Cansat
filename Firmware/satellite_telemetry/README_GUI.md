@@ -1,95 +1,94 @@
-# 🛰️ Satellite Telemetry Monitor - LoRa Edition
+# 🛰️ CanSat Vortex — Ground Segment & Data Pipeline
 
-**A high-performance real-time GUI application for monitoring and visualizing telemetry data from CubeSat/small satellites via LoRa communication on Raspberry Pi 5.**
+**Real-time ground station GUI, LoRa telemetry protocol, onboard data logging and post-flight analysis suite for the ENSEA CanSat Vortex (2025–2026).**
 
-![Version](https://img.shields.io/badge/Version-2.4-blue) ![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi%205-red) ![Python](https://img.shields.io/badge/Python-3.7+-green) ![License](https://img.shields.io/badge/License-Educational-yellow) ![Protocol](https://img.shields.io/badge/Protocol-17%20fields-orange) ![Platform](https://img.shields.io/badge/MCU-STM32G431CBU6-blue) ![IDE](https://img.shields.io/badge/IDE-STM32CubeIDE-yellow)
+![Version](https://img.shields.io/badge/Version-2.4-blue) ![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi%205-red) ![Python](https://img.shields.io/badge/Python-3.7+-green) ![License](https://img.shields.io/badge/License-Educational-yellow) ![Protocol](https://img.shields.io/badge/Protocol-v2.4%20(17%20fields)-orange) ![MCU](https://img.shields.io/badge/MCU-STM32G431CBU6-blue) ![IDE](https://img.shields.io/badge/IDE-STM32CubeIDE-yellow)
 
 ---
 
 ## 📋 Table of Contents
-1. [System Overview](#system-overview)
-2. [Features](#features)
-3. [Hardware Components](#hardware-components)
-4. [Telemetry Protocol](#telemetry-protocol)
-5. [Project Structure](#project-structure)
-6. [Installation](#installation)
-7. [Usage](#usage)
-8. [Transmitter (STM32)](#transmitter-stm32)
-9. [Receiver GUI (Raspberry Pi)](#receiver-gui-raspberry-pi)
-10. [Data Analysis Tools](#data-analysis-tools)
-11. [Signal Processing Tutorials](#signal-processing-tutorials)
-12. [LIDAR Point Cloud Processing](#lidar-point-cloud-processing)
-13. [Troubleshooting](#troubleshooting)
-14. [Known Issues & Bug Fixes](#known-issues--bug-fixes)
+1. [System Overview](#-system-overview)
+2. [Features](#-features)
+3. [Hardware Components](#-hardware-components)
+4. [Telemetry Protocol](#-telemetry-protocol)
+5. [Project Structure](#-project-structure)
+6. [Installation](#-installation)
+7. [Usage](#-usage)
+8. [Transmitter (STM32 Flight Software)](#%EF%B8%8F-transmitter-stm32-flight-software)
+9. [Receiver GUI (Raspberry Pi)](#-receiver-gui-raspberry-pi)
+10. [Post-Flight Telemetry Analysis](#-post-flight-telemetry-analysis)
+11. [Signal Processing Tutorials](#-signal-processing-tutorials)
+12. [3D LIDAR Point Cloud Processing](#%EF%B8%8F-3d-lidar-point-cloud-processing)
+13. [Troubleshooting](#-troubleshooting)
+14. [Known Issues & Bug Fixes](#-known-issues--bug-fixes)
+15. [Performance Metrics](#-performance-metrics)
+16. [Version History](#-version-history)
 
 ---
 
 ## 🎯 System Overview
 
-Complete satellite telemetry system with:
-- **Real-time LoRa telemetry** at 869.53 MHz
-- **High-speed LIDAR logging** (50 Hz) for 3D point cloud generation
-- **Full sensor fusion** (IMU, GPS, Barometer, LIDAR)
-- **Real-time GUI visualization** with 3D satellite model and map
-- **Comprehensive post-flight analysis** suite
+The Vortex data chain covers the full mission lifecycle:
+- **Real-time LoRa telemetry downlink** at 869.53 MHz (custom v2.4 protocol)
+- **High-rate onboard SD logging** — dual-file scheme: full telemetry (`DATA_xxx.CSV`, 10 Hz) and LIDAR georeferencing stream (`LIDA_xxx.CSV`, up to 50 Hz)
+- **Full sensor fusion** (BNO055 IMU, SAM-M10Q GNSS, BMP581 barometer, LW20/C LIDAR)
+- **Real-time GUI visualization** with a 3D satellite model, live map and telemetry plots
+- **Comprehensive post-flight analysis suite** (flight reports, physics analysis, anomaly detection)
+- **3D point cloud reconstruction** of the overflown terrain from the LIDAR + attitude + position data
 - **Signal processing tutorials** for educational purposes
 
 ### System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    SATELLITE (STM32G4)                          │
+│                    SATELLITE (STM32G431CBU6)                    │
 ├─────────────────────────────────────────────────────────────────┤
 │  Sensors:                                                       │
-│    • ICM-20948 IMU (accel, gyro, mag)                           │
-│    • BMP581 Barometer (altitude, temp)                          │
-│    • GNSS (GPS position)                                        │
-│    • LightWare SF20 LIDAR (distance)                            │
-│    • Battery voltage (ADC)                                      │
+│    • BNO055 9-axis IMU (accel, gyro, fused Euler/quaternion)    │
+│    • BMP581 barometer (altitude, temperature)                   │
+│    • SAM-M10Q GNSS (position, MSL altitude, 10 Hz)              │
+│    • LightWare LW20/C LIDAR (distance, up to 50 Hz)             │
+│    • Battery voltage (ADC1 + divider)                           │
 │                                                                 │
 │  Communication:                                                 │
 │    • LoRa SX1276 @ 869.53 MHz → Ground Station                  │
+│    • HMI PCB (I2C): SSD1306 OLED status screen + button         │
 │                                                                 │
-│  Storage:                                                       │
-│    • SD Card (NOT IMPLEMENTED YET)                              │
-│      - LIDAR.CSV (high-speed, 50 Hz)                            │
-│      - TELEM.CSV (full telemetry, 2 Hz)                         │
+│  Storage (FATFS over SPI, implemented):                         │
+│    • LIDA_xxx.CSV — LIDAR + attitude + position (up to 50 Hz)   │
+│    • DATA_xxx.CSV — full telemetry snapshot (10 Hz)             │
 └─────────────────────────────────────────────────────────────────┘
                               ↓ LoRa
 ┌─────────────────────────────────────────────────────────────────┐
 │              GROUND STATION (Raspberry Pi 5)                    │
 ├─────────────────────────────────────────────────────────────────┤
 │  Hardware:                                                      │
-│    • LoRa SX1276 receiver @ 869.53 MHz                          │
+│    • LoRa SX1276 receiver @ 869.53 MHz (SPI)                    │
 │                                                                 │
-│  Real-Time GUI Software:                                        │
-│    • main.py - Application launcher                             │
-│    • gui_main_window.py - Main telemetry window                 │
-│    • data_plotter.py - Real-time plots (3 graphs)               │
-│    • satellite_3d.py - 3D STL model visualization               │
-│    • map_view.py - Interactive OSM tile map                     │
-│    • lora_data_handler.py - LoRa reception                      │
-│    • Saves flight.csv with all data                             │
+│  Real-Time GUI (Firmware/satellite_telemetry/GUI/):             │
+│    • main.py               — application launcher               │
+│    • gui_main_window.py    — main telemetry window              │
+│    • data_plotter.py       — real-time plots (3 graphs)         │
+│    • satellite_3d.py       — 3D STL model visualization         │
+│    • map_view.py           — OSM tile map                       │
+│    • lora_data_handler.py  — LoRa reception & packet parsing    │
+│    • Manual CSV export of the received telemetry                │
 └─────────────────────────────────────────────────────────────────┘
-                              ↓
+                              ↓ post-flight (SD card + ground log)
 ┌─────────────────────────────────────────────────────────────────┐
-│                POST-FLIGHT ANALYSIS SUITE                       │
+│              POST-FLIGHT ANALYSIS SUITE (3D/)                   │
 ├─────────────────────────────────────────────────────────────────┤
-│  Basic Analysis:                                                │
-│    • analyze_telemetry.py - Comprehensive flight report         │
+│  Point cloud pipeline (root of 3D/):                            │
+│    • lidar_common.py          — shared loading/cleaning/georef  │
+│    • cloudPoints.py           — 3D terrain point cloud          │
+│    • distanceDistribution.py  — LIDAR range histogram           │
+│    • generate_sample_data.py  — synthetic LIDA generator        │
 │                                                                 │
-│  Advanced Analysis:                                             │
-│    • advanced_analysis.py - 6-panel automated analysis          │
-│    • advanced_features.py - Physics-based deep analysis         │
-│                                                                 │
-│  Signal Processing:                                             │
-│    • signal_processing_tutorial.py - Educational package        │
-│    • Generates 4 Octave tutorials + Python examples             │
-│                                                                 │
-│  Point Cloud:                                                   │
-│    • merge_point_cloud.py - LIDAR + GPS fusion                  │
-│    • generate_synthetic_data.py - Test data generator           │
-│    • Generates 3D terrain map                                   │
+│  Telemetry analysis (3D/Analysis_Tools/):                       │
+│    • Basic/analyze_telemetry.py      — 10-panel dashboard       │
+│    • Advanced/advanced_analysis.py   — rotation/GPS/energy/KML  │
+│    • Advanced/advanced_features.py   — Cd, parachute, battery   │
+│    • Signal_Processing/…             — educational package      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -97,22 +96,24 @@ Complete satellite telemetry system with:
 
 ## ✨ Features
 
-### Real-Time Ground Station GUI:
-- **Real-time Data Plotting**: Visualizes vertical speed, temperature, and altitude data in real-time
-- **3D Satellite Visualization**: Shows your custom STL satellite model that rotates based on IMU data
-- **2D Map Tracking**: Fast OSM tile map — tiles fetched once, position updates are instant
-- **LoRa Communication**: Direct radio reception using SX127x LoRa module on Raspberry Pi 5
-- **Resizable Layout**: Adjustable splitters to customize view sizes
-- **Flight Phase Indicators**: Visual flags for calibration, drop, parachute deployment, and landing
-- **Battery Monitoring**: Real-time battery percentage with 12-sample moving average smoothing
-- **GPS Satellite Count**: Color-coded display of GPS fix quality
+### Real-Time Ground Station GUI
+- **Real-time data plotting**: vertical speed, temperature and altitude
+- **3D satellite visualization**: custom STL model rotating with the incoming IMU Euler angles
+- **2D map tracking**: fast OSM tile map — tiles are fetched once, position updates are instant
+- **LoRa reception**: direct radio link using an SX127x module on the Raspberry Pi 5 SPI bus
+- **Resizable layout**: adjustable splitters to customize panel sizes
+- **Flight phase indicators**: visual flags for GO FOR LAUNCH, ASCENSION, DROP and RECOVERY
+- **Battery monitoring**: real-time battery percentage with 12-sample moving-average smoothing
+- **GNSS satellite count**: color-coded fix-quality display
+- **Manual CSV export**: one-click export of the whole received dataset with a timestamped filename
 
-### Post-Flight Analysis:
-- **Comprehensive Flight Reports**: 18-panel plots with statistics
-- **Advanced Physics Analysis**: Drag coefficient, energy analysis, rotation detection
-- **Signal Processing Education**: Low-pass filtering, FFT analysis, Kalman filtering
-- **3D Point Cloud Generation**: LIDAR + GPS fusion for terrain mapping
-- **Google Earth Export**: KML files for 3D flight visualization
+### Post-Flight Analysis
+- **Comprehensive flight reports**: multi-panel dashboards with per-phase statistics
+- **Advanced physics analysis**: drag coefficient, energy budget, rotation/tumbling detection
+- **Automatic anomaly detection**: data gaps, GPS jumps, accelerometer saturation, temperature spikes
+- **Signal processing education**: low-pass filtering, FFT analysis, Kalman filtering (Python + Octave)
+- **3D point cloud generation**: LIDAR + attitude + position fusion for terrain mapping
+- **Google Earth export**: KML flight trajectory
 
 ---
 
@@ -121,23 +122,24 @@ Complete satellite telemetry system with:
 ### Transmitter (Satellite)
 | Component | Model | Interface | Purpose |
 |-----------|-------|-----------|---------|
-| MCU | STM32G431 | - | Main controller |
-| IMU | ICM-20948 | I2C3 | Orientation, acceleration |
-| Barometer | BMP581 | I2C1 | Altitude, temperature |
-| GPS | Generic GNSS | UART1 | Position, time |
-| LIDAR | LightWare SF20/LW20 | UART3 | Distance to ground |
-| LoRa | SX1276 | SPI2 | Telemetry transmission |
-| Battery Monitor | - | ADC1 | Voltage monitoring |
-| SD Card | - | SPI (NOT IMPL.) | Data logging |
+| MCU | STM32G431CBU6 | — | Main flight computer (FreeRTOS) |
+| IMU | BNO055 | I2C (DMA reads) | Orientation (Euler/quaternion), acceleration, gyro |
+| Barometer | BMP581 | I2C | Altitude, temperature |
+| GNSS | u-blox SAM-M10Q | UART | Position, MSL altitude, satellite count (10 Hz GGA) |
+| LIDAR | LightWare LW20/C | UART | Distance to ground (up to 50 Hz) |
+| LoRa | SX1276 | SPI | Telemetry downlink |
+| SD Card | MicroSD + Molex 473092651 | SPI (FATFS) | Dual-file flight logging |
+| HMI | Custom PCB + SSD1306 OLED | I2C | Pre-flight status screen, config button, addressable LEDs |
+| Battery Monitor | Voltage divider | ADC1 | 2S LiPo voltage monitoring |
 
 ### Receiver (Ground Station)
 | Component | Model | Interface | Purpose |
 |-----------|-------|-----------|---------|
-| Computer | Raspberry Pi 5 | - | Data reception & visualization |
+| Computer | Raspberry Pi 5 | — | Data reception & visualization |
 | LoRa | SX1276 | SPI | Telemetry reception |
-| Display | HDMI Monitor | - | GUI display |
+| Display | HDMI monitor | — | GUI display |
 
-**LoRa Hardware Connections (Raspberry Pi 5):**
+**LoRa wiring (Raspberry Pi 5):**
 - VCC → 3.3V / GND → GND
 - MISO → GPIO 9 / MOSI → GPIO 10 / SCK → GPIO 11
 - NSS/CS → GPIO 8 / RESET → GPIO 21
@@ -147,7 +149,7 @@ Complete satellite telemetry system with:
 
 ## 📡 Telemetry Protocol
 
-### Protocol Version: **v2.4** (17-field)
+### Protocol Version: **v2.4** (17 fields)
 
 ### Packet Types
 
@@ -162,9 +164,9 @@ CAL,3245,3245\r\n
 ```
 
 **Fields:**
-- `CAL` - Packet identifier
-- `calibration_duration_ms` - Time taken to calibrate sensors (ms)
-- `timestamp_ms` - STM32 timestamp when calibration completed (ms)
+- `CAL` — packet identifier
+- `calibration_duration_ms` — time taken to acquire the reference pressure and calibrate the sensors (ms)
+- `timestamp_ms` — STM32 tick when calibration completed (ms)
 
 ---
 
@@ -193,36 +195,35 @@ temperature,altitude,latitude,longitude,satellites,flags,timestamp_ms,battery_vo
 | 8 | pitch | ° | Pitch angle |
 | 9 | yaw | ° | Yaw angle (heading) |
 | 10 | temperature | °C | Barometer temperature |
-| 11 | altitude | m | Altitude above sea level |
-| 12 | latitude | ° | GPS latitude |
-| 13 | longitude | ° | GPS longitude |
-| 14 | satellites | count | GPS satellites locked |
-| 15 | flags | bitmask | Flight phase flags |
-| 16 | timestamp_ms | ms | STM32 timestamp |
+| 11 | altitude | m | Barometric height above the calibration reference |
+| 12 | latitude | ° | GNSS latitude |
+| 13 | longitude | ° | GNSS longitude |
+| 14 | satellites | count | GNSS satellites in the fix |
+| 15 | flags | bitmask | Flight phase flags (see below) |
+| 16 | timestamp_ms | ms | STM32 tick at packet build time |
 | 17 | battery_voltage | V | Battery voltage |
 
-**Note:** `vertical_speed` is **NOT transmitted**. The receiver calculates it from consecutive altitude readings:
-```python
-vertical_speed = (altitude_now - altitude_prev) / (time_now - time_prev)
-```
+**Notes:**
+- `vertical_speed` is **not transmitted**. The receiver derives it from consecutive altitude readings:
+  ```python
+  vertical_speed = (altitude_now - altitude_prev) / (time_now - time_prev)
+  ```
+- The GNSS altitude (`gnss_alt`) is **not part of the LoRa packet** — it is only appended to the onboard SD logs, where it provides a redundant altitude source for post-flight processing.
 
 ---
 
-### Flight Phase Flags (Bitmask)
+### Flight Phase Flags (Cumulative Bitmask)
 
-| Bit | Value | Flag | Phase |
-|-----|-------|------|-------|
-| 0 | 0x01 | GO_FOR_LAUNCH | Ready for launch |
-| 1 | 0x02 | ASCENSION | Ascending |
-| 2 | 0x04 | DROP | Dropping/falling |
-| 3 | 0x08 | RECOVERY | Recovery/landed |
+Each state ORs its own bit on top of the bits of every state already passed through, so the **highest set bit identifies the current phase**:
 
-**Examples:**
-- `flags = 0` (0b0000) → Calibrating
-- `flags = 1` (0b0001) → Ready for launch
-- `flags = 3` (0b0011) → Ready + Ascending
-- `flags = 7` (0b0111) → Ready + Ascending + Dropping
-- `flags = 15` (0b1111) → All phases (recovered)
+| Bit | Value | Flag | Cumulative value | Phase |
+|-----|-------|------|------------------|-------|
+| 0 | 0x01 | GO_FOR_LAUNCH | `1` (0b0001) | Ready on the pad |
+| 1 | 0x02 | ASCENSION | `3` (0b0011) | Ascending under the drone/rocket |
+| 2 | 0x04 | DROP | `7` (0b0111) | Released, descending |
+| 3 | 0x08 | RECOVERY | `15` (0b1111) | Landed, awaiting recovery |
+
+`flags = 0` means the CanSat is still calibrating (or in STANDBY/CONFIG).
 
 ---
 
@@ -231,109 +232,83 @@ vertical_speed = (altitude_now - altitude_prev) / (time_now - time_prev)
 | Parameter | Value | Notes |
 |-----------|-------|-------|
 | Frequency | 869.53 MHz | EU ISM band |
-| Spreading Factor | SF7 | Good range/data rate balance |
+| Spreading Factor | SF7 | Good range/data-rate trade-off |
 | Bandwidth | 125 kHz | Standard BW |
-| Coding Rate | CR4/8 | Maximum error correction |
+| Coding Rate | CR4/8 | Maximum forward error correction |
 | Sync Word | 0x12 | Private network |
 | TX Power | +17 dBm | Maximum allowed |
 | Preamble | 8 symbols | Standard |
+| CRC | Enabled | Corrupted frames discarded at the receiver |
 
-**Link Budget:**
-- **Range:** ~5-10 km (line of sight)
-- **Data Rate:** ~980 bps
-- **Packet Size:** ~140 bytes
-- **Air Time:** ~1.2 seconds per packet
+**Link Budget & Rate:**
+- **Range:** ~5–10 km line of sight (validated by outdoor range tests)
+- **Dispatch rate:** the FSM builds a telemetry snapshot every 100 ms (10 Hz) and queues it to both the LoRa task and the SD task
+- **Effective downlink rate:** bounded by packet air time at SF7/CR4/8 (~300 ms for a ~120-byte frame), i.e. a few packets per second over the air — the SD card, however, logs the full 10 Hz stream
 
 ---
 
 ## 📁 Project Structure
 
-```
-satellite_telemetry/
-│
-├── 📄 main.py                    # Application entry point
-│   └── Launches GUI, handles venv path prioritization
-│
-├── 🖼️ gui_main_window.py         # Main telemetry display window (v2.4)
-│   └── Integrates 3D view, map, plots; manages LoRa receiver lifecycle
-│   └── Flag mapping: GO_FOR_LAUNCH, ASCENSION, DROP, RECOVERY
-│
-├── 📡 lora_data_handler.py       # LoRa receiver integration (v2.4)
-│   └── SX127x hardware interface, CSV parsing (17 fields)
-│   └── Battery voltage + GPS satellite count parsing
-│   └── Labeled console output with emojis
-│
-├── 📊 data_plotter.py            # Real-time sensor data plotting (v2.4)
-│   └── Optimized PyQtGraph plots with numpy circular buffers
-│   └── Altitude-based vertical speed (no accelerometer drift!)
-│   └── Battery percentage with 12-sample moving average smoothing
-│   └── GPS satellite count display with color coding
-│
-├── 🛰️ satellite_3d.py            # 3D satellite model visualization
-│   └── STL loader with optimized OpenGL rendering and rotation
-│
-├── 🗺️ map_view.py                # Interactive map widget
-│   └── OSM tile-based map with async loading, zoom 18 detail
-│
-├── 📦 requirements.txt           # Python dependencies
-│   └── PyQt5, PyQtGraph, NumPy, PyOpenGL, numpy-stl, etc.
-│
-├── 🎨 Corps.stl                  # Satellite 3D model (user-provided)
-│   └── Custom STL file for your specific satellite design
-│
-├── 📖 README_GUI.md                  # This file
-│   └── Complete documentation and usage guide
-│
-├── 📂 SX127x/                    # LoRa library (external dependency)
-│   ├── __init__.py
-│   ├── LoRa.py                   # Base LoRa class
-│   ├── constants.py              # LoRa register constants
-│   ├── board_config.py           # Raspberry Pi GPIO configuration
-│   └── ...
-│
-├── 📂 Cansat_V1/               # STM32 firmware
-│   └── Core/
-│       ├── Src/
-│       │   ├── main.c           # Main application
-│       │   ├── bmp581.c         # Barometer driver
-│       │   ├── imu.c            # IMU driver
-│       │   ├── sx1276.c         # LoRa driver
-│       │   ├── gnss_reader.c    # GPS parser
-│       │   ├── lidar.c          # LIDAR driver
-│       │   └── cansat_core.c    # Core definitions
-│       └── Inc/
-│           ├── main.h
-│           ├── bmp581.h          # Barometer driver
-│           ├── imu.h             # IMU driver
-│           ├── sx1276.h          # LoRa driver
-│           ├── gnss_reader.h     # GPS parser
-│           ├── lidar.h           # LIDAR driver
-│           └── cansat_core.h     # Core definitions
-│   
-│
-└── 📂 Analysis_Tools/            # Post-flight analysis
-    ├── Basic/
-    │   └── analyze_telemetry.py     # Comprehensive report
-    ├── Advanced/
-    │   ├── advanced_analysis.py     # Automated suite
-    │   └── advanced_features.py     # Physics-based analysis
-    ├── Signal_Processing/
-    │   └── signal_processing_tutorial.py  # Educational package
-    └── Point_Cloud/
-        ├── generate_synthetic_data.py     # Test data generator
-        └── merge_point_cloud.py           # LIDAR + GPS fusion
-```
+Paths are given from the repository root.
 
-### File Descriptions
-
-| File | Lines | Purpose | Key Features |
-|------|-------|---------|--------------|
-| `main.py` | ~50 | Entry point | venv path fix, error handling |
-| `gui_main_window.py` | ~220 | Main window | 4-panel layout, resource cleanup |
-| `lora_data_handler.py` | ~180 | LoRa interface | SX127x config, CSV parsing, signals |
-| `data_plotter.py` | ~280 | Data plots | Numpy buffers, 3 plots, flight flags |
-| `satellite_3d.py` | ~240 | 3D rendering | STL loading, rotation, OpenGL |
-| `map_view.py` | ~320 | Map display | Tile fetching, zoom 18, Y-axis inversion |
+```
+2526_Projet2A_Cansat/
+│
+├── 📖 README.md                       # Project overview (missions, hardware, mechanics)
+├── 📖 README_GUI.md                   # This file — ground segment & data pipeline
+│
+├── 💻 Firmware/satellite_telemetry/
+│   │
+│   ├── 📂 Cansat_V1/                  # STM32CubeIDE project — CURRENT flight firmware
+│   │   ├── Core/
+│   │   │   ├── Src/
+│   │   │   │   ├── main.c             # FreeRTOS tasks, FSM, SD logging, telemetry
+│   │   │   │   ├── bmp581.c           # Barometer driver
+│   │   │   │   ├── imu.c              # BNO055 driver (DMA reads)
+│   │   │   │   ├── sx1276.c           # LoRa driver
+│   │   │   │   ├── gnss_reader.c      # NMEA parser (SAM-M10Q)
+│   │   │   │   ├── lidar.c            # LW20/C driver
+│   │   │   │   ├── hmi.c              # HMI PCB / OLED status screen
+│   │   │   │   ├── ssd1306.c          # OLED display driver
+│   │   │   │   ├── fatfs_sd.c         # Low-level SPI SD driver
+│   │   │   │   └── File_Handling_RTOS.c  # FATFS file helpers
+│   │   │   └── Inc/                   # Matching headers + cansat_core.h (FSM, thresholds)
+│   │   └── FATFS/, Middlewares/       # FATFS + FreeRTOS (CubeMX-generated)
+│   │
+│   ├── 📂 Cansat_V3/                  # Next firmware iteration (in progress)
+│   │
+│   ├── 📂 GUI/                        # Ground station application (Raspberry Pi 5)
+│   │   ├── main.py                    # Entry point (venv path prioritization)
+│   │   ├── gui_main_window.py         # Main window: 3D view + map + plots + controls
+│   │   ├── lora_data_handler.py       # SX127x interface, v2.4 packet parsing
+│   │   ├── data_plotter.py            # PyQtGraph plots, numpy circular buffers
+│   │   ├── satellite_3d.py            # OpenGL STL renderer
+│   │   ├── map_view.py                # OSM tile map (PyQtGraph)
+│   │   ├── Corps.stl                  # 3D model of the CanSat used by the viewer
+│   │   ├── requirements.txt           # Python dependencies
+│   │   └── SX127x/                    # LoRa library (external dependency)
+│   │
+│   └── 📂 Analysis_Tools/             # ⚠️ Legacy analysis scripts (superseded by 3D/)
+│
+├── 📂 3D/                             # Post-flight analysis & point cloud pipeline
+│   ├── lidar_common.py                # Shared loading / cleaning / georeferencing
+│   ├── cloudPoints.py                 # 3D terrain point cloud (main tool)
+│   ├── distanceDistribution.py        # LIDAR range histogram
+│   ├── generate_sample_data.py        # Synthetic LIDA_xxx.CSV generator
+│   ├── COMMANDES.txt                  # Full CLI reference (French)
+│   ├── requirements.txt               # pandas, numpy, scipy, plotly
+│   └── Analysis_Tools/
+│       ├── Basic/analyze_telemetry.py       # Telemetry dashboard + report
+│       ├── Advanced/advanced_analysis.py    # Rotation, GPS, energy, anomalies, KML
+│       ├── Advanced/advanced_features.py    # Cd, parachute detection, battery
+│       └── Signal_Processing/signal_processing_tutorial.py
+│
+├── 📂 Hardware/                       # KiCad projects (Mainboard V1/V2/V3, HMI) + 3D modeling
+├── 📂 IMG/                            # Pictures used by the documentation
+├── 📂 backup data cansat/             # Real SD-card datasets from field tests
+├── 📂 Reports/                        # Project reports (PDF)
+└── 📄 logs.md                         # Session-by-session work log
+```
 
 ---
 
@@ -342,17 +317,13 @@ satellite_telemetry/
 ### Prerequisites
 
 - **Raspberry Pi 5** with Raspberry Pi OS
-- **SX127x LoRa module** connected to Raspberry Pi (SPI interface)
+- **SX127x LoRa module** connected to the Raspberry Pi (SPI interface)
 - Python 3.7 or higher
 - Internet connection (for OSM map tiles on first load)
 
 ### Hardware Setup
 
-1. **Connect LoRa Module to Raspberry Pi 5**:
-   - VCC → 3.3V / GND → GND
-   - MISO → GPIO 9 / MOSI → GPIO 10 / SCK → GPIO 11
-   - NSS/CS → GPIO 8 / RESET → GPIO 21
-   - DIO0 → GPIO 22 / DIO1 → GPIO 23 / DIO2 → GPIO 24
+1. **Connect the LoRa module to the Raspberry Pi 5** (see wiring table above).
 
 2. **Enable SPI**:
    ```bash
@@ -365,10 +336,10 @@ satellite_telemetry/
 ```bash
 sudo apt-get update
 sudo apt-get install python3-pyqt5 python3-spidev
-pip install -r requirements.txt
+pip install -r Firmware/satellite_telemetry/GUI/requirements.txt
 ```
 
-> **Note**: `python3-pyqt5.qtwebengine` is NOT needed — QtWebEngine has been removed entirely.
+> **Note**: `python3-pyqt5.qtwebengine` is NOT needed — QtWebEngine has been removed entirely (see [Known Issues](#-known-issues--bug-fixes)).
 
 ---
 
@@ -377,101 +348,87 @@ pip install -r requirements.txt
 ### Running the Real-Time GUI
 
 ```bash
+cd Firmware/satellite_telemetry/GUI
 python main.py
 # or with sudo for GPIO access:
 sudo python main.py
 ```
 
-### CSV Data Format (Receiver Output)
-
-```csv
-accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,roll,pitch,yaw,temperature,altitude,latitude,longitude,satellites,flags_raw,timestamp_ms,battery_voltage,rssi,snr
-```
-
-**Exported to:** `flight.csv` (automatically saved during reception)
-
 ### Interface Overview
 
-**Top Left**: 3D STL model rotating with roll/pitch/yaw.
+**Top left**: 3D STL model rotating with roll/pitch/yaw.
 
-**Bottom Left**: OSM tile map (zoom 15, 5×5 tile grid). Tiles are fetched once at startup using 8 parallel threads and cached in memory. Position updates are instant — they only move PyQtGraph scatter/line overlay items with no tile work involved. The grid reloads only if the satellite leaves the current tile boundary. Blue polyline path + red dots per point.
+**Bottom left**: OSM tile map. Tiles are fetched once at startup using 8 parallel threads and cached in memory; position updates only move PyQtGraph overlay items, with no tile work involved. The grid reloads only if the satellite leaves the current tile boundary. Blue polyline path + red dots per fix.
 
-**Right**: Vertical speed, temperature, altitude plots + flight phase flags.
+**Right**: vertical speed, temperature and altitude plots, plus the flight phase flag panel.
 
-**Bottom**: Stop/Clear buttons, LoRa status indicator.
+**Bottom**: Stop / Clear / Export-to-CSV buttons and the LoRa status indicator.
+
+### CSV Export
+
+The received telemetry can be exported at any time with the **Export to CSV** button, which proposes a timestamped filename (`telemetry_data_YYYYMMDD_HHMMSS.csv`) and dumps every buffered field.
+
+### Early Development Version
+
+The screenshots below show an early development version of the GUI, when the ground station was still fed over a USB serial link (COM port) and used a Leaflet web map. The current version replaces the serial link with direct LoRa SPI reception and the web map with the PyQtGraph OSM tile engine.
+
+<div align="center">
+  <img src="./IMG/groundstation_gui.png" alt="Early GUI (serial link version)" width="800"><br><br>
+  <img src="./IMG/groundstation_gui_config.png" alt="Early serial port configuration dialog" width="350">
+</div>
 
 ---
 
-## 🖥️ Transmitter (STM32)
+## 🖥️ Transmitter (STM32 Flight Software)
 
-### Current Implementation Status
+> The reference flight firmware is **`Firmware/satellite_telemetry/Cansat_V1/`**. `Cansat_V3/` is the next iteration, still in progress.
+
+### Implementation Status
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| IMU Reading | ✅ Implemented | ICM-20948 via I2C3 |
-| Barometer Reading | ✅ Implemented | BMP581 via I2C1 |
-| GPS Reading | ✅ Implemented | UART1 parsing |
-| LIDAR Reading | ✅ Implemented | LightWare SF20 via UART3 |
-| Battery Monitoring | ✅ Implemented | ADC1 with voltage divider |
-| LoRa Transmission | ✅ Implemented | SX1276 at 869.53 MHz |
-| Flight State Machine | ✅ Implemented | 5 states + transitions |
-| SD Card Logging | ❌ **NOT IMPLEMENTED** | Ready for integration |
+| IMU reading | ✅ Implemented | BNO055 via I2C, 100 Hz DMA reads (Euler + quaternion + accel + gyro) |
+| Barometer reading | ✅ Implemented | BMP581 via I2C, polled at 20 Hz, thermal feed-forward compensation |
+| GNSS reading | ✅ Implemented | SAM-M10Q configured at boot for 10 Hz GGA + airborne dynamic model |
+| LIDAR reading | ✅ Implemented | LW20/C via UART, streaming up to 50 Hz |
+| Battery monitoring | ✅ Implemented | ADC1 with voltage divider |
+| LoRa transmission | ✅ Implemented | SX1276 at 869.53 MHz, v2.4 protocol |
+| Flight state machine | ✅ Implemented | 7 states with debounced transitions |
+| SD card logging | ✅ Implemented | FATFS over SPI, dual-file scheme with `f_sync()` batching |
+| HMI status screen | ✅ Implemented | SSD1306 OLED + button, SD format/erase from the CONFIG state |
 
-### Main Application Features
+### RTOS Tasks (FreeRTOS)
 
-**main.c** includes:
+The firmware follows a **unified snapshot architecture**: sensor data is gathered continuously, then packaged every 100 ms into a single `TelemetryPacket_t` dispatched simultaneously to the LoRa and SD queues (`qLoRa`, `qSDCard`, plus `qSensorEvents` for acquisition tickets).
 
-#### RTOS Tasks (FreeRTOS)
+1. **TaskFSM** — the master metronome. Runs the flight state machine, schedules sensor acquisition tickets in 100 Hz / 20 Hz / 10 Hz blocks, builds the unified telemetry snapshot at 10 Hz and drives the status LED.
+2. **TaskSensors** (high priority) — the data gatherer. Consumes acquisition tickets and hardware events to read the BNO055 (DMA), BMP581, LW20/C stream and GNSS NMEA feed.
+3. **TaskLoRa** (low priority) — the communicator. Serializes the snapshot into the v2.4 comma-separated frame and transmits it through the SX1276. Also broadcasts the startup calibration packet.
+4. **TaskSDCard** (low priority) — the data logger. Mounts the card through FATFS, opens one `DATA_xxx.CSV` and one `LIDA_xxx.CSV` per session, and batches `f_sync()` calls so the high-rate LIDAR stream never stalls the RTOS.
+5. **TaskHMI** — drives the OLED status screen (LoRa link, battery, SD state) and handles the config button.
 
-1. **TaskFSM** - Flight State Machine
-   - Priority: Normal
-   - Stack: 1KB
-   - Controls: State transitions, thresholds
-   
-2. **TaskSensors** - Sensor Data Acquisition
-   - Priority: High (sensor reading critical)
-   - Stack: 2KB
-   - Handles: IMU, Baro, GPS, LIDAR events
-   
-3. **TaskSDCard** - Data Logging
-   - Priority: Low
-   - Stack: 1KB
-   - Status: **EMPTY (NOT IMPLEMENTED)**
-   - Planned: Dual-file logging (LIDAR.CSV + TELEM.CSV)
-   
-4. **TaskLoRa** - Radio Transmission
-   - Priority: Low
-   - Stack: 2KB
-   - Handles: LoRa packet transmission
+### Flight State Machine
 
-#### Queues
+```
+OFF ──power on──▶ STANDBY ──config plugged──▶ CONFIG ──unplugged──▶ READY
+READY ──altitude > 10 m held 2 s──▶ ASCENSION
+ASCENSION ──LIDAR > 1 m & altitude > 30 m held 1 s──▶ DROP
+DROP ──altitude < 5 m & |gyro| < 30 °/s held 3 s──▶ RECOVERY (buzzer on)
+```
 
+**Thresholds** (`cansat_core.h`):
 ```c
-QueueHandle_t qLoRa;          // Telemetry packets to transmit
-QueueHandle_t qSensorEvents;  // Sensor event notifications
-QueueHandle_t qSDCard;        // NOT USED (SD card not implemented)
+#define THRESH_LIDAR_DEPLOYED_M         1.0f   // Min LIDAR distance to confirm deployment out of the box
+#define THRESH_ALTITUDE_DEPLOY_MIN_M    30.0f  // Min altitude for DROP detection (release nominally at 120 m)
+#define THRESH_ALTITUDE_ASCENSION_M     10.0f  // Min altitude to trigger ASCENSION
+#define THRESH_ASCENSION_HOLD_MS        2000   // Condition must hold before READY → ASCENSION
+#define THRESH_DROP_HOLD_MS             1000   // Condition must hold before ASCENSION → DROP
+#define THRESH_ALTITUDE_LANDING_M       5.0f   // Max altitude to trigger RECOVERY
+#define THRESH_GYRO_STILL_DPS           30.0f  // Max |gyro| per axis to consider the CanSat motionless
+#define THRESH_LANDING_HOLD_MS          3000   // Condition must hold before DROP → RECOVERY
 ```
 
-#### Flight State Machine
-
-```
-CALIBRATING (0)
-    ↓ (sensors stable)
-READY (1) - GO_FOR_LAUNCH
-    ↓ (altitude > 400m OR LIDAR < 2m)
-ASCENSION (2)
-    ↓ (LIDAR > 25m)
-DROP (3)
-    ↓ (stable on ground)
-RECOVERY (4)
-```
-
-**Thresholds:**
-```c
-#define THRESH_ALTITUDE_LAUNCH_M     400.0f  // Launch altitude
-#define THRESH_LIDAR_IN_BOX_M        2.0f    // LIDAR in box threshold
-#define THRESH_LIDAR_DEPLOYED_M      25.0f   // Deployment threshold
-```
+Transitions are **debounced**: each condition must hold for its full window at 20 Hz, with a bounded number of outlier samples tolerated (e.g. 4 outliers out of 40 samples for the ascension window), which makes the FSM robust to single noisy readings.
 
 ### Battery Monitoring
 
@@ -480,45 +437,37 @@ RECOVERY (4)
 Battery (7.4V) → R1 (20kΩ) → ADC1 ← R2 (10kΩ) → GND
 ```
 
-**Voltage Divider Ratio:** 3.0× (accounts for 10kΩ/(20kΩ+10kΩ))
+**Voltage divider ratio:** 3.0× (10 kΩ / (20 kΩ + 10 kΩ))
 
-**ADC Reading:**
+**ADC reading:**
 ```c
 HAL_ADC_Start(&hadc1);
 if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
     uint32_t raw_adc = HAL_ADC_GetValue(&hadc1);
     vbat = ((float)raw_adc / 4095.0f) * 3.3f * 3.0f * 1.025f;
-    // 1.025 is calibration factor
+    // 1.025 is an empirical calibration factor
 }
 HAL_ADC_Stop(&hadc1);
 ```
 
-### SD Card Logging (Future Implementation)
+### SD Card Logging (Dual-File Scheme)
 
-**Planned Dual-File System:**
+At boot, the firmware scans the card for existing sessions and opens the next free pair of files (`DATA_%03d.CSV` / `LIDA_%03d.CSV`). Both files stay open for the whole flight; `f_sync()` is called after each write burst so the data is committed to the flash even in case of a hard landing. A full format/erase can be triggered from the CONFIG state through the HMI button.
 
-#### File 1: LIDAR.CSV (High-Speed, ~50 Hz)
+#### File 1: LIDA_xxx.CSV (high rate, up to 50 Hz — feeds the point cloud pipeline)
 ```csv
-timestamp_ms,distance_m,roll,pitch,yaw,latitude,longitude,altitude,flags
-3501,12.34,5.2,2.1,45.3,48.8566,2.3522,385.2,3
-3502,12.35,5.2,2.1,45.3,48.8566,2.3522,385.2,3
-...
+tx_timestamp_ms,distance,roll,pitch,yaw,quat_w,quat_x,quat_y,quat_z,accel_x,accel_y,accel_z,latitude,longitude,altitude,flags_raw,gnss_alt
 ```
 
-#### File 2: TELEM.CSV (Full Telemetry, ~2 Hz)
+#### File 2: DATA_xxx.CSV (full telemetry, 10 Hz — feeds the analysis dashboard)
 ```csv
-timestamp_ms,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,roll,pitch,yaw,temperature,altitude,latitude,longitude,satellites,flags_raw,battery_voltage
-3500,0.12,0.15,9.81,1.2,0.5,0.3,5.2,2.1,45.3,22.5,385.2,48.8566,2.3522,8,3,7.54
-...
+tx_timestamp_ms,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,roll,pitch,yaw,temperature,altitude,latitude,longitude,satellites,flags_raw,battery_voltage,gnss_alt
 ```
 
-**Benefits:**
-- No wasted space (no zeros)
-- LIDAR at full rate
-- Easy post-processing
-- Small file sizes (~225 KB per 60s flight)
-
-**See:** `main_with_lidar_logging.c` for implementation template
+**Notes:**
+- `gnss_alt` (GNSS MSL altitude) was appended last so that files from older firmware remain readable — the analysis tools detect it dynamically.
+- Quaternions in `LIDA_xxx.CSV` give the point cloud pipeline a gimbal-lock-free attitude source; rows logged before the BNO055 fusion converges contain a null quaternion and are discarded during cleaning.
+- Real flight/test datasets recorded with this scheme are archived in `backup data cansat/`.
 
 ---
 
@@ -529,27 +478,19 @@ timestamp_ms,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,roll,pitch,yaw,tempera
 #### 1. main.py
 **Application entry point**
 
-**Features:**
-- venv path prioritization (fixes PyQtGraph version conflicts)
+- venv path prioritization (fixes PyQtGraph version conflicts, see [Known Issues](#-known-issues--bug-fixes))
 - Error handling and graceful shutdown
 - Resource cleanup on exit
-
-**Run:**
-```bash
-python main.py
-```
 
 ---
 
 #### 2. gui_main_window.py
-**Main telemetry display window (v2.4)**
+**Main telemetry display window**
 
-**Features:**
-- 4-panel resizable layout
-- Integrates 3D satellite view, map, and plots
+- 4-panel resizable layout (3D view, map, plots, controls)
 - LoRa receiver lifecycle management
-- Flight phase flag mapping
-- CSV data export
+- Flight phase flag mapping to the plot panel
+- Manual CSV export with timestamped filename
 - Resource cleanup on close
 
 **Layout:**
@@ -561,31 +502,22 @@ python main.py
 ├─────────────────────────────────────┤
 │  Map View      │  Controls          │
 │  (OSM tiles)   │  (Stop/Clear/      │
-│                │   Status)          │
+│                │   Export/Status)   │
 └─────────────────────────────────────┘
 ```
 
 ---
 
 #### 3. lora_data_handler.py
-**LoRa receiver integration (v2.4)**
+**LoRa receiver integration**
 
-**Features:**
-- SX127x hardware interface
+- SX127x hardware interface (frequency, SF, BW, CR, sync word matching the transmitter)
 - Packet type detection (CAL vs telemetry)
-- 17-field CSV parsing
-- Battery voltage monitoring
-- GPS satellite count tracking
-- RSSI/SNR monitoring
-- Qt signal emission for GUI
-- Labeled console output with emojis
-
-**Configuration:**
-- Frequency: 869.53 MHz
-- Spreading Factor: SF7
-- Bandwidth: 125 kHz
-- Coding Rate: CR4/8
-- Sync Word: 0x12
+- 17-field v2.4 packet parsing, with backwards compatibility down to the 14-field v2.1 format
+- GNSS coordinate sanity check (out-of-range lat/lon rejected)
+- Battery voltage and satellite count extraction
+- RSSI / SNR / frequency-error monitoring
+- Qt signal emission towards the GUI thread
 
 **Usage:**
 ```python
@@ -599,165 +531,117 @@ receiver.configure_and_start()
 ---
 
 #### 4. data_plotter.py
-**Real-time sensor data plotting (v2.4)**
+**Real-time sensor data plotting**
 
-**Features:**
-- Optimized PyQtGraph plots with numpy circular buffers (10,000 points)
+- Optimized PyQtGraph plots backed by numpy circular buffers (10,000 points)
 - 3 real-time plots:
-  1. **Vertical Speed** - Calculated from altitude deltas (m/s)
-  2. **Temperature** - Barometer temperature (°C)
-  3. **Altitude** - Above sea level (m)
-- Flight phase color-coded backgrounds:
-  - Gray: CALIBRATION
-  - Blue: GO_FOR_LAUNCH
-  - Green: ASCENSION
-  - Red: DROP
-  - Orange: RECOVERY
-- Battery percentage with 12-sample moving average smoothing
-- GPS satellite count display with color coding
-- Auto-scaling axes
-- Grid lines for readability
-
-**Performance:**
-- Update rate: Real-time (as packets arrive)
-- Buffer size: 10,000 points
-- Circular buffer prevents memory overflow
+  1. **Vertical speed** — derived from altitude deltas (no accelerometer drift)
+  2. **Temperature** — barometer temperature (°C)
+  3. **Altitude** — barometric height (m)
+- Flight phase panel driven by the telemetry bitmask (GO FOR LAUNCH / ASCENSION / DROP / RECOVERY)
+- Battery percentage with 12-sample moving-average smoothing
+- GNSS satellite count with color coding
+- Auto-scaling axes and grid lines
+- CSV export of the full buffered dataset
 
 ---
 
 #### 5. satellite_3d.py
 **3D satellite model visualization**
 
-**Features:**
-- STL file loader (reads `Corps.stl`)
-- Optimized OpenGL rendering
-- Real-time rotation based on IMU data:
-  - Roll (X-axis)
-  - Pitch (Y-axis)
-  - Yaw (Z-axis)
-- Smooth rotation interpolation
-- Lighting and shading
-- Perspective camera
-
-**Supported formats:**
-- Binary STL
-- ASCII STL
+- STL loader (binary and ASCII) reading `Corps.stl`
+- Optimized OpenGL rendering with lighting and perspective camera
+- Real-time rotation from the incoming roll/pitch/yaw angles
 
 ---
 
 #### 6. map_view.py
 **Interactive map widget with OSM tiles**
 
-**Features:**
-- OpenStreetMap tile-based map
-- Async tile loading with ThreadPoolExecutor (8 workers)
-- Zoom level 18 detail
-- 7×7 tile grid (auto-expands as satellite moves)
-- In-memory tile caching
-- Real-time GPS tracking:
-  - Blue polyline path
-  - Red dots per position
-  - Red marker at current position
-- Instant position updates (no tile re-fetching)
-- Y-axis inversion fix for correct tile rendering
-- Lazy tile loading (only fetches when needed)
+- OpenStreetMap tile map rendered with PyQtGraph `ImageItem`s
+- Async tile loading with a `ThreadPoolExecutor` (8 workers), in-memory cache
+- Tile grid pre-fetched at startup and lazily expanded when the satellite leaves the boundary
+- Real-time GNSS tracking: blue polyline path, red dots per fix, marker at the current position
+- Position updates are O(1) `setData` calls — zero network or compositing work
 
 **Performance:**
-- First load: ~2-3 seconds (25 tiles fetched)
-- Position updates: <1ms (zero network work)
-- Tile cache: Permanent for session
-
-**Map Controls:**
-- Auto-centering on satellite position
-- Pan viewport on GPS update
-- Grid reloads only when satellite leaves boundary
+- First load: ~2–3 seconds (tile grid fetch)
+- Position updates: <1 ms
+- Tile cache: kept for the whole session
 
 ---
 
-## 📊 Data Analysis Tools
+## 📊 Post-Flight Telemetry Analysis
+
+The analysis suite lives in **`3D/Analysis_Tools/`** and operates on the onboard `DATA_xxx.CSV` files (it shares the schema definitions of `3D/lidar_common.py`, so it automatically follows the firmware CSV header). A full CLI reference is kept in [`3D/COMMANDES.txt`](./3D/COMMANDES.txt).
 
 ### Quick Reference
 
-| Tool | Purpose | Input | Output | Runtime |
-|------|---------|-------|--------|---------|
-| analyze_telemetry.py | Comprehensive flight report | flight.csv | 18 plots + stats | ~10s |
-| advanced_analysis.py | Automated 6-panel analysis | flight.csv | 6 analyses + folder | ~15s |
-| advanced_features.py | Physics-based deep dive | flight.csv | 5 advanced analyses | ~20s |
-| signal_processing_tutorial.py | Educational package | flight.csv | Python + 4 Octave scripts | ~5s |
-| merge_point_cloud.py | 3D point cloud generator | LIDAR.CSV + TELEM.CSV | 3D terrain map | ~30s |
-| generate_synthetic_data.py | Test data generator | - | LIDAR.CSV + TELEM.CSV | ~2s |
+| Tool | Purpose | Input | Output |
+|------|---------|-------|--------|
+| `Basic/analyze_telemetry.py` | Flight dashboard + report | DATA_xxx.CSV | 10-panel PNG + text report |
+| `Advanced/advanced_analysis.py` | Rotation, GPS, energy, anomalies | DATA_xxx.CSV | 3 PNG + KML + report |
+| `Advanced/advanced_features.py` | Physics: Cd, parachute, battery | DATA_xxx.CSV | 3 PNG analyses |
+| `Signal_Processing/signal_processing_tutorial.py` | Educational package | flight CSV (legacy schema) | Python plots + 4 Octave scripts |
+
+All commands below are run from the `3D/` directory.
 
 ---
 
-### 1. analyze_telemetry.py
+### 1. analyze_telemetry.py — Flight Dashboard
 
-**Basic flight analysis with comprehensive reporting**
+Produces a 10-subplot dashboard (accelerometer, gyroscope, orientation, temperature, altitude, vertical speed, latitude, longitude, satellites, battery), each with colored bands per flight phase, plus a text report (overview, altitude, speed, GPS, battery, temperature and per-phase durations).
 
-#### Features:
-- ✅ 18 time-series plots (one per field)
-- ✅ Flight phase color-coded backgrounds
-- ✅ Automatic statistics calculation
-- ✅ Text report generation
-- ✅ Windows-compatible (UTF-8 encoding)
-
-#### Usage:
 ```bash
-python analyze_telemetry.py flight.csv output_folder/
+python Analysis_Tools\Basic\analyze_telemetry.py DATA_001.CSV                       # interactive display
+python Analysis_Tools\Basic\analyze_telemetry.py DATA_001.CSV --output ./report     # save PNG + report
+python Analysis_Tools\Basic\analyze_telemetry.py DATA_001.CSV --plots altitude,battery
+python Analysis_Tools\Basic\analyze_telemetry.py DATA_001.CSV --list-plots          # list available plot keys
 ```
 
-#### Output:
-```
-output_folder/
-├── all_fields_plot.png          # 18-panel comprehensive plot
-└── flight_analysis_report.txt   # Statistics summary
-```
+**Output:** `DATA_001_analysis.png` + `DATA_001_report.txt`
 
 ---
 
-### 2. advanced_analysis.py
+### 2. advanced_analysis.py — Rotation, GPS, Energy, Anomalies, KML
 
-**Automated comprehensive analysis suite**
-
-#### Features:
-- ✅ 6 different analyses run automatically
-- ✅ All outputs to single folder
-- ✅ Publication-ready plots
-- ✅ KML export for Google Earth
-
-#### Usage:
 ```bash
-python advanced_analysis.py flight.csv
+python Analysis_Tools\Advanced\advanced_analysis.py DATA_001.CSV [--output ./out]
 ```
 
-#### Output:
+**Output:**
 ```
-advanced_analysis_folder/
-├── 1_rotation_analysis.png      # Gyroscope magnitude + tumbling detection
-├── 2_gps_trajectory.png         # 2D map + displacement calculation
-├── 3_signal_quality.png         # RSSI/SNR vs altitude correlation
-├── 4_anomaly_detection.txt      # Gap detection, GPS jumps, sensor issues
-├── 5_energy_analysis.png        # Kinetic/potential energy over time
-└── 6_google_earth.kml           # Import to Google Earth
+rotation_analysis.png    # Gyro X/Y/Z + rotation magnitude (tumbling detection)
+gps_trajectory.png       # Top view + altitude vs horizontal distance (skipped if no fix)
+energy_analysis.png      # Potential + kinetic + total energy over time
+flight_trajectory.kml    # Google Earth export (skipped if no fix)
+analysis_report.txt      # Statistics + detected anomalies
 ```
+
+**Automatic anomaly detection:**
+- Data gaps > 3× the median sample interval
+- GPS jumps > ~110 m between consecutive rows
+- Accelerometer saturation > 15 m/s²
+- Temperature spikes > 5 °C between consecutive rows
 
 ---
 
-### 3. advanced_features.py
+### 3. advanced_features.py — Physics-Based Analysis
 
-**Physics-based deep analysis**
-
-#### Features:
-- ✅ 5 advanced analyses
-- ✅ Animated flight replay (GIF)
-- ✅ 3D orientation visualization
-- ✅ Drag coefficient calculation
-- ✅ Parachute deployment detection
-- ✅ Power consumption analysis
-
-#### Usage:
 ```bash
-python advanced_features.py flight.csv
+python Analysis_Tools\Advanced\advanced_features.py DATA_001.CSV --mass 0.35 --area 0.008 [--output ./out]
 ```
+
+**Output:**
+```
+drag_coefficient.png      # DROP-phase altitude, vertical speed, speed vs altitude, Cd figures
+parachute_deployment.png  # Deployment instant detection (altitude, v_speed, vertical accel)
+power_consumption.png     # Battery voltage + estimated remaining capacity + per-phase summary
+```
+
+**Method notes:**
+- Drag coefficient: `Cd = 2mg / (ρ · v_terminal² · A)` — pass the real mass (`--mass`, kg) and cross-section (`--area`, m²)
+- Parachute deployment is detected as the maximum upward jerk in vertical acceleration
 
 ---
 
@@ -765,162 +649,171 @@ python advanced_features.py flight.csv
 
 ### signal_processing_tutorial.py
 
-**Educational package teaching signal processing with real flight data**
+**Educational package teaching signal processing with real flight data.**
 
-#### What it Creates:
+> ⚠️ This script still expects the legacy ground-station schema with a `timestamp` column in seconds; it is not directly compatible with the onboard `DATA_xxx.CSV` files (`tx_timestamp_ms`). It is kept as a pedagogical reference.
 
+```bash
+python Analysis_Tools\Signal_Processing\signal_processing_tutorial.py flight.csv [output_folder]
+```
+
+**Output:**
 ```
 signal_processing_output/
-├── README.txt                          # Getting started guide
-├── telemetry_data.mat                  # MATLAB/Octave format (21 fields)
-├── python_filtering_demo.png           # Low-pass filter example
-├── python_fft_demo.png                 # FFT analysis example
-├── octave_tutorial_1_basics.m          # Loading & plotting
-├── octave_tutorial_2_filtering.m       # Filter design
-├── octave_tutorial_3_fft.m             # Frequency analysis
-└── octave_tutorial_4_kalman.m          # Kalman filter
+├── 1_lowpass_temperature.png       # Low-pass filter on temperature
+├── 1_lowpass_gps.png               # Low-pass filter on GPS
+├── 2_fft_gyroscope.png             # Gyroscope frequency analysis
+├── 2_fft_accelerometer.png         # Accelerometer frequency analysis
+├── telemetry_data.mat              # MATLAB/Octave export
+├── octave_tutorial_1_basics.m      # Loading & plotting
+├── octave_tutorial_2_filtering.m   # Filter design
+├── octave_tutorial_3_fft.m         # Frequency analysis
+├── octave_tutorial_4_kalman.m      # Kalman filter
+└── README_OCTAVE.txt               # Octave instructions
 ```
 
-#### Usage:
-```bash
-python signal_processing_tutorial.py flight.csv
-```
+**Key concepts covered:**
 
-#### Key Concepts Taught:
-
-**Low-Pass Filtering:**
-- Why? Remove high-frequency noise (vibrations, ADC jitter)
-- How? Keep signals below cutoff, attenuate above
-- When? Temperature smoothing, GPS cleaning
-
-**FFT Analysis:**
-- Why? Reveal hidden patterns in data
-- How? Decompose signal into frequency components
-- When? Finding rotation rates, vibration frequencies
-
-**Kalman Filtering:**
-- Why? Optimal fusion of noisy measurements with physics model
-- How? Predict using model, correct using measurements
-- When? GPS smoothing, sensor fusion
+- **Low-pass filtering** — removing high-frequency noise (vibrations, ADC jitter) from temperature or GPS tracks
+- **FFT analysis** — extracting spin rates and vibration frequencies from the gyro/accelerometer
+- **Kalman filtering** — optimal fusion of noisy measurements with a physics model (GPS smoothing, sensor fusion)
 
 ---
 
-## 🗺️ LIDAR Point Cloud Processing
+## 🗺️ 3D LIDAR Point Cloud Processing
 
-### System Overview
+This is the heart of **Mission 3 (ground study)**: as the CanSat descends, the helicoidal body induces a spin, so the LW20/C laser sweeps the terrain in a spiral pattern. Post-flight, each range sample is georeferenced by fusing it with the attitude and position logged in `LIDA_xxx.CSV`, producing a 3D point cloud of the overflown terrain.
 
-Fuses GPS position with LIDAR distance measurements to create 3D terrain map.
+The pipeline lives at the root of **`3D/`**. A full CLI reference (in French) is kept in [`3D/COMMANDES.txt`](./3D/COMMANDES.txt).
 
-**Physics:**
+> The earlier prototype (`Firmware/satellite_telemetry/Analysis_Tools/Point_Cloud/`: `merge_point_cloud.py`, `generate_synthetic_data.py`) is **legacy** and superseded by this pipeline.
+
+### Georeferencing Model
+
 ```
-Ground_Point = Satellite_Position + (LIDAR_Distance × Direction_Vector)
+Ground_Point = CanSat_Position + LIDAR_Distance × R(attitude) · boresight
 
 Where:
-  Satellite_Position = (latitude, longitude, altitude) from GPS
-  Direction_Vector = calculated from (roll, pitch, yaw) using rotation matrices
-  LIDAR_Distance = distance measurement from LIDAR sensor
+  CanSat_Position = local ENU coordinates from (latitude, longitude, altitude)
+  R(attitude)     = body→world rotation from the logged quaternion
+                    (Euler-angle fallback for older, quat-less logs)
+  boresight       = LIDAR beam direction in the body frame (default: lidar_mount)
 ```
 
----
+### Processing Steps (`lidar_common.py`)
 
-### 1. generate_synthetic_data.py
+1. **Loading** — reads `LIDA_xxx.CSV`, detecting the schema dynamically (quaternion columns and `gnss_alt` are optional, so older logs stay compatible).
+2. **Cleaning** — drops NaNs, samples outside the sensor's rated range gate (0.2–100 m by default) and rows with a null quaternion (logged before the BNO055 fusion converged).
+3. **Phase filtering** — the cumulative `flags_raw` bitmask is decoded and, by default, only **DROP**-phase samples are kept.
+4. **SLERP interpolation** — IMU attitude arrives in DMA bursts at a lower rate than the 50 Hz LIDAR stream; orientations are spherically interpolated (SLERP) between bursts so every range sample gets a smooth attitude estimate.
+5. **Georeferencing** — lat/lon are projected to local metric ENU coordinates around the first fix; the vertical translation uses the barometric altitude by default, or the GNSS altitude with `--alt-source gnss`.
 
-**Creates realistic test data for development**
+### 1. cloudPoints.py — 3D Point Cloud (main tool)
 
-#### Usage:
 ```bash
-python generate_synthetic_data.py
+python cloudPoints.py -i LIDA_001.CSV                          # default: DROP phase, colored by distance
+python cloudPoints.py -i LIDA_001.CSV --color-by time          # color by elapsed time
+python cloudPoints.py -i LIDA_001.CSV --alt-source gnss        # GNSS altitude for the vertical axis
+python cloudPoints.py -i LIDA_001.CSV --ignore-gps             # noisy fix: keep only the altitude translation
+python cloudPoints.py -i LIDA_001.CSV --ignore-gps --ignore-baro  # rotation-only cloud
+python cloudPoints.py -i LIDA_001.CSV --output-html cloud.html --export-xyz points.xyz --no-show
 ```
 
-#### Output:
-```
-LIDAR.CSV       231 KB   3000 readings @ 50 Hz
-TELEM.CSV       18 KB    120 packets @ 2 Hz
-```
+**Main options:**
 
-#### Scenario Simulated:
-```
-0-5s:    Calibration (ground, 400m altitude)
-5-15s:   Go for launch (waiting)
-15-35s:  Ascension to 500m (~5 m/s climb)
-35-60s:  Drop with tumbling (terminal velocity ~15 m/s)
-60s+:    Recovery/landing
-```
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--phases` | `drop` | Flight phase(s) to keep; pass nothing to keep all |
+| `--min-range` / `--max-range` | 0.2 / 100 m | LW20/C rated range gate |
+| `--boresight` | `lidar_mount` | Beam direction in the body frame (`forward`, `down`, …) |
+| `--color-by` | `distance` | `distance`, `time`, or any CSV column (e.g. `altitude`) |
+| `--alt-source` | `baro` | Vertical translation source: `baro` or `gnss` (newer logs) |
+| `--ignore-gps` / `--ignore-baro` | off | Disable the horizontal / vertical translation |
+| `--no-slerp` | off | Use raw IMU snapshots instead of SLERP interpolation |
+| `--no-trajectory` | off | Hide the CanSat descent trajectory overlay |
+| `--output-html` / `--export-xyz` | — | Save the interactive Plotly figure / export a plain `x y z` file |
 
----
+The interactive Plotly view shows the georeferenced point cloud together with the CanSat trajectory, and prints the reference point and per-quartile distance statistics.
 
-### 2. merge_point_cloud.py
+### 2. distanceDistribution.py — Range Histogram
 
-**Merges LIDAR + Telemetry into 3D point cloud**
+Quick sanity check of a flight log before building the cloud: histogram + box plot of the measured distances, filterable by phase.
 
-#### Usage:
 ```bash
-python merge_point_cloud.py LIDAR.CSV TELEM.CSV
+python distanceDistribution.py -i LIDA_001.CSV --phases drop [--nbins 100] [--output-html dist.html]
 ```
 
-#### Output:
-```
-point_cloud.csv                     # Full merged dataset
-point_cloud_XYZ.txt                 # For CloudCompare import
-point_cloud_visualization.png       # 6-panel plot
+### 3. generate_sample_data.py — Synthetic Test Data
+
+Generates a realistic synthetic `LIDA_xxx.CSV` (pad → ascension → tumbling drop → recovery) for developing and testing the pipeline without a flight.
+
+```bash
+python generate_sample_data.py --output LIDA_test.csv --seed 42
+python cloudPoints.py -i LIDA_test.csv --phases drop
 ```
 
-#### CloudCompare Workflow:
+### CloudCompare Workflow
 
-**1. Import Point Cloud:**
-```
-File → Open → point_cloud_XYZ.txt
-Format: ASCII (space-separated)
-Columns: X=longitude, Y=latitude, Z=altitude
-```
+The `.xyz` export can be post-processed in [CloudCompare](https://www.danielgm.net/cc/) (free, open source):
 
-**2. Colorize by Altitude:**
-```
-Edit → Colors → Height Ramp
-Choose color scheme (e.g., terrain)
-```
+1. **Import**: `File → Open → points.xyz` (ASCII, space-separated, X/Y/Z columns)
+2. **Colorize by height**: `Edit → Colors → Height Ramp`
+3. **Export**: `.las`/`.laz` (LiDAR standard), `.ply`, `.obj`
 
-**3. Export:**
-```
-File → Save As
-Formats: .las, .laz (LiDAR standard), .ply, .obj
+### Typical Post-Flight Workflow
+
+```bash
+# 1. Sanity-check the LIDAR ranges
+python distanceDistribution.py -i LIDA_001.CSV --phases drop
+
+# 2. Build the point cloud (default: DROP phase, colored by distance)
+python cloudPoints.py -i LIDA_001.CSV
+
+# 3. Inspect the temporal structure of the spiral scan
+python cloudPoints.py -i LIDA_001.CSV --color-by time
+
+# 4. If the GNSS fix is noisy, fall back to altitude-only translation
+python cloudPoints.py -i LIDA_001.CSV --ignore-gps
+
+# 5. Telemetry dashboard and advanced analyses on the matching DATA file
+python Analysis_Tools\Basic\analyze_telemetry.py DATA_001.CSV --output ./out
+python Analysis_Tools\Advanced\advanced_analysis.py DATA_001.CSV --output ./out
+python Analysis_Tools\Advanced\advanced_features.py DATA_001.CSV --mass 0.35 --area 0.008
 ```
 
 ---
 
 ## 🔧 Troubleshooting
 
-### LoRa Module Not Detected
-- Verify SPI: `lsmod | grep spi`
-- Check GPIO connections
-- Try: `sudo python main.py`
+### LoRa module not detected
+- Verify SPI is enabled: `lsmod | grep spi`
+- Check the GPIO wiring
+- Try running with elevated privileges: `sudo python main.py`
 
 ### Map tiles slow to appear on first load
-- This is normal — 25 tiles are fetched on startup
-- After that, updates are instant
-- Subsequent runs reuse the in-memory cache for the session
+- This is normal — the tile grid is fetched at startup
+- After that, position updates are instant
+- The in-memory cache is reused for the whole session
 
 ### Invalid GPS coordinates
-- Values outside lat [-90,90] / lon [-180,180] are rejected
-- This is a transmitter calibration issue, not a software bug
-- Check GPS antenna and sky view
+- Values outside lat [−90, 90] / lon [−180, 180] are rejected by the parser
+- This indicates a transmitter-side GNSS issue, not a ground station bug
+- Check the antenna and sky view
 
-### GPS: No lock
-- Clear sky view required
-- Wait 2-3 minutes for cold start
-- Check antenna connected
-- Verify UART baud rate: 9600 or 115200
+### GNSS: no fix
+- A clear sky view is required
+- Allow 2–3 minutes for a cold start (outdoor performance is significantly better than indoor)
+- Check the antenna connection and the UART baud rate
 
-### LIDAR: No data
-- Check UART3 baud: 115200
-- Stream mode enabled: `Lidar_RequestStream()`
-- Use `Lidar_DirectDebug()` to verify
+### LIDAR: no data
+- Check the UART baud rate (115200)
+- Make sure streaming is active — the firmware re-arms it (`Lidar_ForceStream()`) when entering READY if no data arrived recently
+- ⚠️ Do **not** send stray characters to a streaming LW20: they are interpreted as menu navigation and silently switch the streamed variable, which kills the `LIDA_xxx.CSV` log
 
-### Analysis: Script crashes
-- Check Python dependencies installed
-- Verify CSV file not corrupted
-- Ensure correct column names
-- Check for empty data
+### Analysis: script crashes
+- Check that the Python dependencies are installed (`3D/requirements.txt`)
+- Verify the CSV file is not corrupted and the header matches the expected schema
+- Check for empty data after phase filtering (e.g. no DROP samples in a bench test)
 
 ---
 
@@ -929,7 +822,7 @@ Formats: .las, .laz (LiDAR standard), .ply, .obj
 ### Fix 1 — PyQtGraph `drawLines` TypeError (`main.py`)
 **Symptom**: `TypeError: arguments did not match any overloaded call: drawLines(...)`
 
-**Cause**: System pyqtgraph 0.13.1 being loaded instead of venv's 0.14.0.
+**Cause**: system pyqtgraph 0.13.1 being loaded instead of the venv's 0.14.0.
 
 **Fix**: `main.py` inserts the venv's site-packages at the front of `sys.path` before any imports.
 
@@ -938,30 +831,30 @@ Formats: .las, .laz (LiDAR standard), .ply, .obj
 ### Fix 2 — QtWebEngine Chromium crash → removed entirely (`map_view.py`)
 **Symptom**: `FATAL: page_allocator_internals_posix.h(169)] Check failed` / `Trace/breakpoint trap`
 
-**Cause**: Chromium renderer incompatible with Raspberry Pi 5 ARM kernel memory allocator. No flag combination (`--no-sandbox`, `--disable-gpu`, `--single-process`) resolved it.
+**Cause**: the Chromium renderer is incompatible with the Raspberry Pi 5 ARM kernel memory allocator. No flag combination (`--no-sandbox`, `--disable-gpu`, `--single-process`) resolved it.
 
-**Fix**: QtWebEngine removed entirely. Map reimplemented in PyQtGraph with urllib tile fetching.
+**Fix**: QtWebEngine removed entirely. The map was reimplemented in PyQtGraph with urllib tile fetching.
 
 ---
 
 ### Fix 3 — Map too slow to update (`map_view.py`)
-**Symptom**: Map position updates were visibly laggy.
+**Symptom**: map position updates were visibly laggy.
 
-**Cause**: Tiles were being fetched and composited on every `update_position()` call.
+**Cause**: tiles were being fetched and composited on every `update_position()` call.
 
-**Fix**: Tile loading and overlay updates are now fully decoupled:
+**Fix**: tile loading and overlay updates are now fully decoupled:
 - `_load_tiles()` runs once at startup in a `ThreadPoolExecutor` with 8 workers
-- `update_position()` only calls `_redraw_overlays()` which moves PyQtGraph items — zero network or compositing work
+- `update_position()` only calls `_redraw_overlays()`, which moves PyQtGraph items — zero network or compositing work
 - Tiles are cached in memory; the grid only reloads when the satellite leaves its boundary
 
 ---
 
 ### Fix 4 — Y-axis tile inversion (`map_view.py`)
-**Symptom**: Map tiles displayed upside-down.
+**Symptom**: map tiles displayed upside-down.
 
-**Cause**: OSM uses TMS tile coordinates (Y increases southward), but PyQtGraph ImageItem expects Y increasing upward.
+**Cause**: OSM uses tile coordinates with Y increasing southward, but the PyQtGraph ImageItem expects Y increasing upward.
 
-**Fix**: Apply Y-axis inversion when positioning ImageItems:
+**Fix**: apply a Y-axis inversion when positioning the ImageItems:
 ```python
 tile_y_inverted = (2**zoom - 1) - tile_y
 ```
@@ -969,38 +862,28 @@ tile_y_inverted = (2**zoom - 1) - tile_y
 ---
 
 ### Fix 5 — Map slow to rebuild on GPS update (`map_view.py`)
-**Symptom**: Map was slow to respond to incoming GPS positions.
+**Symptom**: the map was slow to respond to incoming GPS positions.
 
-**Cause**: Previous implementation rebuilt a numpy canvas on every GPS update — re-blitting all visible tiles into a single array each time.
+**Cause**: the previous implementation rebuilt a numpy canvas on every GPS update — re-blitting all visible tiles into a single array each time.
 
-**Fix**: Tiles are now permanent `pg.ImageItem` objects placed once at fixed world coordinates and never moved or rebuilt. Each GPS update does only three O(1) `setData` calls (polyline, dots, marker) and a viewport pan — zero tile work. A 7×7 tile grid is pre-fetched asynchronously at startup and lazily expanded as the satellite moves.
+**Fix**: tiles are now permanent `pg.ImageItem` objects placed once at fixed world coordinates and never moved or rebuilt. Each GPS update performs only three O(1) `setData` calls (polyline, dots, marker) and a viewport pan — zero tile work. The tile grid is pre-fetched asynchronously at startup and lazily expanded as the satellite moves.
 
 ---
 
 ## 📊 Performance Metrics
 
-### System Performance
-
 | Metric | Value | Notes |
 |--------|-------|-------|
-| Telemetry Rate | ~2 Hz | Limited by LoRa air time |
-| LIDAR Rate | ~50 Hz | (Future, on SD card) |
-| LoRa Range | 5-10 km | Line of sight |
-| Packet Loss | <5% | Typical in good conditions |
-| Battery Life | ~2 hours | Depends on usage |
-| SD Card Storage | ~4400 flights | 1 GB card, 60s flights |
-| GUI Update Rate | Real-time | <50ms latency |
-| Map Tile Load | ~2-3 seconds | First load only |
-| Map Update | <1ms | After tiles loaded |
-
-### File Sizes (60 second flight)
-
-| File | Size | Samples | Rate |
-|------|------|---------|------|
-| flight.csv (receiver) | ~15 KB | ~120 | 2 Hz |
-| LIDAR.CSV (SD card) | ~231 KB | ~3000 | 50 Hz |
-| TELEM.CSV (SD card) | ~18 KB | ~120 | 2 Hz |
-| **Total per flight** | **~250 KB** | - | - |
+| Telemetry snapshot rate | 10 Hz | Unified packet dispatched to LoRa + SD queues |
+| Effective LoRa downlink | a few packets/s | Bounded by air time at SF7 / CR4/8 (~300 ms per frame) |
+| LIDAR logging rate | up to 50 Hz | `LIDA_xxx.CSV` on the SD card |
+| IMU acquisition | 100 Hz | BNO055 via DMA |
+| Barometer polling | 20 Hz | Sufficient for altitude; avoids starving the I2C bus |
+| GNSS fix rate | 10 Hz | SAM-M10Q configured at boot (GGA) |
+| LoRa range | 5–10 km | Line of sight |
+| GUI update latency | <50 ms | As packets arrive |
+| Map tile load | ~2–3 s | First load only |
+| Map position update | <1 ms | After tiles are loaded |
 
 ---
 
@@ -1008,49 +891,43 @@ tile_y_inverted = (2**zoom - 1) - tile_y
 
 ### Python Dependencies
 ```bash
-# Core dependencies
-pip install numpy pandas matplotlib scipy
+# Ground station GUI (Raspberry Pi)
+pip install pyqt5 pyqtgraph pyopengl numpy-stl RPi.GPIO spidev
 
-# For GUI (receiver)
-pip install pyqt5 pyqtgraph pyopengl numpy-stl
-
-# For LoRa (Raspberry Pi only)
-pip install RPi.GPIO spidev
+# Analysis & point cloud pipeline (any machine)
+pip install -r 3D/requirements.txt    # pandas, numpy, scipy, plotly
+pip install matplotlib                # for the Analysis_Tools dashboards
 ```
 
 ### Octave/MATLAB
 ```bash
-# Install Octave (free, open-source)
-sudo apt install octave
+sudo apt install octave   # free, open source — runs the tutorial scripts
 ```
 
 ### CloudCompare
 ```
-Download: https://www.danielgm.net/cc/
-Free, open-source 3D point cloud processing
+https://www.danielgm.net/cc/ — free, open-source 3D point cloud processing
 ```
 
 ---
 
 ## 📝 Version History
 
-### v2.4 (Current)
-- ✅ 17-field telemetry protocol
-- ✅ Battery voltage monitoring
-- ✅ GPS satellite count display
-- ✅ Optimized PyQtGraph plots
-- ✅ Fast OSM tile map
-- ✅ Complete analysis suite
-- ✅ Signal processing tutorials
-- ✅ Point cloud processing pipeline
-- ❌ SD card logging (not yet implemented)
+### v2.4 (current)
+- ✅ 17-field telemetry protocol with battery voltage and GNSS satellite count
+- ✅ SD card logging implemented (dual-file scheme, `f_sync()` batching, session numbering)
+- ✅ GNSS altitude (`gnss_alt`) appended to both SD logs, 10 Hz GNSS fix rate
+- ✅ Quaternion attitude logged in `LIDA_xxx.CSV` for the point cloud pipeline
+- ✅ HMI OLED status screen + SD format from the CONFIG state
+- ✅ New point cloud pipeline (`3D/`): SLERP interpolation, phase filtering, selectable altitude source
+- ✅ Telemetry analysis suite adapted to the onboard `DATA_xxx.CSV` schema
 
 ### v2.3
 - ✅ LIDAR integration
 - ✅ Flight phase flags
 
 ### v2.2
-- ✅ GPS satellite count added
+- ✅ GNSS satellite count added
 - ✅ Calibration packet
 
 ### v2.1
@@ -1060,47 +937,14 @@ Free, open-source 3D point cloud processing
 
 ---
 
-## ⚠️ Important Notes
+## ⚠️ Pre-Flight Checklist
 
-**Current Limitations:**
-- ❌ SD card logging **NOT IMPLEMENTED** in main.c
-- ❌ TaskSDCard is empty (placeholder)
-- ✅ All other features working
-
-**Before Flight:**
-- ✅ Test LoRa communication
-- ✅ Verify GPS lock
-- ✅ Check battery voltage
-- ✅ Calibrate sensors
-- ✅ Test real-time GUI
-- ❌ Cannot log to SD card yet (future feature)
-
-**Data Analysis:**
-- ✅ All tools tested with synthetic data
-- ✅ Point cloud pipeline validated
-- ✅ CloudCompare export working
-- ✅ Octave tutorials functional
-- ✅ GUI tested on Raspberry Pi 5
-
----
-
-## 🎯 Future Enhancements
-
-**High Priority:**
-1. ⬜ Implement SD card logging (dual-file system)
-2. ⬜ Add real-time LIDAR visualization in GUI
-3. ⬜ Implement data compression
-
-**Medium Priority:**
-4. ⬜ Add second GPS for redundancy
-5. ⬜ Implement parachute deployment detection
-6. ⬜ Add temperature compensation for sensors
-7. ⬜ Export to Google Earth from GUI
-
-**Low Priority:**
-8. ⬜ Machine learning for anomaly detection
-9. ⬜ Predictive landing zone calculation
-10. ⬜ Real-time 3D point cloud streaming
+- ✅ Test the LoRa link (calibration packet received, RSSI/SNR nominal)
+- ✅ Verify the GNSS fix (satellite count on the GUI and on the HMI screen)
+- ✅ Check the battery voltage
+- ✅ Let the sensor calibration complete (CAL packet broadcast)
+- ✅ Confirm the SD session files were created (HMI screen)
+- ✅ Verify the LIDAR stream is active
 
 ---
 
@@ -1115,11 +959,11 @@ This project is provided as-is for educational and research purposes.
 This system is designed for educational purposes and includes:
 - Complete signal processing tutorials
 - Physics-based analysis examples
-- Octave/MATLAB learning materials
-- Real-world sensor fusion examples
+- Octave/MATLAB learning material
+- Real-world sensor fusion and georeferencing examples
 - Real-time visualization techniques
 
-Perfect for:
+Well suited for:
 - Engineering students
 - CanSat competitions
 - Rocketry projects
@@ -1129,14 +973,10 @@ Perfect for:
 
 ---
 
-*Built with ❤️ for the Cansat*
+*Built with ❤️ for the CanSat Vortex*
 
 ---
 
-**README.md Version:** 2.4.0  
-**Last Updated:** 2025-04-22  
-**System Status:** Operational (SD card pending)
-
----
-
-**END OF DOCUMENTATION**
+**README_GUI.md version:** 2.4.1
+**Last updated:** 2026-07-11
+**System status:** Operational

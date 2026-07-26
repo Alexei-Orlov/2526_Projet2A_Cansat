@@ -4,7 +4,6 @@
 
 # Test data / field recordings (too large for git, keep on drive/NAS instead)
 backup data cansat/
-**/*.mp4
 **/*.mov
 **/*.avi
 **/*.mkv

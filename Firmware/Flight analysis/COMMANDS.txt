@@ -1,0 +1,317 @@
+================================================================================
+  CANSAT PIPELINE - COMPLETE COMMAND REFERENCE
+  Root directory: c:\Users\Ted\Documents\3D\
+================================================================================
+
+All commands are run from the 3D\ folder unless stated otherwise.
+  LIDA_xxx.CSV  = LIDAR file (distance + IMU + GPS)
+  DATA_xxx.CSV  = telemetry file (accel + gyro + orientation + GPS + battery)
+
+================================================================================
+  1. TEST DATA GENERATION (synthetic LIDA)
+  File: generate_sample_data.py
+================================================================================
+
+  Basic usage (generates data_in/LIDA_sample.csv):
+    python generate_sample_data.py
+
+  Options:
+    --output  -o  <file.csv>      Output file name              (default: data_in/LIDA_sample.csv)
+    --seed        <int>           Random seed (reproducibility)  (default: 0)
+
+  Examples:
+    python generate_sample_data.py
+    python generate_sample_data.py --output data_in/LIDA_test.csv
+    python generate_sample_data.py --output data_in/LIDA_test.csv --seed 42
+
+
+================================================================================
+  2. LIDAR DISTANCE DISTRIBUTION
+  File: distanceDistribution.py
+================================================================================
+
+  Basic usage:
+    python distanceDistribution.py
+
+  Options:
+    --input   -i  <file.csv>      LIDA_xxx.CSV file                 (default: data_in/LIDA_001.CSV)
+    --phases      <phase(s)>      Phase(s) to keep (drop ascension)  (default: all)
+    --min-range   <meters>        Minimum distance to keep           (default: 0.2)
+    --max-range   <meters>        Maximum distance to keep           (default: 100.0)
+    --nbins       <int>           Number of histogram bins           (default: 50)
+    --output-html <file.html>     Save the plot as HTML              (default: no)
+    --no-show                     Do not open the browser            (default: shows)
+
+  Examples:
+    python distanceDistribution.py -i data_in/LIDA_001.CSV
+    python distanceDistribution.py -i data_in/LIDA_001.CSV --phases drop
+    python distanceDistribution.py -i data_in/LIDA_001.CSV --phases drop ascension --nbins 100
+    python distanceDistribution.py -i data_in/LIDA_001.CSV --output-html data_out/dist.html --no-show
+
+
+================================================================================
+  3. 3D POINT CLOUD (main tool)
+  File: cloudPoints.py
+================================================================================
+
+  Basic usage:
+    python cloudPoints.py
+
+  Options:
+    --input   -i  <file.csv>      LIDA_xxx.CSV file                  (default: data_in/LIDA_001.CSV)
+    --phases      <phase(s)>      Phase(s) to keep                   (default: drop)
+    --min-range   <meters>        Minimum distance                    (default: 0.2)
+    --max-range   <meters>        Maximum distance                    (default: 100.0)
+    --boresight   <direction>     LIDAR direction in the body frame   (default: lidar_mount)
+                                  Values: forward backward left right up down lidar_mount
+    --color-by    <column>        Column to color-code by             (default: distance)
+                                  Special values:
+                                    distance   = measured distance (default)
+                                    time       = relative seconds since the 1st hit
+                                  Or any CSV column name (e.g. altitude)
+    --no-trajectory               Do not draw the CanSat trajectory
+    --alt-source  <source>        Altitude source for the vertical translation
+                                  Values: baro = barometer (default, historical behavior)
+                                          gnss = gnss_alt column (newer firmware only)
+                                  With gnss, the original barometric values remain
+                                  available in the altitude_baro column for comparison
+    --ignore-gps                  Ignore lat/lon (noisy fix) - keep only
+                                  the altitude (as selected by --alt-source)
+    --ignore-baro                 Ignore the altitude (as selected by --alt-source)
+                                  - keep only lat/lon
+                                  (combine --ignore-gps + --ignore-baro for an
+                                   orientation-only cloud, with no translation at all)
+    --no-slerp                    Disable SLERP interpolation between DMA bursts
+    --t-start     <seconds>       Only keep hits from this time on,
+                                  relative to the file's first sample   (default: no)
+    --t-end       <seconds>       Only keep hits up to this time,
+                                  relative to the file's first sample   (default: no)
+    --output-html <file.html>     Save the figure as HTML
+    --export-xyz  <file.xyz>      Export the point cloud to a plain text x y z file
+    --no-show                     Do not open the browser
+
+  Note: cleaning removes NaNs, distances outside the min/max range, and
+        rows with a zero quaternion (logged before BNO055 fusion starts,
+        unusable for orientation).
+
+  Examples:
+    python cloudPoints.py -i data_in/LIDA_001.CSV
+    python cloudPoints.py -i data_in/LIDA_001.CSV --phases drop
+    python cloudPoints.py -i data_in/LIDA_001.CSV --alt-source gnss
+    python cloudPoints.py -i data_in/LIDA_001.CSV --color-by time
+    python cloudPoints.py -i data_in/LIDA_001.CSV --color-by altitude
+    python cloudPoints.py -i data_in/LIDA_001.CSV --ignore-gps
+    python cloudPoints.py -i data_in/LIDA_001.CSV --ignore-gps --ignore-baro
+    python cloudPoints.py -i data_in/LIDA_001.CSV --no-slerp
+    python cloudPoints.py -i data_in/LIDA_001.CSV --output-html data_out/cloud.html --no-show
+    python cloudPoints.py -i data_in/LIDA_001.CSV --export-xyz data_out/points.xyz --no-show
+    python cloudPoints.py -i data_in/LIDA_001.CSV --phases drop ascension --boresight down
+    python cloudPoints.py -i data_in/LIDA_001.CSV --min-range 0.5 --max-range 50.0
+    python cloudPoints.py -i data_in/LIDA_001.CSV --phases --t-start 5 --t-end 30
+
+  Full combination (save + export without displaying):
+    python cloudPoints.py -i data_in/LIDA_001.CSV --output-html data_out/cloud.html --export-xyz data_out/points.xyz --no-show
+
+
+================================================================================
+  4. TELEMETRY DASHBOARD + REPORT
+  File: Analysis_Tools\Basic\analyze_telemetry.py
+================================================================================
+
+  Basic usage (interactive display):
+    python Analysis_Tools\Basic\analyze_telemetry.py data_in/DATA_001.CSV
+
+  Options:
+    input         <file.csv>      DATA_xxx.CSV file                  (required)
+    --output  -o  <folder>        Output folder (PNG + report)       (default: display)
+    --plots   -p  <keys/numbers>  Comma-separated subset of curves to display,
+                                  by key (e.g. altitude,battery)
+                                  or by 1-based index (e.g. 1,5)      (default: all)
+    --list-plots                  List available curves (key + index) and exit
+    --t-start     <seconds>       Only keep rows from this time on,
+                                  same scale as the plot time axis
+                                  (tx_timestamp_ms/1000), e.g. --t-start 1500 to
+                                  skip a long GO_FOR_LAUNCH wait       (default: no)
+    --t-end       <seconds>       Only keep rows up to this time
+                                  (same scale)                        (default: no)
+
+  Available keys (see --list-plots):
+    1. accel  2. gyro  3. orientation  4. temperature  5. altitude
+    6. vspeed  7. latitude  8. longitude  9. satellites  10. battery
+
+  Produces:
+    DATA_001_analysis.png   - 10-subplot dashboard (accel, gyro, orientation,
+                              temperature, altitude, vertical speed, GPS, battery)
+                              Each subplot has color bands per flight phase.
+                              With --plots, only the selected curves are drawn.
+    DATA_001_report.txt      - Text report: overview, altitude, speed, GPS,
+                              battery, temperature, phases with durations
+
+  Note: --t-start/--t-end never modify the source CSV, only which rows are
+        taken into account for this plot/report (windowing, not renumbering
+        the raw data). The report recalls the effective window used.
+
+  Examples:
+    python Analysis_Tools\Basic\analyze_telemetry.py data_in/DATA_001.CSV
+    python Analysis_Tools\Basic\analyze_telemetry.py data_in/DATA_001.CSV --output data_out/rapport
+    python Analysis_Tools\Basic\analyze_telemetry.py data_in/DATA_001.CSV -o data_out/out
+    python Analysis_Tools\Basic\analyze_telemetry.py data_in/DATA_001.CSV --list-plots
+    python Analysis_Tools\Basic\analyze_telemetry.py data_in/DATA_001.CSV --plots altitude,battery
+    python Analysis_Tools\Basic\analyze_telemetry.py data_in/DATA_001.CSV --plots 1,5 -o data_out/out
+    python Analysis_Tools\Basic\analyze_telemetry.py data_in/DATA_001.CSV --t-start 1500 --t-end 2190 -o data_out/out
+
+
+================================================================================
+  5. ADVANCED ANALYSES (rotation, GPS, energy, anomalies, KML)
+  File: Analysis_Tools\Advanced\advanced_analysis.py
+================================================================================
+
+  Basic usage:
+    python Analysis_Tools\Advanced\advanced_analysis.py data_in/DATA_001.CSV
+
+  Options:
+    input         <file.csv>      DATA_xxx.CSV file                  (required)
+    --output  -o  <folder>        Output folder   (default: data_out/advanced_analysis_output)
+    --mass        <kg>            CanSat mass in kg, used for potential/
+                                  kinetic energy                     (default: 0.5)
+    --t-start     <seconds>       Only keep rows from this time on,
+                                  same scale as the plot time axis
+                                  (tx_timestamp_ms/1000)                   (default: no)
+    --t-end       <seconds>       Only keep rows up to this time
+                                  (same scale)                            (default: no)
+
+  Produces:
+    rotation_analysis.png   - Gyro X/Y/Z + rotation magnitude
+    gps_trajectory.png      - Top-down view + altitude vs horizontal distance
+                              (skipped if GPS = 0)
+    energy_analysis.png     - Potential + kinetic + total energy
+                              (Ep = mgh, Ec = 1/2 m v^2, using --mass)
+    flight_trajectory.kml   - Google Earth export (skipped if GPS = 0)
+    analysis_report.txt     - Text report with stats + detected anomalies
+
+  Automatically detected anomalies:
+    - Data gaps > 3x the median interval
+    - GPS jumps > ~110 m between consecutive rows
+    - Accelerometer saturation > 15 m/s2
+    - Temperature spikes > 5 deg C between consecutive rows
+
+  Examples:
+    python Analysis_Tools\Advanced\advanced_analysis.py data_in/DATA_001.CSV
+    python Analysis_Tools\Advanced\advanced_analysis.py data_in/DATA_001.CSV --output data_out/out
+    python Analysis_Tools\Advanced\advanced_analysis.py data_in/DATA_001.CSV --mass 0.175 -o data_out/out
+    python Analysis_Tools\Advanced\advanced_analysis.py data_in/DATA_001.CSV --t-start 1500 --t-end 2190 -o data_out/out
+
+
+================================================================================
+  6. PHYSICAL FEATURES (Cd, parachute, battery)
+  File: Analysis_Tools\Advanced\advanced_features.py
+================================================================================
+
+  Basic usage:
+    python Analysis_Tools\Advanced\advanced_features.py data_in/DATA_001.CSV
+
+  Options:
+    input         <file.csv>      DATA_xxx.CSV file                  (required)
+    --output  -o  <folder>   Output folder (default: data_out/advanced_features_output)
+    --mass        <kg>            CanSat mass in kg                  (default: 0.5)
+    --area        <m2>            Cross-section area in m2 for Cd     (default: 0.01)
+    --t-start     <seconds>       Only keep rows from this time on,
+                                  same scale as the plot time axis
+                                  (tx_timestamp_ms/1000)                   (default: no)
+    --t-end       <seconds>       Only keep rows up to this time
+                                  (same scale)                            (default: no)
+
+  Produces:
+    drag_coefficient.png     - 4 panels: altitude during DROP, vertical speed,
+                               speed vs altitude, numerical Cd info
+                               (skipped if fewer than 10 DROP-phase rows)
+    parachute_deployment.png - Detection of the parachute opening moment:
+                               altitude, vertical speed, vertical acceleration
+    power_consumption.png    - Battery voltage + estimated remaining capacity
+                               + per-phase summary
+
+  Note: Cd = 2mg / (rho * v_terminal^2 * A)
+        Parachute detection = peak upward vertical acceleration (jerk)
+
+  Examples:
+    python Analysis_Tools\Advanced\advanced_features.py data_in/DATA_001.CSV
+    python Analysis_Tools\Advanced\advanced_features.py data_in/DATA_001.CSV --output data_out/out
+    python Analysis_Tools\Advanced\advanced_features.py data_in/DATA_001.CSV --mass 0.35 --area 0.008
+    python Analysis_Tools\Advanced\advanced_features.py data_in/DATA_001.CSV --mass 0.35 --area 0.008 -o data_out/out
+    python Analysis_Tools\Advanced\advanced_features.py data_in/DATA_001.CSV --t-start 1500 --t-end 2190
+
+
+================================================================================
+  7. SIGNAL PROCESSING TUTORIAL (educational reference)
+  File: Analysis_Tools\Signal_Processing\signal_processing_tutorial.py
+================================================================================
+
+  Compatible with DATA_xxx.CSV (tx_timestamp_ms): the script automatically
+  derives a "timestamp" column in seconds (t=0 at the first row) from
+  tx_timestamp_ms if the file does not already contain "timestamp"
+  (older schema). No modification of the source CSV.
+
+  Usage:
+    python Analysis_Tools\Signal_Processing\signal_processing_tutorial.py <file.csv>
+    python Analysis_Tools\Signal_Processing\signal_processing_tutorial.py <file.csv> <output_folder>
+
+  Examples:
+    python Analysis_Tools\Signal_Processing\signal_processing_tutorial.py data_in/DATA_001.CSV
+    python Analysis_Tools\Signal_Processing\signal_processing_tutorial.py data_in/DATA_001.CSV data_out/tutorial_out
+
+  Produces:
+    1_lowpass_temperature.png     - Low-pass filter on temperature
+    1_lowpass_gps.png             - Low-pass filter on GPS (degenerate if no GPS fix)
+    2_fft_gyroscope.png           - Gyroscope frequency analysis
+    2_fft_accelerometer.png       - Accelerometer frequency analysis
+    telemetry_data.mat            - Octave/MATLAB export
+    octave_tutorial_1_basics.m    - Octave script: basics
+    octave_tutorial_2_filtering.m - Octave script: filtering
+    octave_tutorial_3_fft.m       - Octave script: FFT
+    octave_tutorial_4_kalman.m    - Octave script: Kalman filter
+    README_OCTAVE.txt              - Octave instructions
+
+  Interactive script: press ENTER between each tutorial (educational,
+  not meant for scripted/batch use).
+
+
+================================================================================
+  QUICK RECAP - TYPICAL WORKFLOW WITH REAL FILES
+================================================================================
+
+  # Step 1: visualize LIDAR distances
+  python distanceDistribution.py -i data_in/LIDA_001.CSV --phases drop
+
+  # Step 2: point cloud colored by distance (default)
+  python cloudPoints.py -i data_in/LIDA_001.CSV
+
+  # Step 3: point cloud colored by time (see temporal order)
+  python cloudPoints.py -i data_in/LIDA_001.CSV --color-by time
+
+  # Step 4: point cloud without GPS (if fix is absent or noisy)
+  python cloudPoints.py -i data_in/LIDA_001.CSV --ignore-gps
+
+  # Step 5: DATA telemetry dashboard
+  python Analysis_Tools\Basic\analyze_telemetry.py data_in/DATA_001.CSV --output data_out/out
+
+  # Step 6: advanced analyses (rotation, GPS, energy, anomalies) - real mass as argument
+  python Analysis_Tools\Advanced\advanced_analysis.py data_in/DATA_001.CSV --mass 0.35 --output data_out/out
+
+  # Step 7: physical analysis (Cd, parachute, battery) - real mass and area as arguments
+  python Analysis_Tools\Advanced\advanced_features.py data_in/DATA_001.CSV --mass 0.35 --area 0.008
+
+  # Step 8 (optional, educational): signal processing tutorial
+  python Analysis_Tools\Signal_Processing\signal_processing_tutorial.py data_in/DATA_001.CSV data_out/out_signal
+
+================================================================================
+  QUICK RECAP - TEST WORKFLOW WITH SYNTHETIC DATA
+================================================================================
+
+  # Generate a test LIDA file
+  python generate_sample_data.py --output data_in/LIDA_test.csv
+
+  # Run the point cloud tool on the test data
+  python cloudPoints.py -i data_in/LIDA_test.csv --phases drop
+
+================================================================================
+</content>

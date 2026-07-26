@@ -1,0 +1,16 @@
+Rotation analysis -> data_out/advanced_analysis_output/rotation_analysis.png
+Max rotation:  2121.6 deg/s
+Mean rotation: 26.4 deg/s
+GPS trajectory skipped (all coordinates are 0 — no fix)
+Energy analysis -> data_out/advanced_analysis_output/energy_analysis.png
+Max potential energy: 782.45 J
+Max kinetic energy:   299.09 J
+KML export skipped (no valid GPS fix)
+======================================================================
+ANOMALY DETECTION
+======================================================================
+WARNING: 2 data gaps > 3x median interval (306 ms)
+  gap at t=180.59s  (1224 ms)
+  gap at t=2144.78s  (1836 ms)
+WARNING: 30 rows with |accel| > 15 m/s² (near BNO055 saturation)
+OK: no temperature spikes
